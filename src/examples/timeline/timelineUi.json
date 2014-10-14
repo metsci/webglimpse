@@ -1,0 +1,36 @@
+{
+    "eventStyles": [ {
+        "styleGuid": "metsci.timelineExample.eventStyle01",
+        "icons": [ {
+            "url": "images/fugue/weather.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0,
+            "hPos": 0
+        }, {
+            "url": "images/fugue/weather-clouds.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 1,
+            "hPos": 1
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.eventStyle02",
+        "icons": [ {
+            "url": "images/fugue/glass.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0,
+            "hPos": 0
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.eventStyle03",
+        "icons": [ {
+            "url": "images/fugue/alarm-clock-blue.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "hPos": 0.5
+        } ]
+    } ]
+}
