@@ -71,8 +71,8 @@ module Webglimpse {
 
             // set color and projection matrix variables
             u_Color.setData( gl, color );
-            // here we set the projection matrix for x coordinates between
-            // -5 and 5 and y coordinates between -10 and 10
+            
+            // set the projection matrix based on the axis bounds
             u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
 
             // XXX: IE doesn't support lineWidth
@@ -83,6 +83,7 @@ module Webglimpse {
 
             // bind buffer data to vertex attribute array
             coordBuffer.bind( gl, GL.ARRAY_BUFFER );
+            
             // first argument corresponds to the 0 attrib array set above
             // second argument indicates two coordinates per vertex
             gl.vertexAttribPointer( 0, dim, GL.FLOAT, false, 0, 0 );
