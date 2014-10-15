@@ -10,7 +10,6 @@
 /// <reference path="webglimpse/util/notification.ts" />
 /// <reference path="webglimpse/util/sorted_arrays.ts" />
 /// <reference path="webglimpse/util/binary_tree.ts" />
-/// <reference path="webglimpse/util/interval_tree.ts" />
 /// <reference path="webglimpse/util/sorted_multimap.ts" />
 /// <reference path="webglimpse/util/split.ts" />
 
