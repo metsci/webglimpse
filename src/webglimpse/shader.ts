@@ -51,9 +51,13 @@ module Webglimpse {
             return program;
         }
         finally {
-            for ( var i = 0; i < shaders.length; i++ ) {
-                gl.detachShader( program, shaders[ i ] );
-            }
+            // It's good GL practice to detach and delete shaders after they have been linked
+            // into a program, and are no longer needed. However, on some versions of Firefox,
+            // doing so causes getAttribLocation and getUniformLocation to fail.
+            //
+            //for ( var i = 0; i < shaders.length; i++ ) {
+            //    gl.detachShader( program, shaders[ i ] );
+            //}
         }
     }
 
@@ -65,9 +69,13 @@ module Webglimpse {
             return linkProgram( gl, shaders );
         }
         finally {
-            for ( var i = 0; i < shaders.length; i++ ) {
-                gl.deleteShader( shaders[ i ] );
-            }
+            // It's good GL practice to detach and delete shaders after they have been linked
+            // into a program, and are no longer needed. However, on some versions of Firefox,
+            // doing so causes getAttribLocation and getUniformLocation to fail.
+            //
+            //for ( var i = 0; i < shaders.length; i++ ) {
+            //    gl.deleteShader( shaders[ i ] );
+            //}
         }
     }
 
