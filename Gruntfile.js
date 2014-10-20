@@ -108,8 +108,12 @@ module.exports = function ( grunt ) {
                 src: [ '**' ],
                 dest: 'build/grunt/release/'
             },
+            release_license: {
+                src: 'LICENSE',
+                dest: 'build/grunt/release/'
+            },
             release_changelog: {
-                src: 'changelog.txt',
+                src: 'CHANGELOG',
                 dest: 'build/grunt/release/'
             },
             release_webglimpse_defs: {
@@ -293,6 +297,7 @@ module.exports = function ( grunt ) {
             'clean:release',
             // Copy all, and modify copies
             'copy:release_sources',
+            'copy:release_license',
             'copy:release_changelog',
             'replace:release_reference',
             // Compile webglimpse, and modify generated
