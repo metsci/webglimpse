@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Plot Example (Web Glimpse)</title>
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="plot.css">
+    <script type="text/javascript" charset="UTF-8" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+    <!-- DEV_BEGIN -->
+    <script type="text/javascript" charset="UTF-8" src="../../webglimpse-dev.js"></script>
+    <!-- DEV_END -->
+
+    <!-- RELEASE_BEGIN --><!--
+    <script type="text/javascript" charset="UTF-8" src="../../webglimpse.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="plot.js"></script>
+    --><!-- RELEASE_END -->
+
+</head>
+<body>
+
+    <div id="exampleDiv"></div>
+
+    <script type="text/javascript" charset="UTF-8">
+        var div = document.getElementById( 'exampleDiv' );
+        try {
+            Webglimpse.runPlotExample( div );
+        }
+        catch ( e ) {
+            if ( e.message === 'WebGLContextCreationError' ) {
+                div.classList.add( 'errorMessage' );
+                div.textContent = 'WebGL is not available, because either the browser, the graphics hardware, or the graphics driver does not support it';
+            }
+            throw e;
+        }
+    </script>
+
+</body>
+</html>
