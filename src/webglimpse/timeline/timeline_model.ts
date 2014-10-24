@@ -144,23 +144,32 @@ module Webglimpse {
         }
 
         set baseline( baseline : number ) {
-            this._baseline = baseline;
+            if ( baseline !== this._baseline ) {
+                this._baseline = baseline;
+                this._attrsChanged.fire( );
+            }
         }
 
         get lineColor( ) : Color {
             return this._lineColor;
         }
 
-        set lineColor( color : Color ) {
-            this._lineColor = color;
+        set lineColor( lineColor : Color ) {
+            if ( lineColor !== this._lineColor ) {
+                this._lineColor = lineColor;
+                this._attrsChanged.fire( );
+            }
         }
 
         get pointColor( ) : Color {
             return this._pointColor;
         }
 
-        set pointColor( color : Color ) {
-            this._pointColor = color;
+        set pointColor( pointColor : Color ) {
+            if ( pointColor !== this._pointColor ) {
+                this._pointColor = pointColor;
+                this._attrsChanged.fire( );
+            }
         }
 
         get lineThickness( ) : number {
@@ -168,7 +177,10 @@ module Webglimpse {
         }
 
         set lineThickness( lineThickness : number ) {
-            this._lineThickness = lineThickness;
+            if ( lineThickness !== this._lineThickness ) {
+                this._lineThickness = lineThickness;
+                this._attrsChanged.fire( );
+            }
         }
 
         get pointSize( ) : number {
@@ -176,7 +188,10 @@ module Webglimpse {
         }
 
         set pointSize( pointSize : number ) {
-            this._pointSize = pointSize;
+            if ( pointSize !== this._pointSize ) {
+                this._pointSize = pointSize;
+                this._attrsChanged.fire( );
+            }
         }
 
         get uiHint( ) : string {
