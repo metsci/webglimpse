@@ -132,8 +132,8 @@ module Webglimpse {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
             this._uiHint = timeseries.uiHint;
             this._baseline = timeseries.baseline;
-            this._lineColor = parseCssColor( timeseries.lineColor );
-            this._pointColor = parseCssColor( timeseries.pointColor );
+            this._lineColor = ( hasval( timeseries.lineColor ) ? parseCssColor( timeseries.lineColor ) : null );
+            this._pointColor = ( hasval( timeseries.pointColor ) ? parseCssColor( timeseries.pointColor ) : null );
             this._lineThickness = timeseries.lineThickness;
             this._pointSize = timeseries.pointSize;
             this._attrsChanged.fire( );
