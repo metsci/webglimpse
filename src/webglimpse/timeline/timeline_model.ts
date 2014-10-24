@@ -213,6 +213,11 @@ module Webglimpse {
             return {
                 timeseriesGuid: this._timeseriesGuid,
                 uiHint: this._uiHint,
+                baseline: this._baseline,
+                lineColor: ( hasval( this._lineColor ) ? this._lineColor.cssString : null ),
+                pointColor: ( hasval( this._pointColor ) ? this._pointColor.cssString : null ),
+                lineThickness: this._lineThickness,
+                pointSize: this._pointSize,
                 fragmentGuids: this._fragmentGuids.toArray( ),
             };
         }
