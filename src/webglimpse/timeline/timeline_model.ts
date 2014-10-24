@@ -43,14 +43,14 @@ module Webglimpse {
         pointSize? : number
         fragmentGuids? : string[];
     }
-    
-    
+
+
     export interface TimelineTimeseriesFragment {
         fragmentGuid : string;
         data : number[];
         times_ISO8601 : string[];
     }
-    
+
 
     export interface TimelineEvent {
         eventGuid : string;
@@ -99,20 +99,20 @@ module Webglimpse {
         groups : TimelineGroup[];
         root : TimelineRoot;
     }
-    
-    
-    
+
+
+
     export class TimelineTimeseriesModel {
         private _timeseriesGuid : string;
+        private _attrsChanged : Notification;
         private _uiHint : string;
         private _baseline : number;
         private _lineColor : Color;
         private _pointColor : Color;
         private _lineThickness : number;
         private _pointSize : number;
-        private _attrsChanged : Notification;
         private _fragmentGuids : OrderedStringSet;
-    
+
         constructor( timeseries : TimelineTimeseries ) {
             this._timeseriesGuid = timeseries.timeseriesGuid;
             this._attrsChanged = new Notification( );
@@ -138,47 +138,47 @@ module Webglimpse {
             this._pointSize = timeseries.pointSize;
             this._attrsChanged.fire( );
         }
-        
+
         get baseline( ) : number {
             return this._baseline;
         }
-        
+
         set baseline( baseline : number ) {
             this._baseline = baseline;
         }
-        
+
         get lineColor( ) : Color {
             return this._lineColor;
         }
-        
+
         set lineColor( color : Color ) {
             this._lineColor = color;
         }
-        
+
         get pointColor( ) : Color {
             return this._pointColor;
         }
-        
+
         set pointColor( color : Color ) {
             this._pointColor = color;
         }
-        
+
         get lineThickness( ) : number {
             return this._lineThickness;
         }
-        
+
         set lineThickness( lineThickness : number ) {
             this._lineThickness = lineThickness;
         }
-        
+
         get pointSize( ) : number {
             return this._pointSize;
         }
-        
+
         set pointSize( pointSize : number ) {
             this._pointSize = pointSize;
         }
-    
+
         get uiHint( ) : string {
             return this._uiHint;
         }
@@ -189,7 +189,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get fragmentGuids( ) : OrderedStringSet {
             return this._fragmentGuids;
         }
@@ -204,29 +204,18 @@ module Webglimpse {
     }
 
 
-    
-        
     export class TimelineTimeseriesFragmentModel {
         private _fragmentGuid : string;
+        private _attrsChanged : Notification;
         private _data : number[];
         private _times_PMILLIS : number[];
-        
-        private _attrsChanged : Notification;
-    
+
         constructor( fragment : TimelineTimeseriesFragment ) {
             this._fragmentGuid = fragment.fragmentGuid;
             this._attrsChanged = new Notification( );
             this.setAttrs( fragment );
         }
-        
-        get start_PMILLIS( ) : number {
-            return this._times_PMILLIS[0];
-        }
-        
-        get end_PMILLIS( ) : number {
-            return this._times_PMILLIS.slice(-1)[0];
-        }
-        
+
         get fragmentGuid( ) : string {
             return this._fragmentGuid;
         }
@@ -234,30 +223,37 @@ module Webglimpse {
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
-        
+
         setAttrs( fragment : TimelineTimeseriesFragment ) {
             this._times_PMILLIS = fragment.times_ISO8601.map( (value,index,array) => { return parseTime_PMILLIS(array[index]); } );
             this._data = fragment.data.slice( );
-            
             this._attrsChanged.fire( );
         }
-        
+
         get data( ) : number[] {
             return this._data;
         }
-        
-        get times_PMILLIS( ) : number[] {
-            return this._times_PMILLIS;
-        }
-        
+
         set data( data : number[] ) {
             this._data = data;
         }
-        
+
+        get start_PMILLIS( ) : number {
+            return this._times_PMILLIS[ 0 ];
+        }
+
+        get end_PMILLIS( ) : number {
+            return this._times_PMILLIS.slice( -1 )[ 0 ];
+        }
+
+        get times_PMILLIS( ) : number[] {
+            return this._times_PMILLIS;
+        }
+
         set times_PMILLIS( _times_PMILLIS : number[] ) {
             this._times_PMILLIS = _times_PMILLIS;
         }
-        
+
         snapshot( ) : TimelineTimeseriesFragment {
             return {
                 fragmentGuid: this._fragmentGuid,
@@ -266,8 +262,6 @@ module Webglimpse {
             };
         }
     }
-    
-    
 
 
     export class TimelineEventModel {
