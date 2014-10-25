@@ -245,7 +245,7 @@ module Webglimpse {
         }
 
         setAttrs( fragment : TimelineTimeseriesFragment ) {
-            this._times_PMILLIS = fragment.times_ISO8601.map( (value,index,array) => { return parseTime_PMILLIS(array[index]); } );
+            this._times_PMILLIS = fragment.times_ISO8601.map( parseTime_PMILLIS );
             this._data = fragment.data.slice( );
             this._attrsChanged.fire( );
         }
@@ -278,7 +278,7 @@ module Webglimpse {
             return {
                 fragmentGuid: this._fragmentGuid,
                 data: this._data.slice( ),
-                times_ISO8601: this._times_PMILLIS.map( (value,index,array) => { return formatTime_ISO8601(array[index]); } ),
+                times_ISO8601: this._times_PMILLIS.map( formatTime_ISO8601 )
             };
         }
     }
