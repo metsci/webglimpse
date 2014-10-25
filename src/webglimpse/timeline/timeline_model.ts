@@ -256,6 +256,7 @@ module Webglimpse {
 
         set data( data : number[] ) {
             this._data = data;
+            // XXX: Fire notification ... separate data notification, maybe
         }
 
         get start_PMILLIS( ) : number {
@@ -272,6 +273,7 @@ module Webglimpse {
 
         set times_PMILLIS( _times_PMILLIS : number[] ) {
             this._times_PMILLIS = _times_PMILLIS;
+            // XXX: Fire notification ... separate data notification, maybe
         }
 
         snapshot( ) : TimelineTimeseriesFragment {
