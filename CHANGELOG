@@ -1,3 +1,9 @@
+Webglimpse 1.4.1 (released 2014-10-29)
+
+  * Minor performance improvements to notifications
+  * Temporary workaround for performance issue triggered by clearing an event row
+
+
 Webglimpse 1.4.0 (released 2014-10-20)
 
   * Initial open-source release
