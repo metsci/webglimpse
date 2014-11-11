@@ -530,34 +530,78 @@ module Webglimpse {
             }
         } );
 
+
+        var endDrag = function( ev : MouseEvent ) {
+            var i = iMouse( element, ev );
+            var j = jMouse( element, ev );
+
+            for ( var n = 0; n < currentPanes.length; n++ ) {
+                currentPanes[ n ].fireMouseUp( i, j, ev );
+            }
+            dragging = false;
+
+            if ( pendingExit ) {
+                detectEntersAndExits( currentPanes, [], i, j, ev );
+                currentPanes = [];
+                pendingExit = false;
+                refreshMouseCursor( );
+            }
+            else {
+                var newPanes = contentPane.panesAt( i, j );
+                detectEntersAndExits( currentPanes, newPanes, i, j, ev );
+                currentPanes = newPanes;
+                for ( var n = 0; n < currentPanes.length; n++ ) {
+                    currentPanes[ n ].fireMouseMove( i, j, ev );
+                }
+                refreshMouseCursor( );
+            }
+        };
+
         // The window always gets the mouse-up event at the end of a drag -- even if it occurs outside the browser window
         window.addEventListener( 'mouseup', function( ev : MouseEvent ) {
             if ( dragging && ev.button === 0 ) {
-                var i = iMouse( element, ev );
-                var j = jMouse( element, ev );
-
-                for ( var n = 0; n < currentPanes.length; n++ ) {
-                    currentPanes[ n ].fireMouseUp( i, j, ev );
-                }
-                dragging = false;
-
-                if ( pendingExit ) {
-                    detectEntersAndExits( currentPanes, [], i, j, ev );
-                    currentPanes = [];
-                    pendingExit = false;
-                    refreshMouseCursor( );
-                }
-                else {
-                    var newPanes = contentPane.panesAt( i, j );
-                    detectEntersAndExits( currentPanes, newPanes, i, j, ev );
-                    currentPanes = newPanes;
-                    for ( var n = 0; n < currentPanes.length; n++ ) {
-                        currentPanes[ n ].fireMouseMove( i, j, ev );
-                    }
-                    refreshMouseCursor( );
-                }
+                endDrag( ev );
             }
         } );
+
+        // We don't receive mouse events that happen over another iframe -- even during a drag. If we miss a mouseup that
+        // should terminate a drag, we end up stuck in dragging mode, which makes for a really lousy user experience. To
+        // avoid that, whenever the mouse moves, check whether the button is down. If we're still in dragging mode, but
+        // the button is now up, end the drag. 
+
+        // If we're dragging, and we see a mousemove with no buttons down, end the drag
+        var recentDrag : MouseEvent = null;
+        var handleMissedMouseUp = function( ev : MouseEvent ) {
+            if ( dragging ) {
+                if ( ( ev.buttons & 1 ) === 0 && recentDrag ) {
+                    var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
+                    mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
+                    endDrag( mouseUp );
+                }
+                recentDrag = ev;
+            }
+        };
+        window.addEventListener( 'mousemove', handleMissedMouseUp );
+        var w = window;
+        while ( w.parent !== w ) {
+            try {
+                w.parent.addEventListener( 'mousemove', handleMissedMouseUp );
+                w = w.parent;
+            }
+            catch ( e ) {
+                // Cross-origin security may prevent us from adding a listener to a window other than our own -- in that case,
+                // the least bad option is to terminate drags on exit from the highest accessible window
+                w.addEventListener( 'mouseout', function( ev : MouseEvent ) {
+                    if ( dragging ) {
+                        var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
+                        mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, ev.screenX, ev.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, 0, null );
+                        endDrag( mouseUp );
+                    }
+                } );
+                break;
+            }
+        }
+
 
         // Firefox uses event type 'DOMMouseScroll' for mouse-wheel events; everybody else uses 'mousewheel'
         var handleMouseWheel = function( ev : MouseWheelEvent ) {
