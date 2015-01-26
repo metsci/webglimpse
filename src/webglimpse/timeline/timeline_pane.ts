@@ -652,6 +652,7 @@ module Webglimpse {
                     var newRowPaneFactory = ( rowUi.paneFactory || rowPaneFactoryChooser( row ) );
                     if ( newRowPaneFactory !== rowPaneFactory && newRowPaneFactory ) {
                         if ( rowContentPane ) {
+                            rowContentPane.dispose( );
                             rowInsetPane.removePane( rowContentPane );
                         }
                         rowPaneFactory = newRowPaneFactory;
@@ -662,6 +663,7 @@ module Webglimpse {
                         drawable.redraw( );
                     }
                 };
+
                 rowUi.paneFactoryChanged.on( refreshRowContentPane );
                 row.attrsChanged.on( refreshRowContentPane );
                 row.eventGuids.valueAdded.on( refreshRowContentPane );

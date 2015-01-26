@@ -118,6 +118,7 @@ module Webglimpse {
             var redraw = function( ) {
                 drawable.redraw( );
             };
+
             row.eventGuids.valueAdded.on( redraw );
             row.eventGuids.valueMoved.on( redraw );
             row.eventGuids.valueRemoved.on( redraw );
@@ -128,9 +129,10 @@ module Webglimpse {
             row.eventGuids.forEach( watchEventAttrs );
             row.eventGuids.valueAdded.on( watchEventAttrs );
 
-            row.eventGuids.valueRemoved.on( function( eventGuid : string ) {
+            var removeRedraw = function( eventGuid : string ) {
                 model.event( eventGuid ).attrsChanged.off( redraw );
-            } );
+            }
+            row.eventGuids.valueRemoved.on( removeRedraw );
 
 
 
@@ -489,6 +491,25 @@ module Webglimpse {
             } );
 
 
+            rowContentPane.dispose = function( ) {
+                rowContentPane.dispose0( );
+                
+                lanes.dispose( );
+                
+                timeAxis.limitsChanged.off( dragEventEnd );
+                timeAxis.limitsChanged.off( dragEventStart );
+                
+                ui.millisPerPx.changed.off( updateCursor );
+                selection.hoveredTime_PMILLIS.changed.off( updateCursor );
+                selection.hoveredEvent.changed.off( updateCursor );
+                
+                row.eventGuids.valueAdded.off( redraw );
+                row.eventGuids.valueMoved.off( redraw );
+                row.eventGuids.valueRemoved.off( redraw );
+                row.eventGuids.valueRemoved.off( removeRedraw );
+                
+                row.eventGuids.valueAdded.off( watchEventAttrs );
+            }
 
             return rowContentPane;
         };

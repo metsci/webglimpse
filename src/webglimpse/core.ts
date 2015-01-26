@@ -327,6 +327,23 @@ module Webglimpse {
         fireContextMenu( i : number, j : number, mouseEvent : MouseEvent ) : any {
             return this._contextMenu.fire( { paneViewport: this._viewport.unmod, i: i, j: j, mouseEvent: mouseEvent } );
         }
+        
+        // Disposal
+        //
+        
+        dispose0( ) : void {
+            this._mouseUp.dispose( );
+            this._mouseDown.dispose( );
+            this._mouseMove.dispose( );
+            this._mouseWheel.dispose( );
+            this._mouseEnter.dispose( );
+            this._mouseExit.dispose( );
+            this._contextMenu.dispose( );
+        }
+        
+        dispose( ) : void {
+            this.dispose0( );
+        }
     }
 
 

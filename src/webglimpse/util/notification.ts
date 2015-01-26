@@ -91,6 +91,10 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
+        
+        dispose( ) {
+            this._listeners.removeAll( );
+        }
 
         fire( ) : any {
             this._deferring = true;
@@ -137,6 +141,10 @@ module Webglimpse {
             else {
                 this._listeners.removeValue( listener );
             }
+        }
+        
+        dispose( ) {
+            this._listeners.removeAll( );
         }
 
         fire( a : A ) : any {
@@ -185,6 +193,10 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
+        
+        dispose( ) {
+            this._listeners.removeAll( );
+        }
 
         fire( a : A, b : B ) : any {
             this._deferring = true;
@@ -231,6 +243,10 @@ module Webglimpse {
             else {
                 this._listeners.removeValue( listener );
             }
+        }
+        
+        dispose( ) {
+            this._listeners.removeAll( );
         }
 
         fire( a : A, b : B, c : C ) : any {

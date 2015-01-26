@@ -86,6 +86,7 @@ module Webglimpse {
             var redraw = function( ) {
                 drawable.redraw( );
             };
+
             row.eventGuids.valueAdded.on( redraw );
             row.eventGuids.valueMoved.on( redraw );
             row.eventGuids.valueRemoved.on( redraw );
@@ -96,11 +97,23 @@ module Webglimpse {
             row.eventGuids.forEach( watchEventAttrs );
             row.eventGuids.valueAdded.on( watchEventAttrs );
 
-            row.eventGuids.valueRemoved.on( function( eventGuid : string ) {
+            var removeRedraw = function( eventGuid : string ) {
                 model.event( eventGuid ).attrsChanged.off( redraw );
-            } );
+            };
+            row.eventGuids.valueRemoved.on( removeRedraw );
             
             
+            rowContentPane.dispose = function( ) {
+                
+                rowContentPane.dispose0( );
+                
+                row.eventGuids.valueAdded.off( redraw );
+                row.eventGuids.valueMoved.off( redraw );
+                row.eventGuids.valueRemoved.off( redraw );
+                
+                row.eventGuids.valueAdded.off( watchEventAttrs );
+                row.eventGuids.valueRemoved.off( removeRedraw );
+            }
             
             return rowContentPane;
         }

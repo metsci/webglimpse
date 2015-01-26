@@ -31,12 +31,18 @@ module Webglimpse {
 
 
     export class TimelineLaneArray {
+        private _ui : TimelineUi;
         private _row : TimelineRowModel;
         private _lanes : TimelineLane[];
         private _laneNums : StringMap<number>;
+        
+        private _rebuildLanes;
+        private _addEvent;
+        private _removeEvent;
 
         constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi ) {
             this._row = row;
+            this._ui = ui;
             this._lanes = [];
             this._laneNums = {};
 
@@ -94,7 +100,7 @@ module Webglimpse {
             // Keep references to listeners, so that we can remove them later
             var eventAttrsListeners : StringMap<Listener> = {};
 
-            var addEvent = function( eventGuid : string ) {
+            self._addEvent = function( eventGuid : string ) {
                 if ( hasval( self._laneNums[ eventGuid ] ) ) {
                     throw new Error( 'Lanes-array already contains this event: row-guid = ' + row.rowGuid + ', lane = ' + self._laneNums[ eventGuid ] + ', event-guid = ' + eventGuid );
                 }
@@ -136,10 +142,11 @@ module Webglimpse {
                 event.attrsChanged.on( updateLaneAssignment );
                 eventAttrsListeners[ eventGuid ] = updateLaneAssignment;
             };
-            row.eventGuids.forEach( addEvent );
-            row.eventGuids.valueAdded.on( addEvent );
 
-            row.eventGuids.valueRemoved.on( function( eventGuid : string ) {
+            row.eventGuids.forEach( self._addEvent );
+            row.eventGuids.valueAdded.on( self._addEvent );
+
+            self._removeEvent = function( eventGuid : string ) {
                 var event = model.event( eventGuid );
 
                 var oldLaneNum = self._laneNums[ eventGuid ];
@@ -151,9 +158,10 @@ module Webglimpse {
 
                 event.attrsChanged.off( eventAttrsListeners[ eventGuid ] );
                 delete eventAttrsListeners[ eventGuid ];
-            } );
+            }
+            row.eventGuids.valueRemoved.on( this._removeEvent );
 
-            var rebuildLanes = function( ) {
+            self._rebuildLanes = function( ) {
                 var oldLanes = self._lanes;
                 self._lanes = [];
                 self._laneNums = {};
@@ -162,13 +170,13 @@ module Webglimpse {
                     var lane = oldLanes[ l ];
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        addEvent( event.eventGuid );
+                        self._addEvent( event.eventGuid );
                     }
                 }
             };
-            ui.millisPerPx.changed.on( rebuildLanes );
-            ui.eventStyles.valueAdded.on( rebuildLanes );
-            ui.eventStyles.valueRemoved.on( rebuildLanes );
+            ui.millisPerPx.changed.on( self._rebuildLanes );
+            ui.eventStyles.valueAdded.on( self._rebuildLanes );
+            ui.eventStyles.valueRemoved.on( self._rebuildLanes );
         }
 
         get length( ) : number {
@@ -186,6 +194,15 @@ module Webglimpse {
         eventAt( laneNum : number, time_PMILLIS : number ) : TimelineEventModel {
             var lane = this._lanes[ laneNum ];
             return ( lane && lane.eventAtTime( time_PMILLIS ) );
+        }
+        
+        dispose( ) : void {
+            this._row.eventGuids.valueAdded.off( this._addEvent );
+            this._row.eventGuids.valueRemoved.off( this._removeEvent );
+                
+            this._ui.millisPerPx.changed.off( this._rebuildLanes );
+            this._ui.eventStyles.valueAdded.off( this._rebuildLanes );
+            this._ui.eventStyles.valueRemoved.off( this._rebuildLanes );
         }
     }
 
