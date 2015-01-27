@@ -456,7 +456,7 @@ module Webglimpse {
 
 
         element.addEventListener( 'mousedown', function( ev : MouseEvent ) {
-            if ( ev.button === 0 ) {
+            if ( ev.which === 1 ) {
                 var press_PMILLIS = ( new Date( ) ).getTime( );
                 var i = iMouse( element, ev );
                 var j = jMouse( element, ev );
@@ -576,7 +576,7 @@ module Webglimpse {
 
         // The window always gets the mouse-up event at the end of a drag -- even if it occurs outside the browser window
         window.addEventListener( 'mouseup', function( ev : MouseEvent ) {
-            if ( dragging && ev.button === 0 ) {
+            if ( dragging && ev.which === 1 ) {
                 endDrag( ev );
             }
         } );
@@ -590,7 +590,7 @@ module Webglimpse {
         var recentDrag : MouseEvent = null;
         var handleMissedMouseUp = function( ev : MouseEvent ) {
             if ( dragging ) {
-                if ( ( ev.buttons & 1 ) === 0 && recentDrag ) {
+                if ( ev.which === 0 && recentDrag ) {
                     var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
                     mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
                     endDrag( mouseUp );
