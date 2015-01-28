@@ -266,13 +266,46 @@ module Webglimpse {
             }
         } );
 
+        // Example Timeseries-Hover Overlay
+        //
+        // Shows overlay div, containing arbitrary html content, when a timeseries point is hovered
+        //
 
+        selection.hoveredTimeseries.changed.on( function( ) {
+            var hoveredTimeseries = selection.hoveredTimeseries;
+            if ( hoveredTimeseries.fragment ) {
+                var iMouse = selection.mousePos.x;
+                var jMouse = selection.mousePos.y;
+                if ( isNumber( iMouse ) && isNumber( jMouse ) ) {
+
+                    // Generate application-specific html content, based on which event is hovered
+                    var html = '' + hoveredTimeseries.data;
+
+                    tooltip.show( html, iMouse+iTooltipOffset, jMouse+jTooltipOffset );
+                }
+                else {
+                    tooltip.hide( );
+                }
+            }
+            else {
+                tooltip.hide( );
+            }
+        } );
 
 
         // Example Input Listeners
         //
         // Fill these in with application-specific input-handling code
         //
+        
+        selection.hoveredTimeseries.changed.on( function( ) {
+            if ( selection.hoveredTimeseries.fragment )
+            {
+                // Do something with the time and data value of the selected timeseries point 
+                var dataValue = selection.hoveredTimeseries.data;
+                var time_PMILLIS = selection.hoveredTimeseries.times_PMILLIS;
+            }
+        } );
 
         selection.mousePos.changed.on( function( ) {
             // Handle mouse position

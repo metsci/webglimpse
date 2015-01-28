@@ -206,21 +206,72 @@ module Webglimpse {
 
     export class TimelineSelectionModel {
         private _mousePos = new XyModel( );
-        private _hoveredTime_PMILLIS = new SimpleModel<number>( null );
+        
+        private _hoveredTime_PMILLIS = new SimpleModel<number>( );
         private _selectedInterval = new TimeIntervalModel( 0, 0 );
-        private _hoveredRow = new SimpleModel<TimelineRowModel>( null );
-        private _hoveredEvent = new SimpleModel<TimelineEventModel>( null );
+        
+        private _hoveredRow = new SimpleModel<TimelineRowModel>( );
+        
+        private _hoveredEvent = new SimpleModel<TimelineEventModel>( );
         private _selectedEvents = new OrderedSet<TimelineEventModel>( [], (e)=>e.eventGuid );
 
+        private _hoveredTimeseries = new TimelineTimeseriesFragmentSelectionModel( );
+        
+        
         get mousePos( ) : XyModel { return this._mousePos; }
+        
         get hoveredTime_PMILLIS( ) : SimpleModel<number> { return this._hoveredTime_PMILLIS; }
         get selectedInterval( ) : TimeIntervalModel { return this._selectedInterval; }
+        
         get hoveredRow( ) : SimpleModel<TimelineRowModel> { return this._hoveredRow; }
+        
         get hoveredEvent( ) : SimpleModel<TimelineEventModel> { return this._hoveredEvent; }
         get selectedEvents( ) : OrderedSet<TimelineEventModel> { return this._selectedEvents; }
+        
+        get hoveredTimeseries( ) : TimelineTimeseriesFragmentSelectionModel { return this._hoveredTimeseries; }
     }
 
 
+    export class TimelineTimeseriesFragmentSelectionModel {
+        private _fragment : TimelineTimeseriesFragmentModel;
+        private _index : number;
+        private _changed : Notification;
+        
+        constructor( fragment : TimelineTimeseriesFragmentModel = null, index : number = -1 ) {
+            this._fragment = fragment;
+            this._index = index;
+            this._changed = new Notification( );
+        }
+        
+        setValue( fragment : TimelineTimeseriesFragmentModel, index : number ) {
+            if ( fragment !== this._fragment || index !== this._index  ) {
+                this._fragment = fragment;
+                this._index = index;
+                this._changed.fire( );
+            }
+        }
+        
+        get fragment( ) : TimelineTimeseriesFragmentModel { return this._fragment; }
+        get index( ) : number { return this._index; }
+        get changed( ) : Notification { return this._changed; }
+        
+        get times_PMILLIS( ) : number {
+            if ( this._fragment ) {
+                return this._fragment.times_PMILLIS[ this._index ];
+            }
+            else {
+                return undefined;
+            }
+        }
+        get data( ) : number {
+            if ( this._fragment ) {
+                return this._fragment.data[ this._index ];
+            }
+            else {
+                return undefined;
+            }
+        }
+    }
 
     export class TimeIntervalModel {
         private _start_PMILLIS : number;

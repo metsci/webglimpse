@@ -82,37 +82,119 @@ module Webglimpse {
             rowContentPane.addPane( yAxisPane, 0 );
             
             
-            
             var redraw = function( ) {
                 drawable.redraw( );
             };
 
-            row.eventGuids.valueAdded.on( redraw );
-            row.eventGuids.valueMoved.on( redraw );
-            row.eventGuids.valueRemoved.on( redraw );
+            row.timeseriesGuids.valueAdded.on( redraw );
+            row.timeseriesGuids.valueMoved.on( redraw );
+            row.timeseriesGuids.valueRemoved.on( redraw );
 
-            var watchEventAttrs = function( eventGuid : string ) {
-                model.event( eventGuid ).attrsChanged.on( redraw );
-            };
-            row.eventGuids.forEach( watchEventAttrs );
-            row.eventGuids.valueAdded.on( watchEventAttrs );
+            var watchTimeseriesAttrs = function( timeseriesGuid : string ) {
+                var timeseries = model.timeseries( timeseriesGuid );
+                timeseries.attrsChanged.on( redraw );
+                timeseries.fragmentGuids.valueAdded.on( redraw );
+                timeseries.fragmentGuids.valueRemoved.on( redraw );
 
-            var removeRedraw = function( eventGuid : string ) {
-                model.event( eventGuid ).attrsChanged.off( redraw );
             };
-            row.eventGuids.valueRemoved.on( removeRedraw );
+            row.timeseriesGuids.forEach( watchTimeseriesAttrs );
+            row.timeseriesGuids.valueAdded.on( watchTimeseriesAttrs );
+
+            var removeRedraw = function( timeseriesGuid : string ) {
+                var timeseries = model.timeseries( timeseriesGuid );
+                timeseries.attrsChanged.on( redraw );
+                timeseries.fragmentGuids.valueAdded.off( redraw );
+                timeseries.fragmentGuids.valueRemoved.off( redraw );
+            };
+            row.timeseriesGuids.valueRemoved.on( removeRedraw );
             
+            
+            var timeAtCoords_PMILLIS = function( viewport : BoundsUnmodifiable, i : number ) : number {
+                return timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
+            };
+            
+            var timeAtPointer_PMILLIS = function( ev : PointerEvent ) : number {
+                return timeAtCoords_PMILLIS( ev.paneViewport, ev.i );
+            };
+            
+            
+            // Hook up input notifications
+            //
+            
+            // choose the closest data point to the mouse cursor position and fire an event when it changes
+            rowContentPane.mouseMove.on( function( ev : PointerEvent ) {
+              
+                // maximum number of pixels away from a point the mouse can be to select it
+                var pickBuffer_PIXEL : number = 25;
+                // value per pixel in x and y directions
+                var vppx : number = ui.millisPerPx.value;
+                var vppy : number = dataAxis.vSize / rowContentPane.viewport.h;
+                var pickBuffer_PMILLIS : number = pickBuffer_PIXEL * vppx;
+                
+                var bestFragment : TimelineTimeseriesFragmentModel;
+                var bestIndex : number;
+                var best_PIXEL : number;
+                    
+                var ev_time : number = timeAtPointer_PMILLIS( ev );
+                var ev_value : number = dataAxis.vAtFrac( yFrac( ev ) );
+                
+                if ( ev_time ) {
+                    for ( var i = 0 ; i < row.timeseriesGuids.length ; i++ ) {
+                        var timeseriesGuid : string = row.timeseriesGuids.valueAt( i );
+                        var timeseries : TimelineTimeseriesModel = model.timeseries( timeseriesGuid );
+                    
+                        for ( var j = 0 ; j < timeseries.fragmentGuids.length ; j++ ) {
+                            var fragmentGuid : string = timeseries.fragmentGuids.valueAt( j );
+                            var fragment : TimelineTimeseriesFragmentModel = model.timeseriesFragment( fragmentGuid );
+                            
+                            // fragments should not overlap
+                            if ( fragment.start_PMILLIS - pickBuffer_PMILLIS < ev_time && fragment.end_PMILLIS + pickBuffer_PMILLIS > ev_time ) {
+                                // bars are drawn starting at the point and continuing to the next point, so we need to choose the closest index differently
+                                var index : number = timeseries.uiHint == 'bars' ? indexAtOrBefore( fragment.times_PMILLIS, ev_time ) : indexNearest( fragment.times_PMILLIS, ev_time );
+                                var value = fragment.data[index];
+                                var time = fragment.times_PMILLIS[index];
+                                
+                                var dy_PIXEL = ( value - ev_value ) / vppy;
+                                var dx_PIXEL = ( time - ev_time ) / vppx;
+                                var d_PIXEL = Math.sqrt( dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL ); 
+                                
+                                var filter = function( ) : boolean {
+                                    if ( timeseries.uiHint == 'bars' ) {
+                                        return true;
+                                    }
+                                    else {
+                                        return d_PIXEL < pickBuffer_PIXEL;
+                                    }
+                                }
+                                
+                                if ( ( !best_PIXEL || d_PIXEL < best_PIXEL ) && filter( ) )
+                                {
+                                    best_PIXEL = d_PIXEL;
+                                    bestFragment = fragment;
+                                    bestIndex = index;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                selection.hoveredTimeseries.setValue( bestFragment, bestIndex );
+            } );
+            
+            selection.hoveredTimeseries.changed.on( redraw );
             
             rowContentPane.dispose = function( ) {
                 
                 rowContentPane.dispose0( );
                 
-                row.eventGuids.valueAdded.off( redraw );
-                row.eventGuids.valueMoved.off( redraw );
-                row.eventGuids.valueRemoved.off( redraw );
+                row.timeseriesGuids.valueAdded.off( redraw );
+                row.timeseriesGuids.valueMoved.off( redraw );
+                row.timeseriesGuids.valueRemoved.off( redraw );
                 
-                row.eventGuids.valueAdded.off( watchEventAttrs );
-                row.eventGuids.valueRemoved.off( removeRedraw );
+                row.timeseriesGuids.valueAdded.off( watchTimeseriesAttrs );
+                row.timeseriesGuids.valueRemoved.off( removeRedraw );
+                
+                selection.hoveredTimeseries.changed.off( redraw );
             }
             
             return rowContentPane;
@@ -293,6 +375,69 @@ module Webglimpse {
                         
                         gl.drawArrays( GL.TRIANGLE_STRIP, 0, size / 2 );
                         
+                    }
+                    
+                    // highlight hovered point
+                    if ( selection.hoveredTimeseries.fragment && timeseries.fragmentGuids.hasValue( selection.hoveredTimeseries.fragment.fragmentGuid ) )
+                    {
+                        if ( timeseries.uiHint == 'area' || timeseries.uiHint == 'lines' || timeseries.uiHint == 'points' || timeseries.uiHint == 'lines-and-points' || timeseries.uiHint == undefined ) {
+                            var size = 8;
+                            xys = ensureCapacityFloat32( xys, size );
+                            
+                            var vppx : number = timeAxis.vSize / viewport.w;
+                            var vppy : number = dataAxis.vSize / viewport.h;
+                            
+                            var highlightSize = hasval( timeseries.pointSize ) ? timeseries.pointSize : 5;
+                            
+                            var bufferx = ( highlightSize / 2 ) * vppx;
+                            var buffery = ( highlightSize / 2 ) * vppy;
+                                                    
+                            var fragment = selection.hoveredTimeseries.fragment;
+                            var y = selection.hoveredTimeseries.data;
+                            var x = timeAxis.vAtTime( selection.hoveredTimeseries.times_PMILLIS );
+                            
+                            xys[0] = x-bufferx; xys[1] = y-buffery;
+                            xys[2] = x+bufferx; xys[3] = y-buffery;
+                            xys[4] = x+bufferx; xys[5] = y+buffery;
+                            xys[6] = x-bufferx; xys[7] = y+buffery;
+                            
+                            var color = hasval( timeseries.pointColor ) ? timeseries.pointColor : defaultColor;
+                            u_Color.setData( gl, darker( color, 0.8 ) );
+        
+                            xysBuffer.setData( xys.subarray( 0, size ) );
+                            a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                            
+                            gl.drawArrays( GL.LINE_LOOP, 0, size / 2 );
+                        }
+                        else if ( timeseries.uiHint == 'bars' ) {
+                            var size = 8;
+                            xys = ensureCapacityFloat32( xys, size );
+    
+                            var fragment = selection.hoveredTimeseries.fragment;
+                            var index = selection.hoveredTimeseries.index;
+                            
+                            if ( index < fragment.data.length )
+                            {
+                                var x1 = timeAxis.vAtTime( fragment.times_PMILLIS[index] );
+                                var y1 = fragment.data[index];
+                                
+                                var x2 = timeAxis.vAtTime( fragment.times_PMILLIS[index+1] );
+                                var y2 = fragment.data[index+1];
+                                
+                                xys[0] = x1; xys[1] = y1;
+                                xys[2] = x2; xys[3] = y1;
+                                xys[4] = x2; xys[5] = baseline;
+                                xys[6] = x1; xys[7] = baseline;
+                                
+                                var color = hasval( timeseries.lineColor ) ? timeseries.lineColor : defaultColor;
+                                u_Color.setData( gl, darker( color, 0.8 ) );
+        
+                                xysBuffer.setData( xys.subarray( 0, size ) );
+                                a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                            
+                                gl.drawArrays( GL.LINE_LOOP, 0, size / 2 );
+                            }
+                        }
                     }
                 }
                 
