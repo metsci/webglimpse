@@ -437,6 +437,37 @@ module Webglimpse {
         var pendingExit : boolean = false;
 
 
+        // Button presses for mouse events are reported differently in different browsers:
+        // The results below are for the following browser versions:
+        // Chrome Version 40.0.2214.94 (64-bit)
+        // Firefox 35.0.1
+        // IE 11.0.9600.17501
+        //
+        // ‘mousemove’ event with left mouse button down:
+        //
+        //                        Chrome                Firefox                  IE
+        // MouseEvent.button      0                     0                        0
+        // MouseEvent.buttons     undefined             1                        1
+        // MouseEvent.which       1                     1                        1
+        //
+        //
+        //                        Chrome                Firefox                  IE
+        // MouseEvent.button      0                     0                        0
+        // MouseEvent.buttons     undefined             0                        0
+        // MouseEvent.which       0                     1                        1
+        //
+        //
+        // For more info see: http://stackoverflow.com/questions/3944122/detect-left-mouse-button-press
+        //
+        function isLefMouseDown( ev : MouseEvent ) {
+            if ( ev.buttons !== undefined ) {
+                return ev.buttons === 1;
+            }
+            else {
+                return ev.which === 1;
+            }
+        }
+
         function refreshMouseCursor( ) {
             var newMouseCursor = null;
             for ( var n = 0; n < currentPanes.length; n++ ) {
@@ -456,7 +487,7 @@ module Webglimpse {
 
 
         element.addEventListener( 'mousedown', function( ev : MouseEvent ) {
-            if ( ev.which === 1 ) {
+            if ( isLefMouseDown( ev ) ) {
                 var press_PMILLIS = ( new Date( ) ).getTime( );
                 var i = iMouse( element, ev );
                 var j = jMouse( element, ev );
@@ -576,7 +607,7 @@ module Webglimpse {
 
         // The window always gets the mouse-up event at the end of a drag -- even if it occurs outside the browser window
         window.addEventListener( 'mouseup', function( ev : MouseEvent ) {
-            if ( dragging && ev.which === 1 ) {
+            if ( dragging && isLefMouseDown( ev ) ) {
                 endDrag( ev );
             }
         } );
@@ -589,8 +620,9 @@ module Webglimpse {
         // If we're dragging, and we see a mousemove with no buttons down, end the drag
         var recentDrag : MouseEvent = null;
         var handleMissedMouseUp = function( ev : MouseEvent ) {
+            console.log( ev.which + ' ' + ev.buttons + ' ' + ev.button + ' ' + isLefMouseDown( ev ).toString( ) );
             if ( dragging ) {
-                if ( ev.which === 0 && recentDrag ) {
+                if ( !isLefMouseDown( ev ) && recentDrag ) {
                     var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
                     mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
                     endDrag( mouseUp );
