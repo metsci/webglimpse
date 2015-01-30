@@ -135,7 +135,6 @@ module Webglimpse {
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
 
-
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
         var contentPaneOpts = { enableSelectedInterval: enableSelectedInterval, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
@@ -180,6 +179,18 @@ module Webglimpse {
             var overlayPane = new Pane( null, false, alwaysFalse );
             overlayPane.addPainter( newTimelineSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
+        }
+        
+        timelinePane.dispose = function( ) {
+            timelinePane.dispose0( );
+            
+            selection.selectedInterval.changed.off( redraw );
+            selection.hoveredEvent.changed.off( redraw );
+            selection.selectedEvents.valueAdded.off( redraw );
+            selection.selectedEvents.valueRemoved.off( redraw );
+            
+            underlayPane.viewportChanged.off( updateMillisPerPx );
+            timeAxis.limitsChanged.off( updateMillisPerPx );
         }
 
         return timelinePane;

@@ -339,6 +339,11 @@ module Webglimpse {
             this._mouseEnter.dispose( );
             this._mouseExit.dispose( );
             this._contextMenu.dispose( );
+            
+            // recursively dispose all child panes
+            for ( var i = 0 ; i < this.children.length ; i++ ) {
+                this.children.valueAt( i ).pane.dispose( );
+            }
         }
         
         dispose( ) : void {
