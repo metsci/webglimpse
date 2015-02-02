@@ -166,13 +166,14 @@ module Webglimpse {
                 recentMouseMove = null;
             } );
 
-            ui.millisPerPx.changed.on( function( ) {
+            var uiMillisPerPxChanged = function( ) {
                 if ( !eventDragMode && recentMouseMove != null ) {
                     var ev = recentMouseMove;
                     input.timeHover.fire( timeAtPointer_PMILLIS( ev ), ev );
                     input.eventHover.fire( eventAtPointer( ev ), ev );
                 }
-            } );
+            };
+            ui.millisPerPx.changed.on( uiMillisPerPxChanged );
 
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
                 input.mouseDown.fire( ev );
@@ -491,13 +492,13 @@ module Webglimpse {
             } );
 
 
-            rowContentPane.dispose = function( ) {
-                rowContentPane.dispose0( );
-                
+            rowContentPane.dispose.on( function( ) {
                 lanes.dispose( );
                 
                 timeAxis.limitsChanged.off( dragEventEnd );
                 timeAxis.limitsChanged.off( dragEventStart );
+                
+                ui.millisPerPx.changed.off( uiMillisPerPxChanged );
                 
                 ui.millisPerPx.changed.off( updateCursor );
                 selection.hoveredTime_PMILLIS.changed.off( updateCursor );
@@ -509,7 +510,7 @@ module Webglimpse {
                 row.eventGuids.valueRemoved.off( removeRedraw );
                 
                 row.eventGuids.valueAdded.off( watchEventAttrs );
-            }
+            } );
 
             return rowContentPane;
         };

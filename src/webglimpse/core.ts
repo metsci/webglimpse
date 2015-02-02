@@ -117,6 +117,8 @@ module Webglimpse {
         private _viewport : Bounds;
         private _scissor : Bounds;
         private _viewportChanged : Notification;
+        
+        private _dispose : Notification;
 
         constructor( layout : Layout, consumesInputEvents : boolean = true, isInside : Mask2D = alwaysTrue ) {
             this.painters = [];
@@ -132,6 +134,23 @@ module Webglimpse {
             this._viewport = newBoundsFromRect( 0, 0, 0, 0 );
             this._scissor = newBoundsFromRect( 0, 0, 0, 0 );
             this._viewportChanged = new Notification( );
+            
+            this._dispose = new Notification( );
+            
+            this._dispose.on( ( ) => {
+                this._mouseUp.dispose( );
+                this._mouseDown.dispose( );
+                this._mouseMove.dispose( );
+                this._mouseWheel.dispose( );
+                this._mouseEnter.dispose( );
+                this._mouseExit.dispose( );
+                this._contextMenu.dispose( );
+            
+                // recursively dispose all child panes
+                for ( var i = 0 ; i < this.children.length ; i++ ) {
+                    this.children.valueAt( i ).pane.dispose.fire( );
+                }
+            } );
         }
 
         get mouseCursor( ) : string {
@@ -330,24 +349,9 @@ module Webglimpse {
         
         // Disposal
         //
-        
-        dispose0( ) : void {
-            this._mouseUp.dispose( );
-            this._mouseDown.dispose( );
-            this._mouseMove.dispose( );
-            this._mouseWheel.dispose( );
-            this._mouseEnter.dispose( );
-            this._mouseExit.dispose( );
-            this._contextMenu.dispose( );
-            
-            // recursively dispose all child panes
-            for ( var i = 0 ; i < this.children.length ; i++ ) {
-                this.children.valueAt( i ).pane.dispose( );
-            }
-        }
-        
-        dispose( ) : void {
-            this.dispose0( );
+                
+        get dispose( ) : Notification {
+            return this._dispose;
         }
     }
 
@@ -625,7 +629,6 @@ module Webglimpse {
         // If we're dragging, and we see a mousemove with no buttons down, end the drag
         var recentDrag : MouseEvent = null;
         var handleMissedMouseUp = function( ev : MouseEvent ) {
-            console.log( ev.which + ' ' + ev.buttons + ' ' + ev.button + ' ' + isLefMouseDown( ev ).toString( ) );
             if ( dragging ) {
                 if ( !isLefMouseDown( ev ) && recentDrag ) {
                     var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );

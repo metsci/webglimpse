@@ -37,14 +37,22 @@ module Webglimpse {
         private _laneNums : StringMap<number>;
         
         private _rebuildLanes;
+        private _newEvent;
         private _addEvent;
         private _removeEvent;
+        
+        private _model : TimelineModel;
+        
+        // Keep references to listeners, so that we can remove them later
+        private _eventAttrsListeners : StringMap<Listener>;
 
         constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi ) {
+            this._model = model;
             this._row = row;
             this._ui = ui;
             this._lanes = [];
             this._laneNums = {};
+            this._eventAttrsListeners = {};
 
             var self = this;
 
@@ -97,17 +105,24 @@ module Webglimpse {
                 }
             }
 
-            // Keep references to listeners, so that we can remove them later
-            var eventAttrsListeners : StringMap<Listener> = {};
-
-            self._addEvent = function( eventGuid : string ) {
+            // adds event to lane, may be called multiple times
+            this._addEvent = function( eventGuid : string ) {
+                console.log( 'add event ' + eventGuid );
                 if ( hasval( self._laneNums[ eventGuid ] ) ) {
                     throw new Error( 'Lanes-array already contains this event: row-guid = ' + row.rowGuid + ', lane = ' + self._laneNums[ eventGuid ] + ', event-guid = ' + eventGuid );
                 }
                 var event = model.event( eventGuid );
                 var laneNum = firstAvailableLaneNum( event );
                 addEventToLane( event, laneNum );
+            };
 
+            row.eventGuids.forEach( this._addEvent );
+            row.eventGuids.valueAdded.on( this._addEvent );
+            
+            // attaches listeners to event, should be called only once
+            // when an event is first added to the row model
+            this._newEvent = function( eventGuid : string ) {
+                var event = model.event( eventGuid );
                 var oldEdges_PMILLIS = effectiveEdges_PMILLIS( ui, event );
                 var updateLaneAssignment = function( ) {
                     var newEdges_PMILLIS = effectiveEdges_PMILLIS( ui, event );
@@ -139,14 +154,14 @@ module Webglimpse {
                         oldEdges_PMILLIS = newEdges_PMILLIS;
                     }
                 };
+                
                 event.attrsChanged.on( updateLaneAssignment );
-                eventAttrsListeners[ eventGuid ] = updateLaneAssignment;
+                self._eventAttrsListeners[ eventGuid ] = updateLaneAssignment;  
             };
+            row.eventGuids.forEach( this._newEvent );
+            row.eventGuids.valueAdded.on( this._newEvent );
 
-            row.eventGuids.forEach( self._addEvent );
-            row.eventGuids.valueAdded.on( self._addEvent );
-
-            self._removeEvent = function( eventGuid : string ) {
+            this._removeEvent = function( eventGuid : string ) {
                 var event = model.event( eventGuid );
 
                 var oldLaneNum = self._laneNums[ eventGuid ];
@@ -156,8 +171,8 @@ module Webglimpse {
                 fillVacancy( oldLaneNum, effectiveEdges_PMILLIS( ui, event ) );
                 trimEmptyLanes( );
 
-                event.attrsChanged.off( eventAttrsListeners[ eventGuid ] );
-                delete eventAttrsListeners[ eventGuid ];
+                event.attrsChanged.off( self._eventAttrsListeners[ eventGuid ] );
+                delete self._eventAttrsListeners[ eventGuid ];
             }
             row.eventGuids.valueRemoved.on( this._removeEvent );
 
@@ -199,10 +214,19 @@ module Webglimpse {
         dispose( ) : void {
             this._row.eventGuids.valueAdded.off( this._addEvent );
             this._row.eventGuids.valueRemoved.off( this._removeEvent );
-                
+            this._row.eventGuids.valueAdded.off( this._newEvent );
+
             this._ui.millisPerPx.changed.off( this._rebuildLanes );
             this._ui.eventStyles.valueAdded.off( this._rebuildLanes );
             this._ui.eventStyles.valueRemoved.off( this._rebuildLanes );
+            
+            for ( var eventGuid in this._eventAttrsListeners ) {
+                if ( this._eventAttrsListeners.hasOwnProperty( eventGuid ) ) {
+                    var listener = this._eventAttrsListeners[ eventGuid ];
+                    var event = this._model.event( eventGuid );
+                    if ( listener && event ) event.attrsChanged.off( listener );
+                }
+            }
         }
     }
 

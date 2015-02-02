@@ -181,17 +181,14 @@ module Webglimpse {
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
         
-        timelinePane.dispose = function( ) {
-            timelinePane.dispose0( );
-            
+        timelinePane.dispose.on( function( ) {
             selection.selectedInterval.changed.off( redraw );
             selection.hoveredEvent.changed.off( redraw );
             selection.selectedEvents.valueAdded.off( redraw );
             selection.selectedEvents.valueRemoved.off( redraw );
-            
             underlayPane.viewportChanged.off( updateMillisPerPx );
             timeAxis.limitsChanged.off( updateMillisPerPx );
-        }
+        } );
 
         return timelinePane;
     }
@@ -249,6 +246,11 @@ module Webglimpse {
             selectedIntervalPane.mouseDown.on( onMouseDown );
             selectedIntervalPane.contextMenu.on( onContextMenu );
         }
+        
+        // Dispose
+        //
+        
+        // mouse listeners are disposed of automatically by Pane
 
         return axisPane;
     }
@@ -416,6 +418,15 @@ module Webglimpse {
             dragPointer_PMILLIS = null;
             dragMode = null;
         } );
+        
+        // Dispose
+        //
+        
+        pane.dispose.on( function( ) {
+            // mouse listeners are disposed of automatically by Pane
+            timeAxis.limitsChanged.off( dragStart );
+            timeAxis.limitsChanged.off( dragEnd );
+        } );
 
     }
 
@@ -556,10 +567,12 @@ module Webglimpse {
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
             var groupButton = newInsetPane( groupLabelPane, groupLabelInsets, bgColor );
-            group.attrsChanged.on( function( ) {
+            
+            var redrawLabel = function( ) {
                 groupLabel.text = group.label;
                 drawable.redraw( );
-            } );
+            }
+            group.attrsChanged.on( redrawLabel );
 
             var groupHeaderStripe = new Pane( newRowLayout( ) );
             groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
@@ -590,13 +603,14 @@ module Webglimpse {
             groupHeaderPanes[ groupGuid ] = groupHeaderPane;
             groupContentPanes[ groupGuid ] = groupContentPane;
 
-            group.attrsChanged.on( function( ) {
+            var groupAttrsChanged = function( ) {
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
                     drawable.redraw( );
                 }
-            } );
+            };
+            group.attrsChanged.on( groupAttrsChanged );
 
             groupButton.mouseDown.on( function( ) {
                 group.collapsed = !group.collapsed;
@@ -624,10 +638,12 @@ module Webglimpse {
                 var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
                 rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
                 var rowHeaderPane = newInsetPane( rowLabelPane, rowLabelInsets, bgColor );
-                row.attrsChanged.on( function( ) {
+                
+                var rowAttrsChanged = function( ) {
                     rowLabel.text = row.label;
                     drawable.redraw( );
-                } );
+                }
+                row.attrsChanged.on( rowAttrsChanged );
 
                 var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, enableSelectedInterval );
                 rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
@@ -663,7 +679,7 @@ module Webglimpse {
                     var newRowPaneFactory = ( rowUi.paneFactory || rowPaneFactoryChooser( row ) );
                     if ( newRowPaneFactory !== rowPaneFactory && newRowPaneFactory ) {
                         if ( rowContentPane ) {
-                            rowContentPane.dispose( );
+                            rowContentPane.dispose.fire( );
                             rowInsetPane.removePane( rowContentPane );
                         }
                         rowPaneFactory = newRowPaneFactory;
@@ -691,11 +707,20 @@ module Webglimpse {
                 rowPanes[ rowGuid ] = rowPane;
 
                 drawable.redraw( );
+                
+                rowPane.dispose.on( function( ) {
+                    rowUi.paneFactoryChanged.off( refreshRowContentPane );
+                    row.attrsChanged.off( refreshRowContentPane );
+                    row.eventGuids.valueAdded.off( refreshRowContentPane );
+                    row.eventGuids.valueRemoved.off( refreshRowContentPane );
+                    row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
+                    row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
+                } );
             };
             group.rowGuids.forEach( addRow );
             group.rowGuids.valueAdded.on( addRow );
 
-            group.rowGuids.valueMoved.on( function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
+            var valueMoved = function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
                 var nMin = Math.min( rowOldIndex, rowNewIndex );
                 var nMax = Math.max( rowOldIndex, rowNewIndex );
                 for ( var n = nMin; n <= nMax; n++ ) {
@@ -704,9 +729,10 @@ module Webglimpse {
                 }
 
                 drawable.redraw( );
-            } );
+            };
+            group.rowGuids.valueMoved.on( valueMoved );
 
-            group.rowGuids.valueRemoved.on( function( rowGuid : string, rowIndex : number ) {
+            var valueRemoved = function( rowGuid : string, rowIndex : number ) {
                 groupContentPane.removePane( rowPanes[ rowGuid ] );
                 groupContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                     var shift = ( isNumber( layoutArg ) && layoutArg > rowIndex );
@@ -715,13 +741,27 @@ module Webglimpse {
                 delete rowPanes[ rowGuid ];
 
                 drawable.redraw( );
-            } );
+            };
+            group.rowGuids.valueRemoved.on( valueRemoved );
 
 
             // Redraw
             //
 
             drawable.redraw( );
+            
+            // Dispose
+            
+            groupContentPane.dispose.on( function( ) {
+                group.attrsChanged.off( redrawLabel );
+                
+                group.attrsChanged.off( groupAttrsChanged );
+                
+                group.rowGuids.valueAdded.off( addRow );
+                
+                group.rowGuids.valueMoved.off( valueMoved );
+                group.rowGuids.valueRemoved.off( valueRemoved );
+           } );
         };
         root.groupGuids.forEach( addGroup );
         root.groupGuids.valueAdded.on( addGroup );

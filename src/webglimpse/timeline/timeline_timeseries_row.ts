@@ -90,19 +90,19 @@ module Webglimpse {
             row.timeseriesGuids.valueMoved.on( redraw );
             row.timeseriesGuids.valueRemoved.on( redraw );
 
-            var watchTimeseriesAttrs = function( timeseriesGuid : string ) {
+            var addRedraw = function( timeseriesGuid : string ) {
                 var timeseries = model.timeseries( timeseriesGuid );
                 timeseries.attrsChanged.on( redraw );
                 timeseries.fragmentGuids.valueAdded.on( redraw );
                 timeseries.fragmentGuids.valueRemoved.on( redraw );
 
             };
-            row.timeseriesGuids.forEach( watchTimeseriesAttrs );
-            row.timeseriesGuids.valueAdded.on( watchTimeseriesAttrs );
+            row.timeseriesGuids.forEach( addRedraw );
+            row.timeseriesGuids.valueAdded.on( addRedraw );
 
             var removeRedraw = function( timeseriesGuid : string ) {
                 var timeseries = model.timeseries( timeseriesGuid );
-                timeseries.attrsChanged.on( redraw );
+                timeseries.attrsChanged.off( redraw );
                 timeseries.fragmentGuids.valueAdded.off( redraw );
                 timeseries.fragmentGuids.valueRemoved.off( redraw );
             };
@@ -183,19 +183,18 @@ module Webglimpse {
             
             selection.hoveredTimeseries.changed.on( redraw );
             
-            rowContentPane.dispose = function( ) {
-                
-                rowContentPane.dispose0( );
+            rowContentPane.dispose.on( function( ) {
+                dataAxis.limitsChanged.off( drawable.redraw );
                 
                 row.timeseriesGuids.valueAdded.off( redraw );
                 row.timeseriesGuids.valueMoved.off( redraw );
                 row.timeseriesGuids.valueRemoved.off( redraw );
                 
-                row.timeseriesGuids.valueAdded.off( watchTimeseriesAttrs );
+                row.timeseriesGuids.valueAdded.off( addRedraw );
                 row.timeseriesGuids.valueRemoved.off( removeRedraw );
                 
                 selection.hoveredTimeseries.changed.off( redraw );
-            }
+            } );
             
             return rowContentPane;
         }
