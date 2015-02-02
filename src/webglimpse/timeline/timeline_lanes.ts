@@ -107,7 +107,6 @@ module Webglimpse {
 
             // adds event to lane, may be called multiple times
             this._addEvent = function( eventGuid : string ) {
-                console.log( 'add event ' + eventGuid );
                 if ( hasval( self._laneNums[ eventGuid ] ) ) {
                     throw new Error( 'Lanes-array already contains this event: row-guid = ' + row.rowGuid + ', lane = ' + self._laneNums[ eventGuid ] + ', event-guid = ' + eventGuid );
                 }

@@ -510,6 +510,10 @@ module Webglimpse {
                 row.eventGuids.valueRemoved.off( removeRedraw );
                 
                 row.eventGuids.valueAdded.off( watchEventAttrs );
+                
+                row.eventGuids.forEach( function( eventGuid : string ) {
+                    model.event( eventGuid ).attrsChanged.off( redraw );
+                } );
             } );
 
             return rowContentPane;

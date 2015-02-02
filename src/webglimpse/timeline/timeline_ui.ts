@@ -42,9 +42,12 @@ module Webglimpse {
 
         private _imageStatus : StringMap<boolean>;
         private _imageCache : StringMap<Texture2D>;
+        
+        private _dispose : Notification;
 
 
         constructor( model : TimelineModel, enableSelectedInterval : boolean ) {
+            this._dispose = new Notification( );
             this._input = new TimelineInput( );
 
             this._selection = new TimelineSelectionModel( );
@@ -72,6 +75,13 @@ module Webglimpse {
 
             this._imageStatus = {};
             this._imageCache = {};
+            
+            this._dispose.on( function( ) {
+                model.groups.valueAdded.off( addGroupUi );
+                model.groups.valueRemoved.off( removeGroupUi );
+                model.rows.valueAdded.off( addRowUi );
+                model.rows.valueRemoved.off( removeRowUi );
+            } );
         }
 
         get input( ) : TimelineInput {
@@ -126,6 +136,8 @@ module Webglimpse {
             }
             return this._imageCache[ url ];
         }
+        
+        get dispose( ) { return this._dispose; }
     }
 
 

@@ -182,6 +182,7 @@ module Webglimpse {
         }
         
         timelinePane.dispose.on( function( ) {
+            ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
             selection.hoveredEvent.changed.off( redraw );
             selection.selectedEvents.valueAdded.off( redraw );
@@ -709,6 +710,7 @@ module Webglimpse {
                 drawable.redraw( );
                 
                 rowPane.dispose.on( function( ) {
+                    row.attrsChanged.off( rowAttrsChanged );
                     rowUi.paneFactoryChanged.off( refreshRowContentPane );
                     row.attrsChanged.off( refreshRowContentPane );
                     row.eventGuids.valueAdded.off( refreshRowContentPane );
@@ -766,7 +768,7 @@ module Webglimpse {
         root.groupGuids.forEach( addGroup );
         root.groupGuids.valueAdded.on( addGroup );
 
-        root.groupGuids.valueMoved.on( function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
+        var groupGuidsValueMoved = function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
             var nMin = Math.min( groupOldIndex, groupNewIndex );
             var nMax = Math.max( groupOldIndex, groupNewIndex );
             for ( var n = nMin; n <= nMax; n++ ) {
@@ -776,9 +778,10 @@ module Webglimpse {
             }
 
             drawable.redraw( );
-        } );
-
-        root.groupGuids.valueRemoved.on( function( groupGuid : string, groupIndex : number ) {
+        };
+        root.groupGuids.valueMoved.on( groupGuidsValueMoved );
+        
+        var groupGuidsValueRemoved = function( groupGuid : string, groupIndex : number ) {
             timelineContentPane.removePane( groupContentPanes[ groupGuid ] );
             timelineContentPane.removePane( groupHeaderPanes[ groupGuid ] );
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
@@ -789,9 +792,16 @@ module Webglimpse {
             delete groupContentPanes[ groupGuid ];
 
             drawable.redraw( );
+        };
+        root.groupGuids.valueRemoved.on( groupGuidsValueRemoved );
+
+       // Dispose
+        
+        timelineContentPane.dispose.on( function( ) {
+            root.groupGuids.valueAdded.off( addGroup );
+            root.groupGuids.valueMoved.off( groupGuidsValueMoved );
+            root.groupGuids.valueRemoved.off( groupGuidsValueRemoved );
         } );
-
-
 
         return timelineContentPane;
     }

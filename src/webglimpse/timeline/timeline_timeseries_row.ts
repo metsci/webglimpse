@@ -194,6 +194,13 @@ module Webglimpse {
                 row.timeseriesGuids.valueRemoved.off( removeRedraw );
                 
                 selection.hoveredTimeseries.changed.off( redraw );
+                
+                row.timeseriesGuids.forEach( function( timeseriesGuid : string ) {
+                    var timeseries = model.timeseries( timeseriesGuid );
+                    timeseries.attrsChanged.off( redraw );
+                    timeseries.fragmentGuids.valueAdded.off( redraw );
+                    timeseries.fragmentGuids.valueRemoved.off( redraw );
+                } );
             } );
             
             return rowContentPane;
