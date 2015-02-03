@@ -319,8 +319,8 @@ module Webglimpse {
         get mouseExit( ) : Notification1<PointerEvent> { return this._mouseExit; }
         get contextMenu( ) : Notification1<PointerEvent> { return this._contextMenu; }
 
-        fireMouseUp( i : number, j : number, mouseEvent : MouseEvent ) : any {
-            return this._mouseUp.fire( { paneViewport: this._viewport.unmod, i: i, j: j, mouseEvent: mouseEvent } );
+        fireMouseUp( i : number, j : number, clickCount : number, mouseEvent : MouseEvent ) : any {
+            return this._mouseUp.fire( { paneViewport: this._viewport.unmod, i: i, j: j, clickCount: clickCount, mouseEvent: mouseEvent } );
         }
 
         fireMouseDown( i : number, j : number, clickCount : number, mouseEvent : MouseEvent ) : any {
@@ -593,7 +593,7 @@ module Webglimpse {
             var j = jMouse( element, ev );
 
             for ( var n = 0; n < currentPanes.length; n++ ) {
-                currentPanes[ n ].fireMouseUp( i, j, ev );
+                currentPanes[ n ].fireMouseUp( i, j, clickCount, ev );
             }
             dragging = false;
 

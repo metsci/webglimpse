@@ -240,6 +240,11 @@ module Webglimpse {
         };
         axisPane.mouseDown.on( onMouseDown );
 
+        var onMouseUp = function( ev : PointerEvent ) {
+            input.mouseUp.fire( ev );
+        };
+        axisPane.mouseUp.on( onMouseUp );
+        
         var onContextMenu = function( ev : PointerEvent ) {
             input.contextMenu.fire( ev );
         };
@@ -254,6 +259,7 @@ module Webglimpse {
             selectedIntervalPane.mouseMove.on( onMouseMove );
             selectedIntervalPane.mouseExit.on( onMouseExit );
             selectedIntervalPane.mouseDown.on( onMouseDown );
+            selectedIntervalPane.mouseUp.on( onMouseUp );
             selectedIntervalPane.contextMenu.on( onContextMenu );
         }
         

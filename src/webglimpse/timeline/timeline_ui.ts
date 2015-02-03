@@ -203,6 +203,7 @@ module Webglimpse {
         private _rowHover = new Notification2<TimelineRowModel,PointerEvent>( );
         private _eventHover = new Notification2<TimelineEventModel,PointerEvent>( );
         private _mouseDown = new Notification1<PointerEvent>( );
+        private _mouseUp = new Notification1<PointerEvent>( );
         private _contextMenu = new Notification1<PointerEvent>( );
 
         get mouseMove( ) : Notification1<PointerEvent> { return this._mouseMove; }
@@ -211,6 +212,7 @@ module Webglimpse {
         get rowHover( ) : Notification2<TimelineRowModel,PointerEvent> { return this._rowHover; }
         get eventHover( ) : Notification2<TimelineEventModel,PointerEvent> { return this._eventHover; }
         get mouseDown( ) : Notification1<PointerEvent> { return this._mouseDown; }
+        get mouseUp( ) : Notification1<PointerEvent> { return this._mouseUp; }
         get contextMenu( ) : Notification1<PointerEvent> { return this._contextMenu; }
     }
 
