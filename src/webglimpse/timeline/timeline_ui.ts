@@ -46,12 +46,12 @@ module Webglimpse {
         private _dispose : Notification;
 
 
-        constructor( model : TimelineModel, enableSelectedInterval : boolean ) {
+        constructor( model : TimelineModel ) {
             this._dispose = new Notification( );
             this._input = new TimelineInput( );
 
             this._selection = new TimelineSelectionModel( );
-            attachTimelineInputToSelection( this._input, this._selection, enableSelectedInterval );
+            attachTimelineInputToSelection( this._input, this._selection );
 
             this._groupUis = new OrderedSet<TimelineGroupUi>( [], (g)=>g.groupGuid );
             var groupUis = this._groupUis;
@@ -288,16 +288,19 @@ module Webglimpse {
     export class TimeIntervalModel {
         private _start_PMILLIS : number;
         private _end_PMILLIS : number;
+        private _selection_PMILLIS : number;
         private _changed : Notification;
 
-        constructor( start_PMILLIS : number, end_PMILLIS : number ) {
+        constructor( start_PMILLIS : number, end_PMILLIS : number, selection_PMILLIS? : number ) {
             this._start_PMILLIS = start_PMILLIS;
             this._end_PMILLIS = end_PMILLIS;
+            this._selection_PMILLIS = selection_PMILLIS ? selection_PMILLIS : end_PMILLIS;
             this._changed = new Notification( );
         }
 
         get start_PMILLIS( ) : number { return this._start_PMILLIS; }
         get end_PMILLIS( ) : number { return this._end_PMILLIS; }
+        get selection_PMILLIS( ) : number { return this._selection_PMILLIS; }
         get duration_MILLIS( ) : number { return this._end_PMILLIS - this._start_PMILLIS; }
         get changed( ) : Notification { return this._changed; }
 
@@ -314,11 +317,22 @@ module Webglimpse {
                 this._changed.fire( );
             }
         }
+        
+        set selection_PMILLIS( selection_PMILLIS : number ) {
+            if ( selection_PMILLIS !== this._selection_PMILLIS ) {
+                this._selection_PMILLIS = selection_PMILLIS;
+                this._changed.fire( );
+            }
+        }
 
-        setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
-            if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
+        setInterval( start_PMILLIS : number, end_PMILLIS : number, selection_PMILLIS? : number ) {
+            if ( start_PMILLIS !== this._start_PMILLIS ||
+                     end_PMILLIS !== this._end_PMILLIS ||
+                     ( selection_PMILLIS && selection_PMILLIS != this._selection_PMILLIS ) ) {
+                
                 this._start_PMILLIS = start_PMILLIS;
                 this._end_PMILLIS = end_PMILLIS;
+                this._selection_PMILLIS = selection_PMILLIS ? selection_PMILLIS : end_PMILLIS;
                 this._changed.fire( );
             }
         }
@@ -331,14 +345,16 @@ module Webglimpse {
             if ( amount_MILLIS !== 0 ) {
                 this._start_PMILLIS += amount_MILLIS;
                 this._end_PMILLIS += amount_MILLIS;
+                this._selection_PMILLIS += amount_MILLIS;
                 this._changed.fire( );
             }
         }
 
         scale( factor : number, anchor_PMILLIS : number ) {
             if ( anchor_PMILLIS !== 1 ) {
-                this._start_PMILLIS = anchor_PMILLIS - factor*( anchor_PMILLIS - this._start_PMILLIS );
-                this._end_PMILLIS = anchor_PMILLIS + factor*( this._end_PMILLIS - anchor_PMILLIS );
+                this._start_PMILLIS =     anchor_PMILLIS + factor * ( this._start_PMILLIS - anchor_PMILLIS );
+                this._end_PMILLIS =       anchor_PMILLIS + factor * ( this._end_PMILLIS - anchor_PMILLIS );
+                this._selection_PMILLIS = anchor_PMILLIS + factor * ( this._selection_PMILLIS - anchor_PMILLIS );
                 this._changed.fire( );
             }
         }
@@ -346,7 +362,7 @@ module Webglimpse {
 
 
 
-    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel, enableSelectedInterval : boolean ) {
+    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel ) {
         // Mouse-pos & Time
         //
         input.mouseMove.on( function( ev : PointerEvent ) {
@@ -361,15 +377,6 @@ module Webglimpse {
         input.timeHover.on( function( time_PMILLIS : number, ev : PointerEvent ) {
             selection.hoveredTime_PMILLIS.value = time_PMILLIS;
         } );
-        if ( enableSelectedInterval ) {
-            input.mouseDown.on( function( ev : PointerEvent ) {
-                if ( ev.clickCount > 1 ) {
-                    var interval = selection.selectedInterval;
-                    var time_PMILLIS = selection.hoveredTime_PMILLIS.value;
-                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
-                }
-            } );
-        }
 
         // Events
         //

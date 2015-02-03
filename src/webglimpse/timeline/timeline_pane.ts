@@ -50,7 +50,11 @@ module Webglimpse {
 
         // Misc
         font? : string;
-        enableSelectedInterval? : boolean;
+        // Options:
+        // 'none' or any falsy value : no time selection
+        // 'single'                  : single selected time
+        // 'range'                   : range of selected times
+        selectedIntervalMode? : string;
         scrollbarOptions? : ScrollbarOptions;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
 
@@ -88,7 +92,7 @@ module Webglimpse {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var enableSelectedInterval = ( hasval( options ) && hasval( options.enableSelectedInterval ) ? options.enableSelectedInterval : true );
+        var selectedIntervalMode = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
         var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
 
@@ -122,7 +126,7 @@ module Webglimpse {
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
         if ( !ui ) {
-            ui = new TimelineUi( model, enableSelectedInterval );
+            ui = new TimelineUi( model );
         }
         var selection = ui.selection;
 
@@ -135,7 +139,7 @@ module Webglimpse {
         selection.selectedEvents.valueRemoved.on( redraw );
 
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { enableSelectedInterval: enableSelectedInterval, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
 
         var scrollLayout = newVerticalScrollLayout( );
@@ -153,13 +157,13 @@ module Webglimpse {
 
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
-            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
         }
         underlayPane.addPane( scrollPane );
         if ( showBottomAxis ) {
-            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), Side.BOTTOM );
         }
@@ -174,9 +178,15 @@ module Webglimpse {
         var timelinePane = new TimelinePane( newOverlayLayout( ), model, ui );
         timelinePane.addPainter( newBackgroundPainter( bgColor ) );
         timelinePane.addPane( underlayPane, true );
-        if ( enableSelectedInterval ) {
+        
+        if ( selectedIntervalMode === 'single' ) {
             var overlayPane = new Pane( null, false, alwaysFalse );
-            overlayPane.addPainter( newTimelineSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
+            overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
+            timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
+        }
+        else if ( selectedIntervalMode === 'range' ) {
+            var overlayPane = new Pane( null, false, alwaysFalse );
+            overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
         
@@ -204,7 +214,7 @@ module Webglimpse {
 
 
 
-    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, enableSelectedInterval : boolean ) : Pane {
+    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, selectedIntervalMode : string ) : Pane {
         var input = ui.input;
 
         var axisPane = new Pane( newOverlayLayout( ) );
@@ -235,7 +245,7 @@ module Webglimpse {
         };
         axisPane.contextMenu.on( onContextMenu );
 
-        if ( enableSelectedInterval ) {
+        if ( selectedIntervalMode ) {
             var selection = ui.selection;
             var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
             attachTimeIntervalSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth );
@@ -262,6 +272,15 @@ module Webglimpse {
         function timeAtPointer_PMILLIS( ev : PointerEvent ) : number {
             return timeAxis.tAtFrac_PMILLIS( ev.paneViewport.xFrac( ev.i ) );
         }
+        
+        // Enable double click to center selection on mouse
+        
+        input.mouseDown.on( function( ev : PointerEvent ) {
+            if ( ev.clickCount > 1 ) {
+                var time_PMILLIS = timeAtPointer_PMILLIS( ev );
+                interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
+            }
+        } );
 
 
         // Hook up input notifications
@@ -429,17 +448,71 @@ module Webglimpse {
         } );
 
     }
-
-
-
-    function newTimelineSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+    
+    function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
 
         var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var u_Color = new UniformColor( program, 'u_Color' );
 
         // holds vertices for fill and border
-        var coords = new Float32Array( 8 + 48 );
+        var coords = new Float32Array( 12 + 8 );
+        var coordsBuffer = newDynamicBuffer( );
+
+        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+            if ( hasval( interval.selection_PMILLIS  ) ) {
+
+                var fracSelection = timeAxis.tFrac( interval.selection_PMILLIS );
+                var fracWidth = 1 / viewport.w;
+                var fracHeight = 1 / viewport.h;
+                var thickWidth = 3 / viewport.w;
+                var highlightWidth = 7 / viewport.w;
+                var index = 0;
+                
+                console.log( interval.selection_PMILLIS );
+                
+                // fill vertices
+                coords[ index++ ] = fracSelection - highlightWidth;
+                coords[ index++ ] = 1;
+                coords[ index++ ] = fracSelection + highlightWidth;
+                coords[ index++ ] = 1;
+                coords[ index++ ] = fracSelection - highlightWidth;
+                coords[ index++ ] = 0;
+                coords[ index++ ] = fracSelection + highlightWidth;
+                coords[ index++ ] = 0;
+                
+                // selection vertices
+                index = putQuadXys( coords, index, fracSelection-thickWidth/2, fracSelection+thickWidth/2, 1, 0+fracHeight ); // selection
+                
+                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                gl.enable( GL.BLEND );
+
+                program.use( gl );
+                coordsBuffer.setData( coords );
+                a_XyFrac.setDataAndEnable( gl, coordsBuffer, 2, GL.FLOAT );
+                
+                u_Color.setData( gl, fillColor );
+                gl.drawArrays( GL.TRIANGLE_STRIP, 0, 4 );
+
+                u_Color.setData( gl, borderColor );
+                gl.drawArrays( GL.TRIANGLES, 4, 6 );
+                
+                a_XyFrac.disable( gl );
+                program.endUse( gl );
+                
+                
+            }
+        };
+    }
+
+    function newTimelineRangeSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+
+        var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var u_Color = new UniformColor( program, 'u_Color' );
+
+        // holds vertices for fill and border
+        var coords = new Float32Array( 12 + 8 + 48 );
         var coordsBuffer = newDynamicBuffer( );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -447,12 +520,15 @@ module Webglimpse {
 
                 var fracStart = timeAxis.tFrac( interval.start_PMILLIS );
                 var fracEnd = timeAxis.tFrac( interval.end_PMILLIS );
+                var fracSelection = timeAxis.tFrac( interval.selection_PMILLIS );
                 var fracWidth = 1 / viewport.w;
                 var fracHeight = 1 / viewport.h;
                 var thickWidth = 3 / viewport.w;
                 var index = 0;
                 
-                 // fill vertices
+                console.log( interval.selection_PMILLIS );
+                
+                // fill vertices
                 coords[ index++ ] = fracStart;
                 coords[ index++ ] = 1;
                 coords[ index++ ] = fracEnd;
@@ -466,8 +542,11 @@ module Webglimpse {
                 index = putQuadXys( coords, index, fracStart, fracEnd-fracWidth, +1, +1-fracHeight ); // top
                 index = putQuadXys( coords, index, fracStart+fracWidth, fracEnd, 0+fracHeight, 0 ); // bottom
                 index = putQuadXys( coords, index, fracStart, fracStart+fracWidth, 1-fracHeight, 0 ); // left
-                index = putQuadXys( coords, index, fracEnd-thickWidth, fracEnd, 1, 0+fracHeight ); // right
+                index = putQuadXys( coords, index, fracEnd-fracWidth, fracEnd, 1, 0+fracHeight ); // right
 
+                // selection vertices
+                index = putQuadXys( coords, index, fracSelection-thickWidth, fracSelection, 1, 0+fracHeight ); // selection
+                
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
 
@@ -479,7 +558,7 @@ module Webglimpse {
                 gl.drawArrays( GL.TRIANGLE_STRIP, 0, 4 );
 
                 u_Color.setData( gl, borderColor );
-                gl.drawArrays( GL.TRIANGLES, 4, 24 );
+                gl.drawArrays( GL.TRIANGLES, 4, 30 );
                 
                 a_XyFrac.disable( gl );
                 program.endUse( gl );
@@ -492,7 +571,7 @@ module Webglimpse {
 
 
     interface TimelineContentPaneOptions {
-        enableSelectedInterval : boolean;
+        selectedIntervalMode : string;
         rowPaneFactoryChooser : TimelineRowPaneFactoryChooser;
 
         font : string;
@@ -522,7 +601,7 @@ module Webglimpse {
     function newTimelineContentPane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, ui : TimelineUi, options : TimelineContentPaneOptions ) : Pane {
         var root = model.root;
 
-        var enableSelectedInterval = options.enableSelectedInterval;
+        var selectedIntervalMode = options.selectedIntervalMode;
         var rowPaneFactoryChooser = options.rowPaneFactoryChooser;
 
         var font = options.font;
@@ -584,7 +663,7 @@ module Webglimpse {
             groupHeaderUnderlay.addPane( groupButton, 0 );
             groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
 
-            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
 
             var groupHeaderPane = new Pane( newOverlayLayout( ) );
@@ -645,7 +724,7 @@ module Webglimpse {
                 }
                 row.attrsChanged.on( rowAttrsChanged );
 
-                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, enableSelectedInterval );
+                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
                 rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
 
                 var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
