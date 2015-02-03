@@ -517,5 +517,29 @@ module Webglimpse {
         $.getJSON( 'timelineData.json', function( newTimeline : Timeline ) {
             model.merge( newTimeline, timelineMergeNewBeforeOld );
         } );
+        
+        // Example function for reloading TimelinePane with new TimelinePaneOptions. Takes care of
+        // removing the TimelinePane from its parent pane, disposing of its listeners/resources,
+        // creating a new TimelinePane, and reattaching it to the parent Pane. The new TimelinePane
+        // is returned.
+        //
+        // In this example, this function would be called as follows:
+        //
+        // timelinePane = reloadTimeline( contentPane, timelinePane, timelineOptions );
+        //
+        var reloadTimeline = function( parentPane : Pane, oldTimelinePane : TimelinePane, newOptions : TimelinePaneOptions ) : TimelinePane {
+
+            // remove the old TimelinePane from the parent Pane, dispose of it, and create a new TimelinePane
+            parentPane.removePane( oldTimelinePane );
+            oldTimelinePane.dispose.fire( );
+            var reloadedTimelinePane = newTimelinePane( drawable, timeAxis, model, timelineOptions, oldTimelinePane.ui );
+            parentPane.addPane( reloadedTimelinePane );
+
+            // update the drawable
+            drawable.redraw( );
+        
+            // return the newly created Pane
+            return reloadedTimelinePane;
+        }
     }
 }

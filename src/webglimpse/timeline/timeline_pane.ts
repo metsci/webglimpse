@@ -84,9 +84,7 @@ module Webglimpse {
         snapToDistance? : number;
     }
 
-
-
-    export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions ) : TimelinePane {
+    export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
@@ -123,8 +121,9 @@ module Webglimpse {
         var draggableEdgeWidth = ( hasval( options ) && hasval( options.draggableEdgeWidth ) ? options.draggableEdgeWidth : 6   );
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
-
-        var ui = new TimelineUi( model, enableSelectedInterval );
+        if ( !ui ) {
+            ui = new TimelineUi( model, enableSelectedInterval );
+        }
         var selection = ui.selection;
 
         var redraw = function( ) {
