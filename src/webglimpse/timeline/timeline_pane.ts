@@ -245,10 +245,10 @@ module Webglimpse {
         };
         axisPane.contextMenu.on( onContextMenu );
 
-        if ( selectedIntervalMode ) {
+        if ( selectedIntervalMode && selectedIntervalMode !== 'none' ) {
             var selection = ui.selection;
             var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
-            attachTimeIntervalSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth );
+            attachTimeSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode );
             axisPane.addPane( selectedIntervalPane, false );
 
             selectedIntervalPane.mouseMove.on( onMouseMove );
@@ -265,19 +265,84 @@ module Webglimpse {
         return axisPane;
     }
 
+    function timeAtPointer_PMILLIS( timeAxis : TimeAxis1D, ev : PointerEvent ) : number {
+        return timeAxis.tAtFrac_PMILLIS( ev.paneViewport.xFrac( ev.i ) );
+    }
+    
 
+    function attachTimeSelectionMouseListeners( pane : Pane,
+                                                timeAxis : TimeAxis1D,
+                                                interval : TimeIntervalModel,
+                                                input : TimelineInput,
+                                                draggableEdgeWidth : number,
+                                                selectedIntervalMode : string ) {
+        
+        if ( selectedIntervalMode === 'single' ) {
+            
+            var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
+                return 'center';
+            }
+            
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, chooseDragMode );
 
-    function attachTimeIntervalSelectionMouseListeners( pane : Pane, timeAxis : TimeAxis1D, interval : TimeIntervalModel, input : TimelineInput, draggableEdgeWidth : number ) {
-
-        function timeAtPointer_PMILLIS( ev : PointerEvent ) : number {
-            return timeAxis.tAtFrac_PMILLIS( ev.paneViewport.xFrac( ev.i ) );
         }
+        else if ( selectedIntervalMode === 'range' ) {
+            
+            // Edges are draggable when interval is at least this wide
+            var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+    
+            // When dragging an edge, the interval cannot be made narrower than this
+            //
+            // Needs to be greater than minIntervalWidthForEdgeDraggability -- by enough to
+            // cover floating-point precision loss -- so a user can't accidentally make
+            // the interval so narrow that it can't easily be widened again.
+            //
+            var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
+            
+            var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
+                var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
+                    // If interval isn't very wide, don't try to allow edge dragging
+                    return 'center';
+                }
+                else {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                    if ( mouseOffset < draggableEdgeWidth ) {
+                        // If mouse is near the left edge, drag the interval's start-time
+                        return 'start';
+                    }
+                    else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
+                        // If mouse is in the center, drag the whole interval
+                        return 'center';
+                    }
+                    else {
+                        // If mouse is near the right edge, drag the interval's end-time
+                        return 'end';
+                    }
+                }
+            };
+            
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, chooseDragMode );
+        }
+    }
+        
+    function attachTimeIntervalSelectionMouseListeners( pane : Pane,
+                                                        timeAxis : TimeAxis1D,
+                                                        interval : TimeIntervalModel,
+                                                        input : TimelineInput,
+                                                        draggableEdgeWidth : number,
+                                                        chooseDragMode : ( ev : PointerEvent ) => string ) {
+        
+        // see comments in attachTimeSelectionMouseListeners( ... )
+        var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+        var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
         
         // Enable double click to center selection on mouse
         
         input.mouseDown.on( function( ev : PointerEvent ) {
             if ( ev.clickCount > 1 ) {
-                var time_PMILLIS = timeAtPointer_PMILLIS( ev );
+                var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
                 interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
             }
         } );
@@ -302,42 +367,6 @@ module Webglimpse {
         var dragMode : string = null;
         var dragOffset_MILLIS : number = null;
 
-        // Edges are draggable when interval is at least this wide
-        var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
-
-        // When dragging an edge, the interval cannot be made narrower than this
-        //
-        // Needs to be greater than minIntervalWidthForEdgeDraggability -- by enough to
-        // cover floating-point precision loss -- so a user can't accidentally make
-        // the interval so narrow that it can't easily be widened again.
-        //
-        var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
-
-
-        function chooseDragMode( ev : PointerEvent ) : string {
-            var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-            if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
-                // If interval isn't very wide, don't try to allow edge dragging
-                return 'center';
-            }
-            else {
-                var time_PMILLIS = timeAtPointer_PMILLIS( ev );
-                var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                if ( mouseOffset < draggableEdgeWidth ) {
-                    // If mouse is near the left edge, drag the interval's start-time
-                    return 'start';
-                }
-                else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
-                    // If mouse is in the center, drag the whole interval
-                    return 'center';
-                }
-                else {
-                    // If mouse is near the right edge, drag the interval's end-time
-                    return 'end';
-                }
-            }
-        }
-
         pane.mouseMove.on( function( ev : PointerEvent ) {
             if ( !dragMode ) {
                 var mouseCursors = { 'center': 'move', 'start': 'w-resize', 'end': 'e-resize' };
@@ -360,7 +389,7 @@ module Webglimpse {
 
         var updateDragPointer = function( ev : PointerEvent ) {
             if ( dragMode ) {
-                dragPointer_PMILLIS = timeAtPointer_PMILLIS( ev );
+                dragPointer_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
             }
         };
         pane.mouseDown.on( updateDragPointer );
@@ -423,6 +452,7 @@ module Webglimpse {
                 var wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
                 var newEnd_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
                 interval.end_PMILLIS = Math.max( interval.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS );
+                interval.selection_PMILLIS = interval.end_PMILLIS;
             }
         };
         pane.mouseMove.on( dragEnd );

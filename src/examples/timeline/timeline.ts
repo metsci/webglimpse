@@ -98,7 +98,7 @@ module Webglimpse {
 
         var timelineOptions = {
 
-            selectedIntervalMode: 'range',
+            selectedIntervalMode: 'none',
             
             topTimeZone: '-0500',
             breakGridLines: true,
