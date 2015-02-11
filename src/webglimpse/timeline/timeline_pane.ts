@@ -346,12 +346,13 @@ module Webglimpse {
         
         // Enable double click to center selection on mouse
         
-        input.mouseDown.on( function( ev : PointerEvent ) {
+        var doubleClick = function( ev : PointerEvent ) {
             if ( ev.clickCount > 1 ) {
                 var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
                 interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
             }
-        } );
+        };
+        input.mouseDown.on( doubleClick );
 
 
         // Hook up input notifications
@@ -479,6 +480,7 @@ module Webglimpse {
         
         pane.dispose.on( function( ) {
             // mouse listeners are disposed of automatically by Pane
+            input.mouseDown.off( doubleClick );
             timeAxis.limitsChanged.off( dragStart );
             timeAxis.limitsChanged.off( dragEnd );
         } );
