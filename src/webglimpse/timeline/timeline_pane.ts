@@ -797,12 +797,8 @@ module Webglimpse {
                 var rowPaneFactory : TimelineRowPaneFactory = null;
                 var rowContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
                 var refreshRowContentPane = function( ) {
-                    // The current row-panes don't clean up after themselves very well. Until that's fixed,
-                    // avoid switching row-panes in the common case: content is cleared and re-added, causing
-                    // the row-pane to switch to null and then back to its original value. To avoid that,
-                    // only switch row-panes if newRowPaneFactory is truthy.
                     var newRowPaneFactory = ( rowUi.paneFactory || rowPaneFactoryChooser( row ) );
-                    if ( newRowPaneFactory !== rowPaneFactory && newRowPaneFactory ) {
+                    if ( newRowPaneFactory !== rowPaneFactory ) {
                         if ( rowContentPane ) {
                             rowContentPane.dispose.fire( );
                             rowInsetPane.removePane( rowContentPane );
