@@ -383,8 +383,22 @@ module Webglimpse {
             return this._userEditable;
         }
 
+        set userEditable( userEditable : boolean ) {
+            if ( userEditable !== this._userEditable ) {
+                this._userEditable = userEditable;
+                this._attrsChanged.fire( );
+            }
+        }
+
         get styleGuid( ) : string {
             return this._styleGuid;
+        }
+        
+        set styleGuid( styleGuid : string ) {
+            if ( styleGuid !== this._styleGuid ) {
+                this._styleGuid = styleGuid;
+                this._attrsChanged.fire( );
+            }
         }
 
         get fgColor( ) : Color {
