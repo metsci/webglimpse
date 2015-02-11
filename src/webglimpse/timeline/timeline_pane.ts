@@ -289,7 +289,7 @@ module Webglimpse {
                 return 'center';
             }
             
-            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, chooseDragMode );
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
 
         }
         else if ( selectedIntervalMode === 'range' ) {
@@ -329,7 +329,7 @@ module Webglimpse {
                 }
             };
             
-            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, chooseDragMode );
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
         }
     }
         
@@ -338,6 +338,7 @@ module Webglimpse {
                                                         interval : TimeIntervalModel,
                                                         input : TimelineInput,
                                                         draggableEdgeWidth : number,
+                                                        selectedIntervalMode : string,
                                                         chooseDragMode : ( ev : PointerEvent ) => string ) {
         
         // see comments in attachTimeSelectionMouseListeners( ... )
@@ -347,9 +348,20 @@ module Webglimpse {
         // Enable double click to center selection on mouse
         
         var doubleClick = function( ev : PointerEvent ) {
-            if ( ev.clickCount > 1 ) {
-                var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
+            
+            if ( selectedIntervalMode === 'single' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    interval.cursor_PMILLIS = time_PMILLIS;
+                    interval.start_PMILLIS = time_PMILLIS;
+                    interval.end_PMILLIS = time_PMILLIS;
+                }
+            }
+            else if ( selectedIntervalMode === 'range' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
+                }            
             }
         };
         input.mouseDown.on( doubleClick );
