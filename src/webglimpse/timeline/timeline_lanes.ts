@@ -46,10 +46,11 @@ module Webglimpse {
         // Keep references to listeners, so that we can remove them later
         private _eventAttrsListeners : StringMap<Listener>;
 
-        constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi ) {
+        constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, allowMultipleLanes : boolean ) {
             this._model = model;
             this._row = row;
             this._ui = ui;
+            
             this._lanes = [];
             this._laneNums = {};
             this._eventAttrsListeners = {};
@@ -72,7 +73,7 @@ module Webglimpse {
 
             function addEventToLane( event : TimelineEventModel, laneNum : number ) {
                 if ( !self._lanes[ laneNum ] ) {
-                    self._lanes[ laneNum ] = new TimelineLane( ui );
+                    self._lanes[ laneNum ] = allowMultipleLanes ? new TimelineLane( ui ) : new TimelineLaneNoStack( ui );
                 }
                 self._lanes[ laneNum ].add( event );
                 self._laneNums[ event.eventGuid ] = laneNum;
@@ -379,7 +380,7 @@ module Webglimpse {
             return this._eventFitsBetween( event, iBefore, iAfter );
         }
 
-        private _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
+        _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
             var edges_PMILLIS = effectiveEdges_PMILLIS( this._ui, event );
 
             if ( iBefore >= 0 ) {
@@ -398,6 +399,14 @@ module Webglimpse {
                 }
             }
 
+            return true;
+        }
+    }
+    
+    export class TimelineLaneNoStack extends TimelineLane {
+        
+        // we can alwasy fit more events
+        _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
             return true;
         }
     }

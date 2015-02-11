@@ -50,6 +50,7 @@ module Webglimpse {
         rowTopPadding? : number;
         rowBottomPadding? : number;
         laneHeight? : number;
+        allowMultipleLanes? : boolean;
         painterFactories? : TimelineEventsPainterFactory[];
     }
 
@@ -63,6 +64,7 @@ module Webglimpse {
             var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
             var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
             var painterFactories = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
+            var allowMultipleLanes = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.allowMultipleLanes ) ? eventsRowOpts.allowMultipleLanes : true );
 
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
@@ -72,7 +74,7 @@ module Webglimpse {
 
             var input = ui.input;
             var selection = ui.selection;
-            var lanes = new TimelineLaneArray( model, row, ui );
+            var lanes = new TimelineLaneArray( model, row, ui, allowMultipleLanes );
 
             var timeAtCoords_PMILLIS = function( viewport : BoundsUnmodifiable, i : number ) : number {
                 return timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
@@ -539,6 +541,11 @@ module Webglimpse {
         defaultColor? : Color;
         defaultBorderColor? : Color;
         selectedBorderColor? : Color;
+        
+        // minimum pixel width of the event bar
+        // when the timeline is zoomed out so that the event bar
+        // is smaller than this visible width, the event bar is hidden
+        minimumVisibleWidth? : number;
     }
 
 
@@ -558,7 +565,8 @@ module Webglimpse {
             var defaultColor        = ( hasval( barOpts ) && hasval( barOpts.defaultColor        ) ? barOpts.defaultColor        : options.timelineFgColor.withAlphaTimes( 0.4 ) );
             var defaultBorderColor  = ( hasval( barOpts ) && hasval( barOpts.defaultBorderColor  ) ? barOpts.defaultBorderColor  : null );
             var selectedBorderColor = ( hasval( barOpts ) && hasval( barOpts.selectedBorderColor ) ? barOpts.selectedBorderColor : options.timelineFgColor );
-
+            var minimumVisibleWidth = ( hasval( barOpts ) && hasval( barOpts.minimumVisibleWidth ) ? barOpts.minimumVisibleWidth : 0 );
+            
             var selection = ui.selection;
 
             var xyFrac_vColor_VERTSHADER = concatLines(
@@ -622,7 +630,10 @@ module Webglimpse {
 
                         var xLeft = timeAxis.tFrac( event.start_PMILLIS );
                         var xRight = timeAxis.tFrac( event.end_PMILLIS );
-                        if ( !( xRight < 0 || xLeft > 1 ) ) {
+                        
+                        var xWidthPixels = viewport.w * ( xRight - xLeft );
+                        
+                        if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
                             // Fill
                             var fillColor = ( event.bgColor || defaultColor );

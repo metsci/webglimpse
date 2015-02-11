@@ -73,10 +73,12 @@ module Webglimpse {
         rowTopPadding: 0,
         rowBottomPadding: 0,
         laneHeight: 23,
+        allowMultipleLanes: false,
         painterFactories: [
             newEventBarsPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
+                minimumVisibleWidth: 0,
                 cornerType: JointType.MITER
             } ),
             newEventIconsPainterFactory( {
