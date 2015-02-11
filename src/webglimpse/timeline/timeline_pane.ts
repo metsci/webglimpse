@@ -208,7 +208,11 @@ module Webglimpse {
     function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel ) : Mask2D {
         return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
             var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
-            return interval.contains( time_PMILLIS );
+            
+            // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
+            var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+            
+            return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
         };
     }
 
@@ -352,9 +356,7 @@ module Webglimpse {
             if ( selectedIntervalMode === 'single' ) {
                 if ( ev.clickCount > 1 ) {
                     var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    interval.cursor_PMILLIS = time_PMILLIS;
-                    interval.start_PMILLIS = time_PMILLIS;
-                    interval.end_PMILLIS = time_PMILLIS;
+                    interval.setInterval( time_PMILLIS, time_PMILLIS );
                 }
             }
             else if ( selectedIntervalMode === 'range' ) {

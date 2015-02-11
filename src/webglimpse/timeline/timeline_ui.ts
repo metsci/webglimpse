@@ -339,6 +339,10 @@ module Webglimpse {
             }
         }
 
+        overlaps( start_PMILLIS : number, end_PMILLIS : number ) : boolean {
+            return ( this._start_PMILLIS <= end_PMILLIS && start_PMILLIS <= this._end_PMILLIS );
+        }
+        
         contains( time_PMILLIS : number ) : boolean {
             return ( this._start_PMILLIS <= time_PMILLIS && time_PMILLIS <= this._end_PMILLIS );
         }
