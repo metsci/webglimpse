@@ -290,19 +290,19 @@ module Webglimpse {
     export class TimeIntervalModel {
         private _start_PMILLIS : number;
         private _end_PMILLIS : number;
-        private _selection_PMILLIS : number;
+        private _cursor_PMILLIS : number;
         private _changed : Notification;
 
-        constructor( start_PMILLIS : number, end_PMILLIS : number, selection_PMILLIS? : number ) {
+        constructor( start_PMILLIS : number, end_PMILLIS : number, cursor_PMILLIS? : number ) {
             this._start_PMILLIS = start_PMILLIS;
             this._end_PMILLIS = end_PMILLIS;
-            this._selection_PMILLIS = selection_PMILLIS ? selection_PMILLIS : end_PMILLIS;
+            this._cursor_PMILLIS = cursor_PMILLIS ? cursor_PMILLIS : end_PMILLIS;
             this._changed = new Notification( );
         }
 
         get start_PMILLIS( ) : number { return this._start_PMILLIS; }
         get end_PMILLIS( ) : number { return this._end_PMILLIS; }
-        get selection_PMILLIS( ) : number { return this._selection_PMILLIS; }
+        get cursor_PMILLIS( ) : number { return this._cursor_PMILLIS; }
         get duration_MILLIS( ) : number { return this._end_PMILLIS - this._start_PMILLIS; }
         get changed( ) : Notification { return this._changed; }
 
@@ -320,21 +320,21 @@ module Webglimpse {
             }
         }
         
-        set selection_PMILLIS( selection_PMILLIS : number ) {
-            if ( selection_PMILLIS !== this._selection_PMILLIS ) {
-                this._selection_PMILLIS = selection_PMILLIS;
+        set cursor_PMILLIS( cursor_PMILLIS : number ) {
+            if ( cursor_PMILLIS !== this._cursor_PMILLIS ) {
+                this._cursor_PMILLIS = cursor_PMILLIS;
                 this._changed.fire( );
             }
         }
 
-        setInterval( start_PMILLIS : number, end_PMILLIS : number, selection_PMILLIS? : number ) {
+        setInterval( start_PMILLIS : number, end_PMILLIS : number, cursor_PMILLIS? : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS ||
                      end_PMILLIS !== this._end_PMILLIS ||
-                     ( selection_PMILLIS && selection_PMILLIS != this._selection_PMILLIS ) ) {
+                     ( cursor_PMILLIS && cursor_PMILLIS != this._cursor_PMILLIS ) ) {
                 
                 this._start_PMILLIS = start_PMILLIS;
                 this._end_PMILLIS = end_PMILLIS;
-                this._selection_PMILLIS = selection_PMILLIS ? selection_PMILLIS : end_PMILLIS;
+                this._cursor_PMILLIS = cursor_PMILLIS ? cursor_PMILLIS : end_PMILLIS;
                 this._changed.fire( );
             }
         }
@@ -347,7 +347,7 @@ module Webglimpse {
             if ( amount_MILLIS !== 0 ) {
                 this._start_PMILLIS += amount_MILLIS;
                 this._end_PMILLIS += amount_MILLIS;
-                this._selection_PMILLIS += amount_MILLIS;
+                this._cursor_PMILLIS += amount_MILLIS;
                 this._changed.fire( );
             }
         }
@@ -356,7 +356,7 @@ module Webglimpse {
             if ( anchor_PMILLIS !== 1 ) {
                 this._start_PMILLIS =     anchor_PMILLIS + factor * ( this._start_PMILLIS - anchor_PMILLIS );
                 this._end_PMILLIS =       anchor_PMILLIS + factor * ( this._end_PMILLIS - anchor_PMILLIS );
-                this._selection_PMILLIS = anchor_PMILLIS + factor * ( this._selection_PMILLIS - anchor_PMILLIS );
+                this._cursor_PMILLIS = anchor_PMILLIS + factor * ( this._cursor_PMILLIS - anchor_PMILLIS );
                 this._changed.fire( );
             }
         }

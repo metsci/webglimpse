@@ -458,7 +458,7 @@ module Webglimpse {
                 var wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
                 var newEnd_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
                 interval.end_PMILLIS = Math.max( interval.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS );
-                interval.selection_PMILLIS = interval.end_PMILLIS;
+                interval.cursor_PMILLIS = interval.end_PMILLIS;
             }
         };
         pane.mouseMove.on( dragEnd );
@@ -496,16 +496,16 @@ module Webglimpse {
         var coordsBuffer = newDynamicBuffer( );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            if ( hasval( interval.selection_PMILLIS  ) ) {
+            if ( hasval( interval.cursor_PMILLIS  ) ) {
 
-                var fracSelection = timeAxis.tFrac( interval.selection_PMILLIS );
+                var fracSelection = timeAxis.tFrac( interval.cursor_PMILLIS );
                 var fracWidth = 1 / viewport.w;
                 var fracHeight = 1 / viewport.h;
                 var thickWidth = 3 / viewport.w;
                 var highlightWidth = 7 / viewport.w;
                 var index = 0;
                 
-                console.log( interval.selection_PMILLIS );
+                console.log( interval.cursor_PMILLIS );
                 
                 // fill vertices
                 coords[ index++ ] = fracSelection - highlightWidth;
@@ -556,13 +556,11 @@ module Webglimpse {
 
                 var fracStart = timeAxis.tFrac( interval.start_PMILLIS );
                 var fracEnd = timeAxis.tFrac( interval.end_PMILLIS );
-                var fracSelection = timeAxis.tFrac( interval.selection_PMILLIS );
+                var fracSelection = timeAxis.tFrac( interval.cursor_PMILLIS );
                 var fracWidth = 1 / viewport.w;
                 var fracHeight = 1 / viewport.h;
                 var thickWidth = 3 / viewport.w;
                 var index = 0;
-                
-                console.log( interval.selection_PMILLIS );
                 
                 // fill vertices
                 coords[ index++ ] = fracStart;
