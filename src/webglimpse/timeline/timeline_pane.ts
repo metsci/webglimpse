@@ -505,8 +505,6 @@ module Webglimpse {
                 var highlightWidth = 7 / viewport.w;
                 var index = 0;
                 
-                console.log( interval.cursor_PMILLIS );
-                
                 // fill vertices
                 coords[ index++ ] = fracSelection - highlightWidth;
                 coords[ index++ ] = 1;
