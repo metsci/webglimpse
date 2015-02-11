@@ -1,4 +1,11 @@
 
+Webglimpse 1.4.2-pre2 (released 2015-2-11)
+
+  * Added TimelineEventModel.styleGuid setter
+  * Added TimelineEventsRowPaneOptions.allowMultipleLanes option (to enable/disable stacking of events)
+  * Added TimelineEventBarsPainterOptions.minimumVisibleWidth option (to hide event bars when they are very small horizontally)
+  * Fixed additional listener leaks
+
 Webglimpse 1.4.2-pre1 (released 2015-2-3)
 
   * Proper handling of disposal of panes (permanent workaround for performance issue triggered by clearing an event row)
