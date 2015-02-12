@@ -264,6 +264,10 @@ module Webglimpse {
                 this._changed.fire( );
             }
         }
+                
+        clearValue( ) {
+            this.setValue( null, -1 );
+        }
         
         get fragment( ) : TimelineTimeseriesFragmentModel { return this._fragment; }
         get index( ) : number { return this._index; }

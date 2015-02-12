@@ -180,8 +180,11 @@ module Webglimpse {
                 
                 selection.hoveredTimeseries.setValue( bestFragment, bestIndex );
             } );
-            
             selection.hoveredTimeseries.changed.on( redraw );
+            
+            rowContentPane.mouseExit.on( function( ) {
+                selection.hoveredTimeseries.clearValue( );
+            } );
             
             rowContentPane.dispose.on( function( ) {
                 dataAxis.limitsChanged.off( drawable.redraw );
