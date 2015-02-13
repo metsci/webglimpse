@@ -36,6 +36,7 @@ module Webglimpse {
         private _lanes : TimelineLane[];
         private _laneNums : StringMap<number>;
         
+        private _rebuildLanesMouseWheel;
         private _rebuildLanes;
         private _newEvent;
         private _addEvent;
@@ -189,7 +190,27 @@ module Webglimpse {
                     }
                 }
             };
-            ui.millisPerPx.changed.on( self._rebuildLanes );
+            
+            var hasIcons = function( ) {
+                var oldLanes = self._lanes;
+                for ( var l = 0; l < oldLanes.length; l++ ) {
+                    var lane = oldLanes[ l ];
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        var style = ui.eventStyle( event.styleGuid );
+                        if ( event.labelIcon || style.numIcons > 0 ) return true;
+                    }
+                }
+                return false;
+            }
+            
+            self._rebuildLanesMouseWheel = function( ) {
+                if ( hasIcons( ) ) {
+                    self._rebuildLanes( );
+                }
+            }
+            
+            ui.millisPerPx.changed.on( self._rebuildLanesMouseWheel );
             ui.eventStyles.valueAdded.on( self._rebuildLanes );
             ui.eventStyles.valueRemoved.on( self._rebuildLanes );
         }
@@ -216,7 +237,7 @@ module Webglimpse {
             this._row.eventGuids.valueRemoved.off( this._removeEvent );
             this._row.eventGuids.valueAdded.off( this._newEvent );
 
-            this._ui.millisPerPx.changed.off( this._rebuildLanes );
+            this._ui.millisPerPx.changed.off( this._rebuildLanesMouseWheel );
             this._ui.eventStyles.valueAdded.off( this._rebuildLanes );
             this._ui.eventStyles.valueRemoved.off( this._rebuildLanes );
             
