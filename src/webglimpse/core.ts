@@ -468,7 +468,7 @@ module Webglimpse {
         //
         // For more info see: http://stackoverflow.com/questions/3944122/detect-left-mouse-button-press
         //
-        function isLefMouseDown( ev : MouseEvent ) {
+        function isLeftMouseDown( ev : MouseEvent ) {
             if ( ev.buttons !== undefined ) {
                 return ev.buttons === 1;
             }
@@ -496,7 +496,7 @@ module Webglimpse {
 
 
         element.addEventListener( 'mousedown', function( ev : MouseEvent ) {
-            if ( isLefMouseDown( ev ) ) {
+            if ( isLeftMouseDown( ev ) ) {
                 var press_PMILLIS = ( new Date( ) ).getTime( );
                 var i = iMouse( element, ev );
                 var j = jMouse( element, ev );
@@ -587,14 +587,14 @@ module Webglimpse {
             }
         } );
 
-
         var endDrag = function( ev : MouseEvent ) {
             var i = iMouse( element, ev );
             var j = jMouse( element, ev );
-
+            
             for ( var n = 0; n < currentPanes.length; n++ ) {
                 currentPanes[ n ].fireMouseUp( i, j, clickCount, ev );
             }
+            
             dragging = false;
 
             if ( pendingExit ) {
@@ -616,7 +616,7 @@ module Webglimpse {
 
         // The window always gets the mouse-up event at the end of a drag -- even if it occurs outside the browser window
         window.addEventListener( 'mouseup', function( ev : MouseEvent ) {
-            if ( dragging && isLefMouseDown( ev ) ) {
+            if ( dragging ) {
                 endDrag( ev );
             }
         } );
@@ -630,7 +630,7 @@ module Webglimpse {
         var recentDrag : MouseEvent = null;
         var handleMissedMouseUp = function( ev : MouseEvent ) {
             if ( dragging ) {
-                if ( !isLefMouseDown( ev ) && recentDrag ) {
+                if ( !isLeftMouseDown( ev ) && recentDrag ) {
                     var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
                     mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
                     endDrag( mouseUp );
