@@ -760,6 +760,9 @@ module Webglimpse {
             var addRow = function( rowGuid : string, rowIndex : number ) {
                 var row = model.row( rowGuid );
                 var rowUi = ui.rowUi( rowGuid );
+                
+                // if the row is currently hidden, don't add it
+                if ( hasval( row.hidden ) && row.hidden ) return;
 
                 var rowLabel = new Label( font, rowLabelColor, row.label );
                 var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
