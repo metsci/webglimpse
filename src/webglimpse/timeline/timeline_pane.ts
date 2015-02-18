@@ -690,6 +690,9 @@ module Webglimpse {
         var addGroup = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
 
+            // if the group is currently hidden, don't add it
+            if ( hasval( group.hidden ) && group.hidden ) return;
+            
             var groupLabel = new Label( font, groupLabelColor, group.label );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
@@ -731,6 +734,11 @@ module Webglimpse {
             groupContentPanes[ groupGuid ] = groupContentPane;
 
             var groupAttrsChanged = function( ) {
+                // If the group is currently hidden, ignore notification
+                // Note: when the group is hidden its Pane is disposed and this listener is unregistered
+                //       but this listener will still see the attrsChanged event caused by hiding the group
+                if ( hasval( group.hidden ) && group.hidden ) return;
+                
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
@@ -873,6 +881,9 @@ module Webglimpse {
             };
             group.rowGuids.valueRemoved.on( removeRow );
 
+            // Handle listing for hidden property
+            //
+            
             var attrsChangedListeners = {};
             
             var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
@@ -909,7 +920,6 @@ module Webglimpse {
             
             groupContentPane.dispose.on( function( ) {
                 group.attrsChanged.off( redrawLabel );
-                
                 group.attrsChanged.off( groupAttrsChanged );
                 
                 group.rowGuids.valueAdded.off( addRow );                
@@ -923,7 +933,7 @@ module Webglimpse {
         root.groupGuids.forEach( addGroup );
         root.groupGuids.valueAdded.on( addGroup );
 
-        var groupGuidsValueMoved = function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
+        var moveGroup = function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
             var nMin = Math.min( groupOldIndex, groupNewIndex );
             var nMax = Math.max( groupOldIndex, groupNewIndex );
             for ( var n = nMin; n <= nMax; n++ ) {
@@ -934,11 +944,15 @@ module Webglimpse {
 
             drawable.redraw( );
         };
-        root.groupGuids.valueMoved.on( groupGuidsValueMoved );
+        root.groupGuids.valueMoved.on( moveGroup );
         
-        var groupGuidsValueRemoved = function( groupGuid : string, groupIndex : number ) {
-            timelineContentPane.removePane( groupContentPanes[ groupGuid ] );
-            timelineContentPane.removePane( groupHeaderPanes[ groupGuid ] );
+        var removeGroup = function( groupGuid : string, groupIndex : number ) {
+            var contentPane : Pane = groupContentPanes[ groupGuid ];
+            var headerPane : Pane = groupHeaderPanes[ groupGuid ];
+            contentPane.dispose.fire( );
+            headerPane.dispose.fire( );
+            timelineContentPane.removePane( contentPane );
+            timelineContentPane.removePane( headerPane );
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                 var shift = ( isNumber( layoutArg ) && layoutArg > 2*groupIndex + 1 );
                 return ( shift ? layoutArg - 2 : layoutArg );
@@ -948,14 +962,45 @@ module Webglimpse {
 
             drawable.redraw( );
         };
-        root.groupGuids.valueRemoved.on( groupGuidsValueRemoved );
+        root.groupGuids.valueRemoved.on( removeGroup );
+        
+        // Handle listing for hidden property
+        //
+        
+        var groupAttrsChangedListeners = {};
+        
+        var attachGroupAttrsChangedListener = function( groupGuid : string, groupIndex : number ) {
+            var group = model.group( groupGuid );
+            var groupAttrsChangedListener = function( ) {
+                if ( hasval( group.hidden ) ) {
+                    if ( !group.hidden && !hasval( groupContentPanes[groupGuid] ) ) {
+                        addGroup( groupGuid, groupIndex );
+                    }
+                    else if ( group.hidden && hasval( groupContentPanes[groupGuid] ) ) {
+                        removeGroup( groupGuid, groupIndex );
+                    }
+                }
+            };
+            groupAttrsChangedListeners[ groupGuid ] = groupAttrsChangedListener;
+            group.attrsChanged.on( groupAttrsChangedListener );
+        };
+        
+        var unattachGroupAttrsChangedListener = function( groupGuid : string, groupIndex : number ) {
+            var group = model.group( groupGuid );
+            group.attrsChanged.off( groupAttrsChangedListeners[ groupGuid ] );
+        }
+        
+        root.groupGuids.forEach( attachGroupAttrsChangedListener );
+        root.groupGuids.valueAdded.on( attachGroupAttrsChangedListener );
+        root.groupGuids.valueRemoved.on( unattachGroupAttrsChangedListener );
 
-       // Dispose
+        // Dispose
+        //
         
         timelineContentPane.dispose.on( function( ) {
             root.groupGuids.valueAdded.off( addGroup );
-            root.groupGuids.valueMoved.off( groupGuidsValueMoved );
-            root.groupGuids.valueRemoved.off( groupGuidsValueRemoved );
+            root.groupGuids.valueMoved.off( moveGroup );
+            root.groupGuids.valueRemoved.off( removeGroup );
         } );
 
         return timelineContentPane;
