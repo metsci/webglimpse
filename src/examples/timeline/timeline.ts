@@ -272,16 +272,29 @@ module Webglimpse {
         //
         // Shows overlay div, containing arbitrary html content, when a timeseries point is hovered
         //
+        
+        var hoveredFragment : TimelineTimeseriesFragmentModel;
 
-        selection.hoveredTimeseries.changed.on( function( ) {
-            var hoveredTimeseries = selection.hoveredTimeseries;
-            if ( hoveredTimeseries.fragment ) {
+        var updateTimeseriesTooltip = function( ) {
+            
+            // unattach any old data change listener
+            if ( hasval( hoveredFragment ) ) {
+                hoveredFragment.dataChanged.off( updateTimeseriesTooltip );
+            }
+            
+            hoveredFragment = selection.hoveredTimeseries.fragment;
+            
+            if ( hasval( hoveredFragment ) ) {
+                
+                // attach listener to newly selected fragment to update toolip when fragment data changes
+                hoveredFragment.dataChanged.on( updateTimeseriesTooltip );
+                
                 var iMouse = selection.mousePos.x;
                 var jMouse = selection.mousePos.y;
                 if ( isNumber( iMouse ) && isNumber( jMouse ) ) {
 
                     // Generate application-specific html content, based on which event is hovered
-                    var html = '' + hoveredTimeseries.data;
+                    var html = '' + selection.hoveredTimeseries.data.toFixed(2);
 
                     tooltip.show( html, iMouse+iTooltipOffset, jMouse+jTooltipOffset );
                 }
@@ -292,7 +305,9 @@ module Webglimpse {
             else {
                 tooltip.hide( );
             }
-        } );
+        };
+        
+        selection.hoveredTimeseries.changed.on( updateTimeseriesTooltip );
 
 
         // Example Input Listeners
@@ -377,12 +392,18 @@ module Webglimpse {
         // create an empty timeseries fragment and listen for changes to its data
         // the fragment will be filled later with data loaded from timeline.json
         
-        var fragment1 = new TimelineTimeseriesFragmentModel( { fragmentGuid: 'metsci.timelineExample.fragment01' } );
-        model.timeseriesFragments.add( fragment1 );
+        var fragment3 = new TimelineTimeseriesFragmentModel( { fragmentGuid: 'metsci.timelineExample.fragment03' } );
+        model.timeseriesFragments.add( fragment3 );
         
-        fragment1.dataChanged.on( function( startIndex : number, endIndex : number ) {
+        // print the new data value when fragment3 changes
+        // also, ensure that fragment1 data values never exceed 20
+        fragment3.dataChanged.on( function( startIndex : number, endIndex : number ) {
             for ( var i = startIndex ; i < endIndex ; i++ ) {
-                console.log( 'Value changed: index: ' + i + ' value: ' + fragment1.data[i] + ' time: ' + fragment1.times_PMILLIS[i] );
+                console.log( 'Value changed: index: ' + i + ' value: ' + fragment3.data[i] + ' time: ' + fragment3.times_PMILLIS[i] );
+                
+                if ( fragment3.data[i] > 20 ) {
+                    fragment3.setData( i, 20 );
+                }
             }
         } );
         
