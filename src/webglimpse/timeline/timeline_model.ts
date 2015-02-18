@@ -304,11 +304,11 @@ module Webglimpse {
             }
         }
         
-        // Time should only be modified in a way which keeps the _times_PMILLIS
-        // array sorted. This is currently not enforced by the model.
-        setData( index : number, value : number, time? : number ) {
+        // Handles adjusting the _times_PMILLIS and _data arrays if the new time
+        // requires them to be rearranged to stay in time order. Returns the new
+        // index assigned to the data point.
+        setData( index : number, value : number, time? : number ) : number {
             if ( this._data[index] !== value || ( hasval( time ) && this._times_PMILLIS[index] !== time ) ) {
-
                 if ( hasval( time ) ) {
                     // the new time value would maintain the sorted order of the array
                     if ( ( index === 0 || time > this._times_PMILLIS[index-1] ) &&
@@ -323,8 +323,8 @@ module Webglimpse {
                         this._data.splice( index, 1 );
                         
                         // find the index to reinsert new data at
-                        var newIndex = indexOf( this._times_PMILLIS, time );
-                        if ( newIndex < 0 ) newIndex = -newIndex-1;
+                        index = indexOf( this._times_PMILLIS, time );
+                        if ( index < 0 ) index = -index-1;
                         
                         this._times_PMILLIS.splice( index, 0, time );
                         this._data.splice( index, 0, value );
@@ -336,6 +336,8 @@ module Webglimpse {
                     this._dataChanged.fire( index, index+1 );
                 }
             }
+            
+            return index;
         }
         
         get start_PMILLIS( ) : number {

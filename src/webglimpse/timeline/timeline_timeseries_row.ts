@@ -271,7 +271,7 @@ module Webglimpse {
             
             // choose the closest data point to the mouse cursor position and fire an event when it changes
             rowContentPane.mouseMove.on( function( ev : PointerEvent ) {
-                if ( !timeseriesDragMode ) {
+                if ( ! hasval( timeseriesDragMode ) ) {
                     var result = getNearestFragmentEvent( ev );
                     selection.hoveredTimeseries.setValue( result.fragment, result.index );
                 }
@@ -287,14 +287,23 @@ module Webglimpse {
             } );
             
             rowContentPane.mouseMove.on( function( ev : PointerEvent ) {
-                if ( timeseriesDragMode ) {
+                
+                if ( hasval( timeseriesDragMode ) ) {
                     var x : number = timeAtPointer_PMILLIS( ev );
                     var y : number = dataAxis.vAtFrac( yFrac( ev ) );
                 
                     var fragment = selection.hoveredTimeseries.fragment;
                     var fragment_time = fragment.times_PMILLIS;
                     
-                    fragment.setData( selection.hoveredTimeseries.index, y );
+                    if ( timeseriesDragMode === 'y' ) {                    
+                        fragment.setData( selection.hoveredTimeseries.index, y );
+                    }
+                    else if ( timeseriesDragMode === 'xy' ) {
+                        var index = fragment.setData( selection.hoveredTimeseries.index, y, x );
+                        if ( index !== selection.hoveredTimeseries.index ) {
+                            selection.hoveredTimeseries.setValue( fragment, index );
+                        }
+                    }
                 }
             } );
             

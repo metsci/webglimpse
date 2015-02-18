@@ -2245,7 +2245,6 @@
     },
     {
       "fragmentGuid": "metsci.timelineExample.fragment02",
-      "userEditMode": "xy",
       "data": [
         5.22293797842763,
         1.947528605962833,
@@ -4253,6 +4252,7 @@
     },
     {
       "fragmentGuid": "metsci.timelineExample.fragment03",
+      "userEditMode": "xy",
       "data": [
         2.230633192829229,
         -4.615148893879065,
