@@ -75,6 +75,7 @@ module Webglimpse {
     export interface TimelineRow {
         rowGuid : string;
         label : string;
+        hidden? : boolean;
         yMin? : number;
         yMax? : number;
         uiHint? : string;
@@ -86,6 +87,7 @@ module Webglimpse {
     export interface TimelineGroup {
         groupGuid : string;
         label : string;
+        hidden? : boolean;
         collapsed? : boolean;
         rowGuids : string[];
     }
@@ -538,6 +540,7 @@ module Webglimpse {
     export class TimelineRowModel {
         private _rowGuid : string;
         private _attrsChanged : Notification;
+        private _hidden : boolean;
         private _label : string;
         private _uiHint : string;
         private _eventGuids : OrderedStringSet;
@@ -569,6 +572,16 @@ module Webglimpse {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
             this._label = row.label;
             this._uiHint = row.uiHint;
+            this._hidden = row.hidden;
+            this._attrsChanged.fire( );
+        }
+        
+        get hidden( ) : boolean {
+            return this._hidden;
+        }
+        
+        set hidden( hidden : boolean ) {
+            this._hidden = hidden;
             this._attrsChanged.fire( );
         }
         
@@ -615,6 +628,7 @@ module Webglimpse {
             return {
                 rowGuid: this._rowGuid,
                 label: this._label,
+                hidden: this._hidden,
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
@@ -626,6 +640,7 @@ module Webglimpse {
     export class TimelineGroupModel {
         private _groupGuid : string;
         private _attrsChanged : Notification;
+        private _hidden : boolean;
         private _label : string;
         private _collapsed : boolean;
         private _rowGuids : OrderedStringSet;
@@ -647,8 +662,18 @@ module Webglimpse {
 
         setAttrs( group : TimelineGroup ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
+            this._attrsChanged.fire( );
+        }
+        
+        get hidden( ) : boolean {
+            return this._hidden;
+        }
+        
+        set hidden( hidden : boolean ) {
+            this._hidden = hidden;
             this._attrsChanged.fire( );
         }
 
@@ -682,6 +707,7 @@ module Webglimpse {
             return {
                 groupGuid: this._groupGuid,
                 label: this._label,
+                hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),
                 rowGuids: this._rowGuids.toArray( )
             };

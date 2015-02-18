@@ -856,8 +856,10 @@ module Webglimpse {
             };
             group.rowGuids.valueMoved.on( valueMoved );
 
-            var valueRemoved = function( rowGuid : string, rowIndex : number ) {
-                groupContentPane.removePane( rowPanes[ rowGuid ] );
+            var removeRow = function( rowGuid : string, rowIndex : number ) {
+                var pane : Pane = rowPanes[ rowGuid ];
+                pane.dispose.fire( );
+                groupContentPane.removePane( pane );
                 groupContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                     var shift = ( isNumber( layoutArg ) && layoutArg > rowIndex );
                     return ( shift ? layoutArg - 1 : layoutArg );
@@ -866,9 +868,35 @@ module Webglimpse {
 
                 drawable.redraw( );
             };
-            group.rowGuids.valueRemoved.on( valueRemoved );
+            group.rowGuids.valueRemoved.on( removeRow );
 
-
+            var attrsChangedListeners = {};
+            
+            var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+                var row = model.row( rowGuid );
+                var attrsChangedListener = function( ) {
+                    if ( hasval( row.hidden ) ) {
+                        if ( !row.hidden && !hasval( rowPanes[rowGuid] ) ) {
+                            addRow( rowGuid, rowIndex );
+                        }
+                        else if ( row.hidden && hasval( rowPanes[rowGuid] ) ) {
+                            removeRow( rowGuid, rowIndex );
+                        }
+                    }
+                };
+                attrsChangedListeners[ rowGuid ] = attrsChangedListener;
+                row.attrsChanged.on( attrsChangedListener );
+            };
+            
+            var unattachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+                var row = model.row( rowGuid );
+                row.attrsChanged.off( attrsChangedListeners[ rowGuid ] );
+            }
+            
+            group.rowGuids.forEach( attachAttrsChangedListener );
+            group.rowGuids.valueAdded.on( attachAttrsChangedListener );
+            group.rowGuids.valueRemoved.on( unattachAttrsChangedListener );
+            
             // Redraw
             //
 
@@ -881,10 +909,12 @@ module Webglimpse {
                 
                 group.attrsChanged.off( groupAttrsChanged );
                 
-                group.rowGuids.valueAdded.off( addRow );
-                
+                group.rowGuids.valueAdded.off( addRow );                
                 group.rowGuids.valueMoved.off( valueMoved );
-                group.rowGuids.valueRemoved.off( valueRemoved );
+                group.rowGuids.valueRemoved.off( removeRow );
+                
+                group.rowGuids.valueAdded.off( attachAttrsChangedListener );
+                group.rowGuids.valueRemoved.off( unattachAttrsChangedListener );
            } );
         };
         root.groupGuids.forEach( addGroup );
