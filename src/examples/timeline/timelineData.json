@@ -237,6 +237,7 @@
   "timeseriesFragments": [
     {
       "fragmentGuid": "metsci.timelineExample.fragment01",
+      "userEditMode": "y",
       "data": [
         1.890635306611625,
         1.550174310913207,
@@ -2244,6 +2245,7 @@
     },
     {
       "fragmentGuid": "metsci.timelineExample.fragment02",
+      "userEditMode": "xy",
       "data": [
         5.22293797842763,
         1.947528605962833,

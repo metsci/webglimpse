@@ -47,12 +47,13 @@ module Webglimpse {
 
     export interface TimelineTimeseriesFragment {
         fragmentGuid : string;
+        data? : number[];
+        times_ISO8601? : string[];
+        
         // undefined : user cannot adjust data points
         // 'y'       : user can adjust y value of points, but not time value
         // 'xy       : user can adjust both x (time) and y value of points
-        userEditMode : string;
-        data : number[];
-        times_ISO8601 : string[];
+        userEditMode? : string;
     }
 
 
@@ -263,8 +264,8 @@ module Webglimpse {
 
         setAttrs( fragment : TimelineTimeseriesFragment ) {
             this._userEditMode = fragment.userEditMode;
-            this._times_PMILLIS = fragment.times_ISO8601.map( parseTime_PMILLIS );
-            this._data = fragment.data.slice( );
+            this._times_PMILLIS = hasval( fragment.times_ISO8601 ) ? fragment.times_ISO8601.map( parseTime_PMILLIS ) : [];
+            this._data = hasval( fragment.data ) ? fragment.data.slice( ) : [];
             this._dataChanged.fire( 0, this._data.length );
             this._attrsChanged.fire( );
         }

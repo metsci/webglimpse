@@ -374,6 +374,18 @@ module Webglimpse {
         model.rows.add( new TimelineRowModel( row ) );
         model.group( group4.groupGuid ).rowGuids.add( row.rowGuid );
         
+        // create an empty timeseries fragment and listen for changes to its data
+        // the fragment will be filled later with data loaded from timeline.json
+        
+        var fragment1 = new TimelineTimeseriesFragmentModel( { fragmentGuid: 'metsci.timelineExample.fragment01' } );
+        model.timeseriesFragments.add( fragment1 );
+        
+        fragment1.dataChanged.on( function( startIndex : number, endIndex : number ) {
+            for ( var i = startIndex ; i < endIndex ; i++ ) {
+                console.log( 'Value changed: index: ' + i + ' value: ' + fragment1.data[i] + ' time: ' + fragment1.times_PMILLIS[i] );
+            }
+        } );
+        
         // Example Custom Row
         //
         // Create a heatmap row with data loaded form a json file
