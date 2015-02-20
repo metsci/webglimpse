@@ -1,4 +1,9 @@
 
+Webglimpse 1.4.2-pre3 (released 2015-2-20)
+
+  * Added hidden attribute to row and group
+  * Enabled dragging of timeseries points via the mouse cursor
+
 Webglimpse 1.4.2-pre2 (released 2015-2-11)
 
   * Added TimelineEventModel.styleGuid setter
