@@ -171,6 +171,10 @@ module Webglimpse {
             };
             ui.millisPerPx.changed.on( uiMillisPerPxChanged );
 
+            rowContentPane.mouseUp.on( function( ev : PointerEvent ) {
+                input.mouseUp.fire( ev );
+            } );
+            
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
                 input.mouseDown.fire( ev );
             } );
