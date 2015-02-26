@@ -1,4 +1,8 @@
 
+Webglimpse 1.5.0
+
+  * ui mouseUp events are properly delivered when over an event or timeseries point
+
 Webglimpse 1.4.2-pre3 (released 2015-2-20)
 
   * Added hidden attribute to row and group
