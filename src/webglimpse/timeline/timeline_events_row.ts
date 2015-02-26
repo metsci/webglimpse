@@ -50,6 +50,7 @@ module Webglimpse {
         rowTopPadding? : number;
         rowBottomPadding? : number;
         laneHeight? : number;
+        allowMultipleLanes? : boolean;
         painterFactories? : TimelineEventsPainterFactory[];
     }
 
@@ -63,6 +64,7 @@ module Webglimpse {
             var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
             var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
             var painterFactories = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
+            var allowMultipleLanes = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.allowMultipleLanes ) ? eventsRowOpts.allowMultipleLanes : true );
 
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
@@ -72,7 +74,7 @@ module Webglimpse {
 
             var input = ui.input;
             var selection = ui.selection;
-            var lanes = new TimelineLaneArray( model, row, ui );
+            var lanes = new TimelineLaneArray( model, row, ui, allowMultipleLanes );
 
             var timeAtCoords_PMILLIS = function( viewport : BoundsUnmodifiable, i : number ) : number {
                 return timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
@@ -118,6 +120,7 @@ module Webglimpse {
             var redraw = function( ) {
                 drawable.redraw( );
             };
+
             row.eventGuids.valueAdded.on( redraw );
             row.eventGuids.valueMoved.on( redraw );
             row.eventGuids.valueRemoved.on( redraw );
@@ -128,9 +131,10 @@ module Webglimpse {
             row.eventGuids.forEach( watchEventAttrs );
             row.eventGuids.valueAdded.on( watchEventAttrs );
 
-            row.eventGuids.valueRemoved.on( function( eventGuid : string ) {
+            var removeRedraw = function( eventGuid : string ) {
                 model.event( eventGuid ).attrsChanged.off( redraw );
-            } );
+            }
+            row.eventGuids.valueRemoved.on( removeRedraw );
 
 
 
@@ -164,12 +168,17 @@ module Webglimpse {
                 recentMouseMove = null;
             } );
 
-            ui.millisPerPx.changed.on( function( ) {
+            var uiMillisPerPxChanged = function( ) {
                 if ( !eventDragMode && recentMouseMove != null ) {
                     var ev = recentMouseMove;
                     input.timeHover.fire( timeAtPointer_PMILLIS( ev ), ev );
                     input.eventHover.fire( eventAtPointer( ev ), ev );
                 }
+            };
+            ui.millisPerPx.changed.on( uiMillisPerPxChanged );
+            
+            rowContentPane.mouseUp.on( function( ev : PointerEvent ) {
+                input.mouseUp.fire( ev );
             } );
 
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
@@ -489,6 +498,29 @@ module Webglimpse {
             } );
 
 
+            rowContentPane.dispose.on( function( ) {
+                lanes.dispose( );
+                
+                timeAxis.limitsChanged.off( dragEventEnd );
+                timeAxis.limitsChanged.off( dragEventStart );
+                
+                ui.millisPerPx.changed.off( uiMillisPerPxChanged );
+                
+                ui.millisPerPx.changed.off( updateCursor );
+                selection.hoveredTime_PMILLIS.changed.off( updateCursor );
+                selection.hoveredEvent.changed.off( updateCursor );
+                
+                row.eventGuids.valueAdded.off( redraw );
+                row.eventGuids.valueMoved.off( redraw );
+                row.eventGuids.valueRemoved.off( redraw );
+                row.eventGuids.valueRemoved.off( removeRedraw );
+                
+                row.eventGuids.valueAdded.off( watchEventAttrs );
+                
+                row.eventGuids.forEach( function( eventGuid : string ) {
+                    model.event( eventGuid ).attrsChanged.off( redraw );
+                } );
+            } );
 
             return rowContentPane;
         };
@@ -513,6 +545,11 @@ module Webglimpse {
         defaultColor? : Color;
         defaultBorderColor? : Color;
         selectedBorderColor? : Color;
+        
+        // minimum pixel width of the event bar
+        // when the timeline is zoomed out so that the event bar
+        // is smaller than this visible width, the event bar is hidden
+        minimumVisibleWidth? : number;
     }
 
 
@@ -532,7 +569,8 @@ module Webglimpse {
             var defaultColor        = ( hasval( barOpts ) && hasval( barOpts.defaultColor        ) ? barOpts.defaultColor        : options.timelineFgColor.withAlphaTimes( 0.4 ) );
             var defaultBorderColor  = ( hasval( barOpts ) && hasval( barOpts.defaultBorderColor  ) ? barOpts.defaultBorderColor  : null );
             var selectedBorderColor = ( hasval( barOpts ) && hasval( barOpts.selectedBorderColor ) ? barOpts.selectedBorderColor : options.timelineFgColor );
-
+            var minimumVisibleWidth = ( hasval( barOpts ) && hasval( barOpts.minimumVisibleWidth ) ? barOpts.minimumVisibleWidth : 0 );
+            
             var selection = ui.selection;
 
             var xyFrac_vColor_VERTSHADER = concatLines(
@@ -596,7 +634,10 @@ module Webglimpse {
 
                         var xLeft = timeAxis.tFrac( event.start_PMILLIS );
                         var xRight = timeAxis.tFrac( event.end_PMILLIS );
-                        if ( !( xRight < 0 || xLeft > 1 ) ) {
+                        
+                        var xWidthPixels = viewport.w * ( xRight - xLeft );
+                        
+                        if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
                             // Fill
                             var fillColor = ( event.bgColor || defaultColor );

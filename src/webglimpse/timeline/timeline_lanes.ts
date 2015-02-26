@@ -31,14 +31,30 @@ module Webglimpse {
 
 
     export class TimelineLaneArray {
+        private _ui : TimelineUi;
         private _row : TimelineRowModel;
         private _lanes : TimelineLane[];
         private _laneNums : StringMap<number>;
+        
+        private _rebuildLanesMouseWheel;
+        private _rebuildLanes;
+        private _newEvent;
+        private _addEvent;
+        private _removeEvent;
+        
+        private _model : TimelineModel;
+        
+        // Keep references to listeners, so that we can remove them later
+        private _eventAttrsListeners : StringMap<Listener>;
 
-        constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi ) {
+        constructor( model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, allowMultipleLanes : boolean ) {
+            this._model = model;
             this._row = row;
+            this._ui = ui;
+            
             this._lanes = [];
             this._laneNums = {};
+            this._eventAttrsListeners = {};
 
             var self = this;
 
@@ -58,7 +74,7 @@ module Webglimpse {
 
             function addEventToLane( event : TimelineEventModel, laneNum : number ) {
                 if ( !self._lanes[ laneNum ] ) {
-                    self._lanes[ laneNum ] = new TimelineLane( ui );
+                    self._lanes[ laneNum ] = allowMultipleLanes ? new TimelineLane( ui ) : new TimelineLaneNoStack( ui );
                 }
                 self._lanes[ laneNum ].add( event );
                 self._laneNums[ event.eventGuid ] = laneNum;
@@ -91,17 +107,23 @@ module Webglimpse {
                 }
             }
 
-            // Keep references to listeners, so that we can remove them later
-            var eventAttrsListeners : StringMap<Listener> = {};
-
-            var addEvent = function( eventGuid : string ) {
+            // adds event to lane, may be called multiple times
+            this._addEvent = function( eventGuid : string ) {
                 if ( hasval( self._laneNums[ eventGuid ] ) ) {
                     throw new Error( 'Lanes-array already contains this event: row-guid = ' + row.rowGuid + ', lane = ' + self._laneNums[ eventGuid ] + ', event-guid = ' + eventGuid );
                 }
                 var event = model.event( eventGuid );
                 var laneNum = firstAvailableLaneNum( event );
                 addEventToLane( event, laneNum );
+            };
 
+            row.eventGuids.forEach( this._addEvent );
+            row.eventGuids.valueAdded.on( this._addEvent );
+            
+            // attaches listeners to event, should be called only once
+            // when an event is first added to the row model
+            this._newEvent = function( eventGuid : string ) {
+                var event = model.event( eventGuid );
                 var oldEdges_PMILLIS = effectiveEdges_PMILLIS( ui, event );
                 var updateLaneAssignment = function( ) {
                     var newEdges_PMILLIS = effectiveEdges_PMILLIS( ui, event );
@@ -133,13 +155,14 @@ module Webglimpse {
                         oldEdges_PMILLIS = newEdges_PMILLIS;
                     }
                 };
+                
                 event.attrsChanged.on( updateLaneAssignment );
-                eventAttrsListeners[ eventGuid ] = updateLaneAssignment;
+                self._eventAttrsListeners[ eventGuid ] = updateLaneAssignment;  
             };
-            row.eventGuids.forEach( addEvent );
-            row.eventGuids.valueAdded.on( addEvent );
+            row.eventGuids.forEach( this._newEvent );
+            row.eventGuids.valueAdded.on( this._newEvent );
 
-            row.eventGuids.valueRemoved.on( function( eventGuid : string ) {
+            this._removeEvent = function( eventGuid : string ) {
                 var event = model.event( eventGuid );
 
                 var oldLaneNum = self._laneNums[ eventGuid ];
@@ -149,11 +172,12 @@ module Webglimpse {
                 fillVacancy( oldLaneNum, effectiveEdges_PMILLIS( ui, event ) );
                 trimEmptyLanes( );
 
-                event.attrsChanged.off( eventAttrsListeners[ eventGuid ] );
-                delete eventAttrsListeners[ eventGuid ];
-            } );
+                event.attrsChanged.off( self._eventAttrsListeners[ eventGuid ] );
+                delete self._eventAttrsListeners[ eventGuid ];
+            }
+            row.eventGuids.valueRemoved.on( this._removeEvent );
 
-            var rebuildLanes = function( ) {
+            self._rebuildLanes = function( ) {
                 var oldLanes = self._lanes;
                 self._lanes = [];
                 self._laneNums = {};
@@ -162,13 +186,33 @@ module Webglimpse {
                     var lane = oldLanes[ l ];
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        addEvent( event.eventGuid );
+                        self._addEvent( event.eventGuid );
                     }
                 }
             };
-            ui.millisPerPx.changed.on( rebuildLanes );
-            ui.eventStyles.valueAdded.on( rebuildLanes );
-            ui.eventStyles.valueRemoved.on( rebuildLanes );
+            
+            var hasIcons = function( ) {
+                var oldLanes = self._lanes;
+                for ( var l = 0; l < oldLanes.length; l++ ) {
+                    var lane = oldLanes[ l ];
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        var style = ui.eventStyle( event.styleGuid );
+                        if ( event.labelIcon || style.numIcons > 0 ) return true;
+                    }
+                }
+                return false;
+            }
+            
+            self._rebuildLanesMouseWheel = function( ) {
+                if ( hasIcons( ) ) {
+                    self._rebuildLanes( );
+                }
+            }
+            
+            ui.millisPerPx.changed.on( self._rebuildLanesMouseWheel );
+            ui.eventStyles.valueAdded.on( self._rebuildLanes );
+            ui.eventStyles.valueRemoved.on( self._rebuildLanes );
         }
 
         get length( ) : number {
@@ -186,6 +230,24 @@ module Webglimpse {
         eventAt( laneNum : number, time_PMILLIS : number ) : TimelineEventModel {
             var lane = this._lanes[ laneNum ];
             return ( lane && lane.eventAtTime( time_PMILLIS ) );
+        }
+        
+        dispose( ) : void {
+            this._row.eventGuids.valueAdded.off( this._addEvent );
+            this._row.eventGuids.valueRemoved.off( this._removeEvent );
+            this._row.eventGuids.valueAdded.off( this._newEvent );
+
+            this._ui.millisPerPx.changed.off( this._rebuildLanesMouseWheel );
+            this._ui.eventStyles.valueAdded.off( this._rebuildLanes );
+            this._ui.eventStyles.valueRemoved.off( this._rebuildLanes );
+            
+            for ( var eventGuid in this._eventAttrsListeners ) {
+                if ( this._eventAttrsListeners.hasOwnProperty( eventGuid ) ) {
+                    var listener = this._eventAttrsListeners[ eventGuid ];
+                    var event = this._model.event( eventGuid );
+                    if ( listener && event ) event.attrsChanged.off( listener );
+                }
+            }
         }
     }
 
@@ -339,7 +401,7 @@ module Webglimpse {
             return this._eventFitsBetween( event, iBefore, iAfter );
         }
 
-        private _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
+        _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
             var edges_PMILLIS = effectiveEdges_PMILLIS( this._ui, event );
 
             if ( iBefore >= 0 ) {
@@ -358,6 +420,14 @@ module Webglimpse {
                 }
             }
 
+            return true;
+        }
+    }
+    
+    export class TimelineLaneNoStack extends TimelineLane {
+        
+        // we can alwasy fit more events
+        _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
             return true;
         }
     }

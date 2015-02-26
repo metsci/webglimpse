@@ -98,6 +98,8 @@ module Webglimpse {
 
         var timelineOptions = {
 
+            selectedIntervalMode: 'single',
+            
             topTimeZone: '-0500',
             breakGridLines: true,
 
@@ -266,13 +268,61 @@ module Webglimpse {
             }
         } );
 
+        // Example Timeseries-Hover Overlay
+        //
+        // Shows overlay div, containing arbitrary html content, when a timeseries point is hovered
+        //
+        
+        var hoveredFragment : TimelineTimeseriesFragmentModel;
 
+        var updateTimeseriesTooltip = function( ) {
+            
+            // unattach any old data change listener
+            if ( hasval( hoveredFragment ) ) {
+                hoveredFragment.dataChanged.off( updateTimeseriesTooltip );
+            }
+            
+            hoveredFragment = selection.hoveredTimeseries.fragment;
+            
+            if ( hasval( hoveredFragment ) ) {
+                
+                // attach listener to newly selected fragment to update toolip when fragment data changes
+                hoveredFragment.dataChanged.on( updateTimeseriesTooltip );
+                
+                var iMouse = selection.mousePos.x;
+                var jMouse = selection.mousePos.y;
+                if ( isNumber( iMouse ) && isNumber( jMouse ) ) {
+
+                    // Generate application-specific html content, based on which event is hovered
+                    var html = '' + selection.hoveredTimeseries.data.toFixed(2);
+
+                    tooltip.show( html, iMouse+iTooltipOffset, jMouse+jTooltipOffset );
+                }
+                else {
+                    tooltip.hide( );
+                }
+            }
+            else {
+                tooltip.hide( );
+            }
+        };
+        
+        selection.hoveredTimeseries.changed.on( updateTimeseriesTooltip );
 
 
         // Example Input Listeners
         //
         // Fill these in with application-specific input-handling code
         //
+        
+        selection.hoveredTimeseries.changed.on( function( ) {
+            if ( selection.hoveredTimeseries.fragment )
+            {
+                // Do something with the time and data value of the selected timeseries point 
+                var dataValue = selection.hoveredTimeseries.data;
+                var time_PMILLIS = selection.hoveredTimeseries.times_PMILLIS;
+            }
+        } );
 
         selection.mousePos.changed.on( function( ) {
             // Handle mouse position
@@ -338,6 +388,24 @@ module Webglimpse {
         };
         model.rows.add( new TimelineRowModel( row ) );
         model.group( group4.groupGuid ).rowGuids.add( row.rowGuid );
+        
+        // create an empty timeseries fragment and listen for changes to its data
+        // the fragment will be filled later with data loaded from timeline.json
+        
+        var fragment3 = new TimelineTimeseriesFragmentModel( { fragmentGuid: 'metsci.timelineExample.fragment03' } );
+        model.timeseriesFragments.add( fragment3 );
+        
+        // print the new data value when fragment3 changes
+        // also, ensure that fragment1 data values never exceed 20
+        fragment3.dataChanged.on( function( startIndex : number, endIndex : number ) {
+            for ( var i = startIndex ; i < endIndex ; i++ ) {
+                console.log( 'Value changed: index: ' + i + ' value: ' + fragment3.data[i] + ' time: ' + fragment3.times_PMILLIS[i] );
+                
+                if ( fragment3.data[i] > 20 ) {
+                    fragment3.setData( i, 20 );
+                }
+            }
+        } );
         
         // Example Custom Row
         //
@@ -484,5 +552,29 @@ module Webglimpse {
         $.getJSON( 'timelineData.json', function( newTimeline : Timeline ) {
             model.merge( newTimeline, timelineMergeNewBeforeOld );
         } );
+        
+        // Example function for reloading TimelinePane with new TimelinePaneOptions. Takes care of
+        // removing the TimelinePane from its parent pane, disposing of its listeners/resources,
+        // creating a new TimelinePane, and reattaching it to the parent Pane. The new TimelinePane
+        // is returned.
+        //
+        // In this example, this function would be called as follows:
+        //
+        // timelinePane = reloadTimeline( contentPane, timelinePane, timelineOptions );
+        //
+        var reloadTimeline = function( parentPane : Pane, oldTimelinePane : TimelinePane, newOptions : TimelinePaneOptions ) : TimelinePane {
+
+            // remove the old TimelinePane from the parent Pane, dispose of it, and create a new TimelinePane
+            parentPane.removePane( oldTimelinePane );
+            oldTimelinePane.dispose.fire( );
+            var reloadedTimelinePane = newTimelinePane( drawable, timeAxis, model, timelineOptions, oldTimelinePane.ui );
+            parentPane.addPane( reloadedTimelinePane );
+
+            // update the drawable
+            drawable.redraw( );
+        
+            // return the newly created Pane
+            return reloadedTimelinePane;
+        }
     }
 }

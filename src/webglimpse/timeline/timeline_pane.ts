@@ -50,7 +50,11 @@ module Webglimpse {
 
         // Misc
         font? : string;
-        enableSelectedInterval? : boolean;
+        // Options:
+        // 'none' or any falsy value : no time selection
+        // 'single'                  : single selected time
+        // 'range'                   : range of selected times
+        selectedIntervalMode? : string;
         scrollbarOptions? : ScrollbarOptions;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
 
@@ -84,13 +88,11 @@ module Webglimpse {
         snapToDistance? : number;
     }
 
-
-
-    export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions ) : TimelinePane {
+    export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var enableSelectedInterval = ( hasval( options ) && hasval( options.enableSelectedInterval ) ? options.enableSelectedInterval : true );
+        var selectedIntervalMode = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
         var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
 
@@ -123,8 +125,9 @@ module Webglimpse {
         var draggableEdgeWidth = ( hasval( options ) && hasval( options.draggableEdgeWidth ) ? options.draggableEdgeWidth : 6   );
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
-
-        var ui = new TimelineUi( model, enableSelectedInterval );
+        if ( !ui ) {
+            ui = new TimelineUi( model );
+        }
         var selection = ui.selection;
 
         var redraw = function( ) {
@@ -135,9 +138,8 @@ module Webglimpse {
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
 
-
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { enableSelectedInterval: enableSelectedInterval, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
 
         var scrollLayout = newVerticalScrollLayout( );
@@ -155,13 +157,13 @@ module Webglimpse {
 
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
-            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
         }
         underlayPane.addPane( scrollPane );
         if ( showBottomAxis ) {
-            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), Side.BOTTOM );
         }
@@ -176,11 +178,27 @@ module Webglimpse {
         var timelinePane = new TimelinePane( newOverlayLayout( ), model, ui );
         timelinePane.addPainter( newBackgroundPainter( bgColor ) );
         timelinePane.addPane( underlayPane, true );
-        if ( enableSelectedInterval ) {
+        
+        if ( selectedIntervalMode === 'single' ) {
             var overlayPane = new Pane( null, false, alwaysFalse );
-            overlayPane.addPainter( newTimelineSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
+            overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
+        else if ( selectedIntervalMode === 'range' ) {
+            var overlayPane = new Pane( null, false, alwaysFalse );
+            overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
+            timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
+        }
+        
+        timelinePane.dispose.on( function( ) {
+            ui.dispose.fire( );
+            selection.selectedInterval.changed.off( redraw );
+            selection.hoveredEvent.changed.off( redraw );
+            selection.selectedEvents.valueAdded.off( redraw );
+            selection.selectedEvents.valueRemoved.off( redraw );
+            underlayPane.viewportChanged.off( updateMillisPerPx );
+            timeAxis.limitsChanged.off( updateMillisPerPx );
+        } );
 
         return timelinePane;
     }
@@ -190,13 +208,17 @@ module Webglimpse {
     function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel ) : Mask2D {
         return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
             var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
-            return interval.contains( time_PMILLIS );
+            
+            // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
+            var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+            
+            return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
         };
     }
 
 
 
-    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, enableSelectedInterval : boolean ) : Pane {
+    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, selectedIntervalMode : string ) : Pane {
         var input = ui.input;
 
         var axisPane = new Pane( newOverlayLayout( ) );
@@ -222,33 +244,129 @@ module Webglimpse {
         };
         axisPane.mouseDown.on( onMouseDown );
 
+        var onMouseUp = function( ev : PointerEvent ) {
+            input.mouseUp.fire( ev );
+        };
+        axisPane.mouseUp.on( onMouseUp );
+        
         var onContextMenu = function( ev : PointerEvent ) {
             input.contextMenu.fire( ev );
         };
         axisPane.contextMenu.on( onContextMenu );
 
-        if ( enableSelectedInterval ) {
+        if ( selectedIntervalMode && selectedIntervalMode !== 'none' ) {
             var selection = ui.selection;
             var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
-            attachTimeIntervalSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth );
+            attachTimeSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode );
             axisPane.addPane( selectedIntervalPane, false );
 
             selectedIntervalPane.mouseMove.on( onMouseMove );
             selectedIntervalPane.mouseExit.on( onMouseExit );
             selectedIntervalPane.mouseDown.on( onMouseDown );
+            selectedIntervalPane.mouseUp.on( onMouseUp );
             selectedIntervalPane.contextMenu.on( onContextMenu );
         }
+        
+        // Dispose
+        //
+        
+        // mouse listeners are disposed of automatically by Pane
 
         return axisPane;
     }
 
+    function timeAtPointer_PMILLIS( timeAxis : TimeAxis1D, ev : PointerEvent ) : number {
+        return timeAxis.tAtFrac_PMILLIS( ev.paneViewport.xFrac( ev.i ) );
+    }
+    
 
+    function attachTimeSelectionMouseListeners( pane : Pane,
+                                                timeAxis : TimeAxis1D,
+                                                interval : TimeIntervalModel,
+                                                input : TimelineInput,
+                                                draggableEdgeWidth : number,
+                                                selectedIntervalMode : string ) {
+        
+        if ( selectedIntervalMode === 'single' ) {
+            
+            var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
+                return 'center';
+            }
+            
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
 
-    function attachTimeIntervalSelectionMouseListeners( pane : Pane, timeAxis : TimeAxis1D, interval : TimeIntervalModel, input : TimelineInput, draggableEdgeWidth : number ) {
-
-        function timeAtPointer_PMILLIS( ev : PointerEvent ) : number {
-            return timeAxis.tAtFrac_PMILLIS( ev.paneViewport.xFrac( ev.i ) );
         }
+        else if ( selectedIntervalMode === 'range' ) {
+            
+            // Edges are draggable when interval is at least this wide
+            var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+    
+            // When dragging an edge, the interval cannot be made narrower than this
+            //
+            // Needs to be greater than minIntervalWidthForEdgeDraggability -- by enough to
+            // cover floating-point precision loss -- so a user can't accidentally make
+            // the interval so narrow that it can't easily be widened again.
+            //
+            var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
+            
+            var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
+                var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
+                    // If interval isn't very wide, don't try to allow edge dragging
+                    return 'center';
+                }
+                else {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                    if ( mouseOffset < draggableEdgeWidth ) {
+                        // If mouse is near the left edge, drag the interval's start-time
+                        return 'start';
+                    }
+                    else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
+                        // If mouse is in the center, drag the whole interval
+                        return 'center';
+                    }
+                    else {
+                        // If mouse is near the right edge, drag the interval's end-time
+                        return 'end';
+                    }
+                }
+            };
+            
+            attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
+        }
+    }
+        
+    function attachTimeIntervalSelectionMouseListeners( pane : Pane,
+                                                        timeAxis : TimeAxis1D,
+                                                        interval : TimeIntervalModel,
+                                                        input : TimelineInput,
+                                                        draggableEdgeWidth : number,
+                                                        selectedIntervalMode : string,
+                                                        chooseDragMode : ( ev : PointerEvent ) => string ) {
+        
+        // see comments in attachTimeSelectionMouseListeners( ... )
+        var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+        var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
+        
+        // Enable double click to center selection on mouse
+        
+        var doubleClick = function( ev : PointerEvent ) {
+            
+            if ( selectedIntervalMode === 'single' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    interval.setInterval( time_PMILLIS, time_PMILLIS );
+                }
+            }
+            else if ( selectedIntervalMode === 'range' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
+                }            
+            }
+        };
+        input.mouseDown.on( doubleClick );
 
 
         // Hook up input notifications
@@ -269,42 +387,6 @@ module Webglimpse {
 
         var dragMode : string = null;
         var dragOffset_MILLIS : number = null;
-
-        // Edges are draggable when interval is at least this wide
-        var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
-
-        // When dragging an edge, the interval cannot be made narrower than this
-        //
-        // Needs to be greater than minIntervalWidthForEdgeDraggability -- by enough to
-        // cover floating-point precision loss -- so a user can't accidentally make
-        // the interval so narrow that it can't easily be widened again.
-        //
-        var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
-
-
-        function chooseDragMode( ev : PointerEvent ) : string {
-            var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-            if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
-                // If interval isn't very wide, don't try to allow edge dragging
-                return 'center';
-            }
-            else {
-                var time_PMILLIS = timeAtPointer_PMILLIS( ev );
-                var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                if ( mouseOffset < draggableEdgeWidth ) {
-                    // If mouse is near the left edge, drag the interval's start-time
-                    return 'start';
-                }
-                else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
-                    // If mouse is in the center, drag the whole interval
-                    return 'center';
-                }
-                else {
-                    // If mouse is near the right edge, drag the interval's end-time
-                    return 'end';
-                }
-            }
-        }
 
         pane.mouseMove.on( function( ev : PointerEvent ) {
             if ( !dragMode ) {
@@ -328,7 +410,7 @@ module Webglimpse {
 
         var updateDragPointer = function( ev : PointerEvent ) {
             if ( dragMode ) {
-                dragPointer_PMILLIS = timeAtPointer_PMILLIS( ev );
+                dragPointer_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
             }
         };
         pane.mouseDown.on( updateDragPointer );
@@ -391,6 +473,7 @@ module Webglimpse {
                 var wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
                 var newEnd_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
                 interval.end_PMILLIS = Math.max( interval.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS );
+                interval.cursor_PMILLIS = interval.end_PMILLIS;
             }
         };
         pane.mouseMove.on( dragEnd );
@@ -405,19 +488,81 @@ module Webglimpse {
             dragPointer_PMILLIS = null;
             dragMode = null;
         } );
+        
+        // Dispose
+        //
+        
+        pane.dispose.on( function( ) {
+            // mouse listeners are disposed of automatically by Pane
+            input.mouseDown.off( doubleClick );
+            timeAxis.limitsChanged.off( dragStart );
+            timeAxis.limitsChanged.off( dragEnd );
+        } );
 
     }
-
-
-
-    function newTimelineSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+    
+    function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
 
         var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var u_Color = new UniformColor( program, 'u_Color' );
 
         // holds vertices for fill and border
-        var coords = new Float32Array( 8 + 48 );
+        var coords = new Float32Array( 12 + 8 );
+        var coordsBuffer = newDynamicBuffer( );
+
+        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+            if ( hasval( interval.cursor_PMILLIS  ) ) {
+
+                var fracSelection = timeAxis.tFrac( interval.cursor_PMILLIS );
+                var fracWidth = 1 / viewport.w;
+                var fracHeight = 1 / viewport.h;
+                var thickWidth = 3 / viewport.w;
+                var highlightWidth = 7 / viewport.w;
+                var index = 0;
+                
+                // fill vertices
+                coords[ index++ ] = fracSelection - highlightWidth;
+                coords[ index++ ] = 1;
+                coords[ index++ ] = fracSelection + highlightWidth;
+                coords[ index++ ] = 1;
+                coords[ index++ ] = fracSelection - highlightWidth;
+                coords[ index++ ] = 0;
+                coords[ index++ ] = fracSelection + highlightWidth;
+                coords[ index++ ] = 0;
+                
+                // selection vertices
+                index = putQuadXys( coords, index, fracSelection-thickWidth/2, fracSelection+thickWidth/2, 1, 0+fracHeight ); // selection
+                
+                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                gl.enable( GL.BLEND );
+
+                program.use( gl );
+                coordsBuffer.setData( coords );
+                a_XyFrac.setDataAndEnable( gl, coordsBuffer, 2, GL.FLOAT );
+                
+                u_Color.setData( gl, fillColor );
+                gl.drawArrays( GL.TRIANGLE_STRIP, 0, 4 );
+
+                u_Color.setData( gl, borderColor );
+                gl.drawArrays( GL.TRIANGLES, 4, 6 );
+                
+                a_XyFrac.disable( gl );
+                program.endUse( gl );
+                
+                
+            }
+        };
+    }
+
+    function newTimelineRangeSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+
+        var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var u_Color = new UniformColor( program, 'u_Color' );
+
+        // holds vertices for fill and border
+        var coords = new Float32Array( 12 + 8 + 48 );
         var coordsBuffer = newDynamicBuffer( );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -425,12 +570,13 @@ module Webglimpse {
 
                 var fracStart = timeAxis.tFrac( interval.start_PMILLIS );
                 var fracEnd = timeAxis.tFrac( interval.end_PMILLIS );
+                var fracSelection = timeAxis.tFrac( interval.cursor_PMILLIS );
                 var fracWidth = 1 / viewport.w;
                 var fracHeight = 1 / viewport.h;
                 var thickWidth = 3 / viewport.w;
                 var index = 0;
                 
-                 // fill vertices
+                // fill vertices
                 coords[ index++ ] = fracStart;
                 coords[ index++ ] = 1;
                 coords[ index++ ] = fracEnd;
@@ -444,8 +590,11 @@ module Webglimpse {
                 index = putQuadXys( coords, index, fracStart, fracEnd-fracWidth, +1, +1-fracHeight ); // top
                 index = putQuadXys( coords, index, fracStart+fracWidth, fracEnd, 0+fracHeight, 0 ); // bottom
                 index = putQuadXys( coords, index, fracStart, fracStart+fracWidth, 1-fracHeight, 0 ); // left
-                index = putQuadXys( coords, index, fracEnd-thickWidth, fracEnd, 1, 0+fracHeight ); // right
+                index = putQuadXys( coords, index, fracEnd-fracWidth, fracEnd, 1, 0+fracHeight ); // right
 
+                // selection vertices
+                index = putQuadXys( coords, index, fracSelection-thickWidth, fracSelection, 1, 0+fracHeight ); // selection
+                
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
 
@@ -457,7 +606,7 @@ module Webglimpse {
                 gl.drawArrays( GL.TRIANGLE_STRIP, 0, 4 );
 
                 u_Color.setData( gl, borderColor );
-                gl.drawArrays( GL.TRIANGLES, 4, 24 );
+                gl.drawArrays( GL.TRIANGLES, 4, 30 );
                 
                 a_XyFrac.disable( gl );
                 program.endUse( gl );
@@ -470,7 +619,7 @@ module Webglimpse {
 
 
     interface TimelineContentPaneOptions {
-        enableSelectedInterval : boolean;
+        selectedIntervalMode : string;
         rowPaneFactoryChooser : TimelineRowPaneFactoryChooser;
 
         font : string;
@@ -500,7 +649,7 @@ module Webglimpse {
     function newTimelineContentPane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, ui : TimelineUi, options : TimelineContentPaneOptions ) : Pane {
         var root = model.root;
 
-        var enableSelectedInterval = options.enableSelectedInterval;
+        var selectedIntervalMode = options.selectedIntervalMode;
         var rowPaneFactoryChooser = options.rowPaneFactoryChooser;
 
         var font = options.font;
@@ -541,14 +690,19 @@ module Webglimpse {
         var addGroup = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
 
+            // if the group is currently hidden, don't add it
+            if ( hasval( group.hidden ) && group.hidden ) return;
+            
             var groupLabel = new Label( font, groupLabelColor, group.label );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
             var groupButton = newInsetPane( groupLabelPane, groupLabelInsets, bgColor );
-            group.attrsChanged.on( function( ) {
+            
+            var redrawLabel = function( ) {
                 groupLabel.text = group.label;
                 drawable.redraw( );
-            } );
+            }
+            group.attrsChanged.on( redrawLabel );
 
             var groupHeaderStripe = new Pane( newRowLayout( ) );
             groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
@@ -560,7 +714,7 @@ module Webglimpse {
             groupHeaderUnderlay.addPane( groupButton, 0 );
             groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
 
-            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, enableSelectedInterval );
+            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
 
             var groupHeaderPane = new Pane( newOverlayLayout( ) );
@@ -579,13 +733,19 @@ module Webglimpse {
             groupHeaderPanes[ groupGuid ] = groupHeaderPane;
             groupContentPanes[ groupGuid ] = groupContentPane;
 
-            group.attrsChanged.on( function( ) {
+            var groupAttrsChanged = function( ) {
+                // If the group is currently hidden, ignore notification
+                // Note: when the group is hidden its Pane is disposed and this listener is unregistered
+                //       but this listener will still see the attrsChanged event caused by hiding the group
+                if ( hasval( group.hidden ) && group.hidden ) return;
+                
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
                     drawable.redraw( );
                 }
-            } );
+            };
+            group.attrsChanged.on( groupAttrsChanged );
 
             groupButton.mouseDown.on( function( ) {
                 group.collapsed = !group.collapsed;
@@ -608,17 +768,22 @@ module Webglimpse {
             var addRow = function( rowGuid : string, rowIndex : number ) {
                 var row = model.row( rowGuid );
                 var rowUi = ui.rowUi( rowGuid );
+                
+                // if the row is currently hidden, don't add it
+                if ( hasval( row.hidden ) && row.hidden ) return;
 
                 var rowLabel = new Label( font, rowLabelColor, row.label );
                 var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
                 rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
                 var rowHeaderPane = newInsetPane( rowLabelPane, rowLabelInsets, bgColor );
-                row.attrsChanged.on( function( ) {
+                
+                var rowAttrsChanged = function( ) {
                     rowLabel.text = row.label;
                     drawable.redraw( );
-                } );
+                }
+                row.attrsChanged.on( rowAttrsChanged );
 
-                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, enableSelectedInterval );
+                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
                 rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
 
                 var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
@@ -645,13 +810,10 @@ module Webglimpse {
                 var rowPaneFactory : TimelineRowPaneFactory = null;
                 var rowContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
                 var refreshRowContentPane = function( ) {
-                    // The current row-panes don't clean up after themselves very well. Until that's fixed,
-                    // avoid switching row-panes in the common case: content is cleared and re-added, causing
-                    // the row-pane to switch to null and then back to its original value. To avoid that,
-                    // only switch row-panes if newRowPaneFactory is truthy.
                     var newRowPaneFactory = ( rowUi.paneFactory || rowPaneFactoryChooser( row ) );
-                    if ( newRowPaneFactory !== rowPaneFactory && newRowPaneFactory ) {
+                    if ( newRowPaneFactory !== rowPaneFactory ) {
                         if ( rowContentPane ) {
+                            rowContentPane.dispose.fire( );
                             rowInsetPane.removePane( rowContentPane );
                         }
                         rowPaneFactory = newRowPaneFactory;
@@ -662,6 +824,7 @@ module Webglimpse {
                         drawable.redraw( );
                     }
                 };
+
                 rowUi.paneFactoryChanged.on( refreshRowContentPane );
                 row.attrsChanged.on( refreshRowContentPane );
                 row.eventGuids.valueAdded.on( refreshRowContentPane );
@@ -678,11 +841,21 @@ module Webglimpse {
                 rowPanes[ rowGuid ] = rowPane;
 
                 drawable.redraw( );
+                
+                rowPane.dispose.on( function( ) {
+                    row.attrsChanged.off( rowAttrsChanged );
+                    rowUi.paneFactoryChanged.off( refreshRowContentPane );
+                    row.attrsChanged.off( refreshRowContentPane );
+                    row.eventGuids.valueAdded.off( refreshRowContentPane );
+                    row.eventGuids.valueRemoved.off( refreshRowContentPane );
+                    row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
+                    row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
+                } );
             };
             group.rowGuids.forEach( addRow );
             group.rowGuids.valueAdded.on( addRow );
 
-            group.rowGuids.valueMoved.on( function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
+            var valueMoved = function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
                 var nMin = Math.min( rowOldIndex, rowNewIndex );
                 var nMax = Math.max( rowOldIndex, rowNewIndex );
                 for ( var n = nMin; n <= nMax; n++ ) {
@@ -691,10 +864,13 @@ module Webglimpse {
                 }
 
                 drawable.redraw( );
-            } );
+            };
+            group.rowGuids.valueMoved.on( valueMoved );
 
-            group.rowGuids.valueRemoved.on( function( rowGuid : string, rowIndex : number ) {
-                groupContentPane.removePane( rowPanes[ rowGuid ] );
+            var removeRow = function( rowGuid : string, rowIndex : number ) {
+                var pane : Pane = rowPanes[ rowGuid ];
+                pane.dispose.fire( );
+                groupContentPane.removePane( pane );
                 groupContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                     var shift = ( isNumber( layoutArg ) && layoutArg > rowIndex );
                     return ( shift ? layoutArg - 1 : layoutArg );
@@ -702,18 +878,62 @@ module Webglimpse {
                 delete rowPanes[ rowGuid ];
 
                 drawable.redraw( );
-            } );
+            };
+            group.rowGuids.valueRemoved.on( removeRow );
 
-
+            // Handle listing for hidden property
+            //
+            
+            var attrsChangedListeners = {};
+            
+            var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+                var row = model.row( rowGuid );
+                var attrsChangedListener = function( ) {
+                    if ( hasval( row.hidden ) ) {
+                        if ( !row.hidden && !hasval( rowPanes[rowGuid] ) ) {
+                            addRow( rowGuid, rowIndex );
+                        }
+                        else if ( row.hidden && hasval( rowPanes[rowGuid] ) ) {
+                            removeRow( rowGuid, rowIndex );
+                        }
+                    }
+                };
+                attrsChangedListeners[ rowGuid ] = attrsChangedListener;
+                row.attrsChanged.on( attrsChangedListener );
+            };
+            
+            var unattachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+                var row = model.row( rowGuid );
+                row.attrsChanged.off( attrsChangedListeners[ rowGuid ] );
+            }
+            
+            group.rowGuids.forEach( attachAttrsChangedListener );
+            group.rowGuids.valueAdded.on( attachAttrsChangedListener );
+            group.rowGuids.valueRemoved.on( unattachAttrsChangedListener );
+            
             // Redraw
             //
 
             drawable.redraw( );
+            
+            // Dispose
+            
+            groupContentPane.dispose.on( function( ) {
+                group.attrsChanged.off( redrawLabel );
+                group.attrsChanged.off( groupAttrsChanged );
+                
+                group.rowGuids.valueAdded.off( addRow );                
+                group.rowGuids.valueMoved.off( valueMoved );
+                group.rowGuids.valueRemoved.off( removeRow );
+                
+                group.rowGuids.valueAdded.off( attachAttrsChangedListener );
+                group.rowGuids.valueRemoved.off( unattachAttrsChangedListener );
+           } );
         };
         root.groupGuids.forEach( addGroup );
         root.groupGuids.valueAdded.on( addGroup );
 
-        root.groupGuids.valueMoved.on( function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
+        var moveGroup = function( groupGuid : string, groupOldIndex : number, groupNewIndex : number ) {
             var nMin = Math.min( groupOldIndex, groupNewIndex );
             var nMax = Math.max( groupOldIndex, groupNewIndex );
             for ( var n = nMin; n <= nMax; n++ ) {
@@ -723,11 +943,16 @@ module Webglimpse {
             }
 
             drawable.redraw( );
-        } );
-
-        root.groupGuids.valueRemoved.on( function( groupGuid : string, groupIndex : number ) {
-            timelineContentPane.removePane( groupContentPanes[ groupGuid ] );
-            timelineContentPane.removePane( groupHeaderPanes[ groupGuid ] );
+        };
+        root.groupGuids.valueMoved.on( moveGroup );
+        
+        var removeGroup = function( groupGuid : string, groupIndex : number ) {
+            var contentPane : Pane = groupContentPanes[ groupGuid ];
+            var headerPane : Pane = groupHeaderPanes[ groupGuid ];
+            contentPane.dispose.fire( );
+            headerPane.dispose.fire( );
+            timelineContentPane.removePane( contentPane );
+            timelineContentPane.removePane( headerPane );
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                 var shift = ( isNumber( layoutArg ) && layoutArg > 2*groupIndex + 1 );
                 return ( shift ? layoutArg - 2 : layoutArg );
@@ -736,9 +961,47 @@ module Webglimpse {
             delete groupContentPanes[ groupGuid ];
 
             drawable.redraw( );
+        };
+        root.groupGuids.valueRemoved.on( removeGroup );
+        
+        // Handle listing for hidden property
+        //
+        
+        var groupAttrsChangedListeners = {};
+        
+        var attachGroupAttrsChangedListener = function( groupGuid : string, groupIndex : number ) {
+            var group = model.group( groupGuid );
+            var groupAttrsChangedListener = function( ) {
+                if ( hasval( group.hidden ) ) {
+                    if ( !group.hidden && !hasval( groupContentPanes[groupGuid] ) ) {
+                        addGroup( groupGuid, groupIndex );
+                    }
+                    else if ( group.hidden && hasval( groupContentPanes[groupGuid] ) ) {
+                        removeGroup( groupGuid, groupIndex );
+                    }
+                }
+            };
+            groupAttrsChangedListeners[ groupGuid ] = groupAttrsChangedListener;
+            group.attrsChanged.on( groupAttrsChangedListener );
+        };
+        
+        var unattachGroupAttrsChangedListener = function( groupGuid : string, groupIndex : number ) {
+            var group = model.group( groupGuid );
+            group.attrsChanged.off( groupAttrsChangedListeners[ groupGuid ] );
+        }
+        
+        root.groupGuids.forEach( attachGroupAttrsChangedListener );
+        root.groupGuids.valueAdded.on( attachGroupAttrsChangedListener );
+        root.groupGuids.valueRemoved.on( unattachGroupAttrsChangedListener );
+
+        // Dispose
+        //
+        
+        timelineContentPane.dispose.on( function( ) {
+            root.groupGuids.valueAdded.off( addGroup );
+            root.groupGuids.valueMoved.off( moveGroup );
+            root.groupGuids.valueRemoved.off( removeGroup );
         } );
-
-
 
         return timelineContentPane;
     }

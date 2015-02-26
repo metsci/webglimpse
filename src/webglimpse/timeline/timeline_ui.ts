@@ -42,13 +42,16 @@ module Webglimpse {
 
         private _imageStatus : StringMap<boolean>;
         private _imageCache : StringMap<Texture2D>;
+        
+        private _dispose : Notification;
 
 
-        constructor( model : TimelineModel, enableSelectedInterval : boolean ) {
+        constructor( model : TimelineModel ) {
+            this._dispose = new Notification( );
             this._input = new TimelineInput( );
 
             this._selection = new TimelineSelectionModel( );
-            attachTimelineInputToSelection( this._input, this._selection, enableSelectedInterval );
+            attachTimelineInputToSelection( this._input, this._selection );
 
             this._groupUis = new OrderedSet<TimelineGroupUi>( [], (g)=>g.groupGuid );
             var groupUis = this._groupUis;
@@ -72,6 +75,13 @@ module Webglimpse {
 
             this._imageStatus = {};
             this._imageCache = {};
+            
+            this._dispose.on( function( ) {
+                model.groups.valueAdded.off( addGroupUi );
+                model.groups.valueRemoved.off( removeGroupUi );
+                model.rows.valueAdded.off( addRowUi );
+                model.rows.valueRemoved.off( removeRowUi );
+            } );
         }
 
         get input( ) : TimelineInput {
@@ -126,6 +136,8 @@ module Webglimpse {
             }
             return this._imageCache[ url ];
         }
+        
+        get dispose( ) { return this._dispose; }
     }
 
 
@@ -191,6 +203,7 @@ module Webglimpse {
         private _rowHover = new Notification2<TimelineRowModel,PointerEvent>( );
         private _eventHover = new Notification2<TimelineEventModel,PointerEvent>( );
         private _mouseDown = new Notification1<PointerEvent>( );
+        private _mouseUp = new Notification1<PointerEvent>( );
         private _contextMenu = new Notification1<PointerEvent>( );
 
         get mouseMove( ) : Notification1<PointerEvent> { return this._mouseMove; }
@@ -199,6 +212,7 @@ module Webglimpse {
         get rowHover( ) : Notification2<TimelineRowModel,PointerEvent> { return this._rowHover; }
         get eventHover( ) : Notification2<TimelineEventModel,PointerEvent> { return this._eventHover; }
         get mouseDown( ) : Notification1<PointerEvent> { return this._mouseDown; }
+        get mouseUp( ) : Notification1<PointerEvent> { return this._mouseUp; }
         get contextMenu( ) : Notification1<PointerEvent> { return this._contextMenu; }
     }
 
@@ -206,35 +220,93 @@ module Webglimpse {
 
     export class TimelineSelectionModel {
         private _mousePos = new XyModel( );
-        private _hoveredTime_PMILLIS = new SimpleModel<number>( null );
+        
+        private _hoveredTime_PMILLIS = new SimpleModel<number>( );
         private _selectedInterval = new TimeIntervalModel( 0, 0 );
-        private _hoveredRow = new SimpleModel<TimelineRowModel>( null );
-        private _hoveredEvent = new SimpleModel<TimelineEventModel>( null );
+        
+        private _hoveredRow = new SimpleModel<TimelineRowModel>( );
+        
+        private _hoveredEvent = new SimpleModel<TimelineEventModel>( );
         private _selectedEvents = new OrderedSet<TimelineEventModel>( [], (e)=>e.eventGuid );
 
+        private _hoveredTimeseries = new TimelineTimeseriesFragmentSelectionModel( );
+        
+        
         get mousePos( ) : XyModel { return this._mousePos; }
+        
         get hoveredTime_PMILLIS( ) : SimpleModel<number> { return this._hoveredTime_PMILLIS; }
         get selectedInterval( ) : TimeIntervalModel { return this._selectedInterval; }
+        
         get hoveredRow( ) : SimpleModel<TimelineRowModel> { return this._hoveredRow; }
+        
         get hoveredEvent( ) : SimpleModel<TimelineEventModel> { return this._hoveredEvent; }
         get selectedEvents( ) : OrderedSet<TimelineEventModel> { return this._selectedEvents; }
+        
+        get hoveredTimeseries( ) : TimelineTimeseriesFragmentSelectionModel { return this._hoveredTimeseries; }
     }
 
 
+    export class TimelineTimeseriesFragmentSelectionModel {
+        private _fragment : TimelineTimeseriesFragmentModel;
+        private _index : number;
+        private _changed : Notification;
+        
+        constructor( fragment : TimelineTimeseriesFragmentModel = null, index : number = -1 ) {
+            this._fragment = fragment;
+            this._index = index;
+            this._changed = new Notification( );
+        }
+        
+        setValue( fragment : TimelineTimeseriesFragmentModel, index : number ) {
+            if ( fragment !== this._fragment || index !== this._index  ) {
+                this._fragment = fragment;
+                this._index = index;
+                this._changed.fire( );
+            }
+        }
+                
+        clearValue( ) {
+            this.setValue( null, -1 );
+        }
+        
+        get fragment( ) : TimelineTimeseriesFragmentModel { return this._fragment; }
+        get index( ) : number { return this._index; }
+        get changed( ) : Notification { return this._changed; }
+        
+        get times_PMILLIS( ) : number {
+            if ( this._fragment ) {
+                return this._fragment.times_PMILLIS[ this._index ];
+            }
+            else {
+                return undefined;
+            }
+        }
+        get data( ) : number {
+            if ( this._fragment ) {
+                return this._fragment.data[ this._index ];
+            }
+            else {
+                return undefined;
+            }
+        }
+    }
 
     export class TimeIntervalModel {
         private _start_PMILLIS : number;
         private _end_PMILLIS : number;
+        private _cursor_PMILLIS : number;
         private _changed : Notification;
 
-        constructor( start_PMILLIS : number, end_PMILLIS : number ) {
+        constructor( start_PMILLIS : number, end_PMILLIS : number, cursor_PMILLIS? : number ) {
             this._start_PMILLIS = start_PMILLIS;
             this._end_PMILLIS = end_PMILLIS;
+            this._cursor_PMILLIS = cursor_PMILLIS ? cursor_PMILLIS : end_PMILLIS;
             this._changed = new Notification( );
         }
 
         get start_PMILLIS( ) : number { return this._start_PMILLIS; }
         get end_PMILLIS( ) : number { return this._end_PMILLIS; }
+        get cursor_PMILLIS( ) : number { return this._cursor_PMILLIS; }
         get duration_MILLIS( ) : number { return this._end_PMILLIS - this._start_PMILLIS; }
         get changed( ) : Notification { return this._changed; }
 
@@ -251,15 +323,30 @@ module Webglimpse {
                 this._changed.fire( );
             }
         }
-
-        setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
-            if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
-                this._start_PMILLIS = start_PMILLIS;
-                this._end_PMILLIS = end_PMILLIS;
+        
+        set cursor_PMILLIS( cursor_PMILLIS : number ) {
+            if ( cursor_PMILLIS !== this._cursor_PMILLIS ) {
+                this._cursor_PMILLIS = cursor_PMILLIS;
                 this._changed.fire( );
             }
         }
 
+        setInterval( start_PMILLIS : number, end_PMILLIS : number, cursor_PMILLIS? : number ) {
+            if ( start_PMILLIS !== this._start_PMILLIS ||
+                     end_PMILLIS !== this._end_PMILLIS ||
+                     ( cursor_PMILLIS && cursor_PMILLIS != this._cursor_PMILLIS ) ) {
+                
+                this._start_PMILLIS = start_PMILLIS;
+                this._end_PMILLIS = end_PMILLIS;
+                this._cursor_PMILLIS = cursor_PMILLIS ? cursor_PMILLIS : end_PMILLIS;
+                this._changed.fire( );
+            }
+        }
+
+        overlaps( start_PMILLIS : number, end_PMILLIS : number ) : boolean {
+            return ( this._start_PMILLIS <= end_PMILLIS && start_PMILLIS <= this._end_PMILLIS );
+        }
+        
         contains( time_PMILLIS : number ) : boolean {
             return ( this._start_PMILLIS <= time_PMILLIS && time_PMILLIS <= this._end_PMILLIS );
         }
@@ -268,14 +355,16 @@ module Webglimpse {
             if ( amount_MILLIS !== 0 ) {
                 this._start_PMILLIS += amount_MILLIS;
                 this._end_PMILLIS += amount_MILLIS;
+                this._cursor_PMILLIS += amount_MILLIS;
                 this._changed.fire( );
             }
         }
 
         scale( factor : number, anchor_PMILLIS : number ) {
             if ( anchor_PMILLIS !== 1 ) {
-                this._start_PMILLIS = anchor_PMILLIS - factor*( anchor_PMILLIS - this._start_PMILLIS );
-                this._end_PMILLIS = anchor_PMILLIS + factor*( this._end_PMILLIS - anchor_PMILLIS );
+                this._start_PMILLIS =     anchor_PMILLIS + factor * ( this._start_PMILLIS - anchor_PMILLIS );
+                this._end_PMILLIS =       anchor_PMILLIS + factor * ( this._end_PMILLIS - anchor_PMILLIS );
+                this._cursor_PMILLIS = anchor_PMILLIS + factor * ( this._cursor_PMILLIS - anchor_PMILLIS );
                 this._changed.fire( );
             }
         }
@@ -283,7 +372,7 @@ module Webglimpse {
 
 
 
-    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel, enableSelectedInterval : boolean ) {
+    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel ) {
         // Mouse-pos & Time
         //
         input.mouseMove.on( function( ev : PointerEvent ) {
@@ -298,15 +387,6 @@ module Webglimpse {
         input.timeHover.on( function( time_PMILLIS : number, ev : PointerEvent ) {
             selection.hoveredTime_PMILLIS.value = time_PMILLIS;
         } );
-        if ( enableSelectedInterval ) {
-            input.mouseDown.on( function( ev : PointerEvent ) {
-                if ( ev.clickCount > 1 ) {
-                    var interval = selection.selectedInterval;
-                    var time_PMILLIS = selection.hoveredTime_PMILLIS.value;
-                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
-                }
-            } );
-        }
 
         // Events
         //

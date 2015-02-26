@@ -1,3 +1,29 @@
+
+Webglimpse 1.5.0
+
+  * ui mouseUp events are properly delivered when over an event or timeseries point
+
+Webglimpse 1.4.2-pre3 (released 2015-2-20)
+
+  * Added hidden attribute to row and group
+  * Enabled dragging of timeseries points via the mouse cursor
+
+Webglimpse 1.4.2-pre2 (released 2015-2-11)
+
+  * Added TimelineEventModel.styleGuid setter
+  * Added TimelineEventsRowPaneOptions.allowMultipleLanes option (to enable/disable stacking of events)
+  * Added TimelineEventBarsPainterOptions.minimumVisibleWidth option (to hide event bars when they are very small horizontally)
+  * Fixed additional listener leaks
+
+Webglimpse 1.4.2-pre1 (released 2015-2-3)
+
+  * Proper handling of disposal of panes (permanent workaround for performance issue triggered by clearing an event row)
+  * Fix to "stuck-dragging" bug which should work in Chrome/Firefox/IE
+  * Enabled selection of timeseries points via the mouse cursor
+  * TimelinePaneOptions may be modified by reloading an existing TimelinePane
+  * Added single time selection mode (an alternative to time range selection mode)
+  * Added mouseUp notification to TimelineInput
+
 Webglimpse 1.4.1 (released 2014-10-29)
 
   * Minor performance improvements to notifications

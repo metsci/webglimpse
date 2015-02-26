@@ -288,7 +288,7 @@ module Webglimpse {
         private _value : V;
         private _changed : Notification;
 
-        constructor( value : V ) {
+        constructor( value : V = null ) {
             this._value = value;
             this._changed = new Notification( );
         }

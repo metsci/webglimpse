@@ -117,6 +117,8 @@ module Webglimpse {
         private _viewport : Bounds;
         private _scissor : Bounds;
         private _viewportChanged : Notification;
+        
+        private _dispose : Notification;
 
         constructor( layout : Layout, consumesInputEvents : boolean = true, isInside : Mask2D = alwaysTrue ) {
             this.painters = [];
@@ -132,6 +134,23 @@ module Webglimpse {
             this._viewport = newBoundsFromRect( 0, 0, 0, 0 );
             this._scissor = newBoundsFromRect( 0, 0, 0, 0 );
             this._viewportChanged = new Notification( );
+            
+            this._dispose = new Notification( );
+            
+            this._dispose.on( ( ) => {
+                this._mouseUp.dispose( );
+                this._mouseDown.dispose( );
+                this._mouseMove.dispose( );
+                this._mouseWheel.dispose( );
+                this._mouseEnter.dispose( );
+                this._mouseExit.dispose( );
+                this._contextMenu.dispose( );
+            
+                // recursively dispose all child panes
+                for ( var i = 0 ; i < this.children.length ; i++ ) {
+                    this.children.valueAt( i ).pane.dispose.fire( );
+                }
+            } );
         }
 
         get mouseCursor( ) : string {
@@ -300,8 +319,8 @@ module Webglimpse {
         get mouseExit( ) : Notification1<PointerEvent> { return this._mouseExit; }
         get contextMenu( ) : Notification1<PointerEvent> { return this._contextMenu; }
 
-        fireMouseUp( i : number, j : number, mouseEvent : MouseEvent ) : any {
-            return this._mouseUp.fire( { paneViewport: this._viewport.unmod, i: i, j: j, mouseEvent: mouseEvent } );
+        fireMouseUp( i : number, j : number, clickCount : number, mouseEvent : MouseEvent ) : any {
+            return this._mouseUp.fire( { paneViewport: this._viewport.unmod, i: i, j: j, clickCount: clickCount, mouseEvent: mouseEvent } );
         }
 
         fireMouseDown( i : number, j : number, clickCount : number, mouseEvent : MouseEvent ) : any {
@@ -326,6 +345,13 @@ module Webglimpse {
 
         fireContextMenu( i : number, j : number, mouseEvent : MouseEvent ) : any {
             return this._contextMenu.fire( { paneViewport: this._viewport.unmod, i: i, j: j, mouseEvent: mouseEvent } );
+        }
+        
+        // Disposal
+        //
+                
+        get dispose( ) : Notification {
+            return this._dispose;
         }
     }
 
@@ -420,6 +446,37 @@ module Webglimpse {
         var pendingExit : boolean = false;
 
 
+        // Button presses for mouse events are reported differently in different browsers:
+        // The results below are for the following browser versions:
+        // Chrome Version 40.0.2214.94 (64-bit)
+        // Firefox 35.0.1
+        // IE 11.0.9600.17501
+        //
+        // ‘mousemove’ event with left mouse button down:
+        //
+        //                        Chrome                Firefox                  IE
+        // MouseEvent.button      0                     0                        0
+        // MouseEvent.buttons     undefined             1                        1
+        // MouseEvent.which       1                     1                        1
+        //
+        //
+        //                        Chrome                Firefox                  IE
+        // MouseEvent.button      0                     0                        0
+        // MouseEvent.buttons     undefined             0                        0
+        // MouseEvent.which       0                     1                        1
+        //
+        //
+        // For more info see: http://stackoverflow.com/questions/3944122/detect-left-mouse-button-press
+        //
+        function isLeftMouseDown( ev : MouseEvent ) {
+            if ( ev.buttons !== undefined ) {
+                return ev.buttons === 1;
+            }
+            else {
+                return ev.which === 1;
+            }
+        }
+
         function refreshMouseCursor( ) {
             var newMouseCursor = null;
             for ( var n = 0; n < currentPanes.length; n++ ) {
@@ -439,7 +496,7 @@ module Webglimpse {
 
 
         element.addEventListener( 'mousedown', function( ev : MouseEvent ) {
-            if ( ev.button === 0 ) {
+            if ( isLeftMouseDown( ev ) ) {
                 var press_PMILLIS = ( new Date( ) ).getTime( );
                 var i = iMouse( element, ev );
                 var j = jMouse( element, ev );
@@ -530,34 +587,78 @@ module Webglimpse {
             }
         } );
 
+        var endDrag = function( ev : MouseEvent ) {
+            var i = iMouse( element, ev );
+            var j = jMouse( element, ev );
+            
+            for ( var n = 0; n < currentPanes.length; n++ ) {
+                currentPanes[ n ].fireMouseUp( i, j, clickCount, ev );
+            }
+            
+            dragging = false;
+
+            if ( pendingExit ) {
+                detectEntersAndExits( currentPanes, [], i, j, ev );
+                currentPanes = [];
+                pendingExit = false;
+                refreshMouseCursor( );
+            }
+            else {
+                var newPanes = contentPane.panesAt( i, j );
+                detectEntersAndExits( currentPanes, newPanes, i, j, ev );
+                currentPanes = newPanes;
+                for ( var n = 0; n < currentPanes.length; n++ ) {
+                    currentPanes[ n ].fireMouseMove( i, j, ev );
+                }
+                refreshMouseCursor( );
+            }
+        };
+
         // The window always gets the mouse-up event at the end of a drag -- even if it occurs outside the browser window
         window.addEventListener( 'mouseup', function( ev : MouseEvent ) {
-            if ( dragging && ev.button === 0 ) {
-                var i = iMouse( element, ev );
-                var j = jMouse( element, ev );
-
-                for ( var n = 0; n < currentPanes.length; n++ ) {
-                    currentPanes[ n ].fireMouseUp( i, j, ev );
-                }
-                dragging = false;
-
-                if ( pendingExit ) {
-                    detectEntersAndExits( currentPanes, [], i, j, ev );
-                    currentPanes = [];
-                    pendingExit = false;
-                    refreshMouseCursor( );
-                }
-                else {
-                    var newPanes = contentPane.panesAt( i, j );
-                    detectEntersAndExits( currentPanes, newPanes, i, j, ev );
-                    currentPanes = newPanes;
-                    for ( var n = 0; n < currentPanes.length; n++ ) {
-                        currentPanes[ n ].fireMouseMove( i, j, ev );
-                    }
-                    refreshMouseCursor( );
-                }
+            if ( dragging ) {
+                endDrag( ev );
             }
         } );
+
+        // We don't receive mouse events that happen over another iframe -- even during a drag. If we miss a mouseup that
+        // should terminate a drag, we end up stuck in dragging mode, which makes for a really lousy user experience. To
+        // avoid that, whenever the mouse moves, check whether the button is down. If we're still in dragging mode, but
+        // the button is now up, end the drag. 
+
+        // If we're dragging, and we see a mousemove with no buttons down, end the drag
+        var recentDrag : MouseEvent = null;
+        var handleMissedMouseUp = function( ev : MouseEvent ) {
+            if ( dragging ) {
+                if ( !isLeftMouseDown( ev ) && recentDrag ) {
+                    var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
+                    mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
+                    endDrag( mouseUp );
+                }
+                recentDrag = ev;
+            }
+        };
+        window.addEventListener( 'mousemove', handleMissedMouseUp );
+        var w = window;
+        while ( w.parent !== w ) {
+            try {
+                w.parent.addEventListener( 'mousemove', handleMissedMouseUp );
+                w = w.parent;
+            }
+            catch ( e ) {
+                // Cross-origin security may prevent us from adding a listener to a window other than our own -- in that case,
+                // the least bad option is to terminate drags on exit from the highest accessible window
+                w.addEventListener( 'mouseout', function( ev : MouseEvent ) {
+                    if ( dragging ) {
+                        var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
+                        mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, ev.screenX, ev.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, 0, null );
+                        endDrag( mouseUp );
+                    }
+                } );
+                break;
+            }
+        }
+
 
         // Firefox uses event type 'DOMMouseScroll' for mouse-wheel events; everybody else uses 'mousewheel'
         var handleMouseWheel = function( ev : MouseWheelEvent ) {

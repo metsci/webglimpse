@@ -47,8 +47,13 @@ module Webglimpse {
 
     export interface TimelineTimeseriesFragment {
         fragmentGuid : string;
-        data : number[];
-        times_ISO8601 : string[];
+        data? : number[];
+        times_ISO8601? : string[];
+        
+        // undefined : user cannot adjust data points
+        // 'y'       : user can adjust y value of points, but not time value
+        // 'xy       : user can adjust both x (time) and y value of points
+        userEditMode? : string;
     }
 
 
@@ -70,6 +75,7 @@ module Webglimpse {
     export interface TimelineRow {
         rowGuid : string;
         label : string;
+        hidden? : boolean;
         yMin? : number;
         yMax? : number;
         uiHint? : string;
@@ -81,6 +87,7 @@ module Webglimpse {
     export interface TimelineGroup {
         groupGuid : string;
         label : string;
+        hidden? : boolean;
         collapsed? : boolean;
         rowGuids : string[];
     }
@@ -136,6 +143,7 @@ module Webglimpse {
             this._pointColor = ( hasval( timeseries.pointColor ) ? parseCssColor( timeseries.pointColor ) : null );
             this._lineThickness = timeseries.lineThickness;
             this._pointSize = timeseries.pointSize;
+            this._fragmentGuids = new OrderedStringSet( timeseries.fragmentGuids || [] );
             this._attrsChanged.fire( );
         }
 
@@ -204,9 +212,16 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-
+        
         get fragmentGuids( ) : OrderedStringSet {
             return this._fragmentGuids;
+        }
+        
+        set fragmentGuids( fragmentGuids : OrderedStringSet ) {
+            if ( fragmentGuids !== this._fragmentGuids ) {
+                this._fragmentGuids = fragmentGuids;
+                this._attrsChanged.fire( );
+            }
         }
 
         snapshot( ) : TimelineTimeseries {
@@ -226,13 +241,18 @@ module Webglimpse {
 
     export class TimelineTimeseriesFragmentModel {
         private _fragmentGuid : string;
+        // notification provides the start and end indexes of the modified range
+        // start index is inclusive, end index is exclusive 
+        private _dataChanged : Notification2<number,number>;
         private _attrsChanged : Notification;
+        private _userEditMode : string;
         private _data : number[];
         private _times_PMILLIS : number[];
 
         constructor( fragment : TimelineTimeseriesFragment ) {
             this._fragmentGuid = fragment.fragmentGuid;
             this._attrsChanged = new Notification( );
+            this._dataChanged = new Notification2<number,number>( );
             this.setAttrs( fragment );
         }
 
@@ -240,13 +260,15 @@ module Webglimpse {
             return this._fragmentGuid;
         }
 
-        get attrsChanged( ) : Notification {
-            return this._attrsChanged;
+        get dataChanged( ) : Notification2<number,number> {
+            return this._dataChanged;
         }
 
         setAttrs( fragment : TimelineTimeseriesFragment ) {
-            this._times_PMILLIS = fragment.times_ISO8601.map( parseTime_PMILLIS );
-            this._data = fragment.data.slice( );
+            this._userEditMode = fragment.userEditMode;
+            this._times_PMILLIS = hasval( fragment.times_ISO8601 ) ? fragment.times_ISO8601.map( parseTime_PMILLIS ) : [];
+            this._data = hasval( fragment.data ) ? fragment.data.slice( ) : [];
+            this._dataChanged.fire( 0, this._data.length );
             this._attrsChanged.fire( );
         }
 
@@ -255,10 +277,71 @@ module Webglimpse {
         }
 
         set data( data : number[] ) {
-            this._data = data;
-            // XXX: Fire notification ... separate data notification, maybe
+            if ( data !== this._data ) {
+                this._data = data;
+                this._dataChanged.fire( 0, this._data.length );
+            }
         }
 
+        get times_PMILLIS( ) : number[] {
+            return this._times_PMILLIS;
+        }
+
+        // Time should only be modified in a way which keeps the _times_PMILLIS
+        // array sorted. This is currently not enforced by the model.
+        set times_PMILLIS( times_PMILLIS : number[] ) {
+            if ( times_PMILLIS !== this._times_PMILLIS ) {
+                this._times_PMILLIS = times_PMILLIS;
+                this._dataChanged.fire( 0, this._data.length );
+            }
+        }
+        
+        // Time should only be modified in a way which keeps the _times_PMILLIS
+        // array sorted. This is currently not enforced by the model.
+        setAllData( data : number[], times_PMILLIS : number[] ) {
+            if ( data !== this._data || times_PMILLIS !== this._times_PMILLIS ) {
+                this._data = data;
+                this._times_PMILLIS = times_PMILLIS;
+                this._dataChanged.fire( 0, this._data.length );
+            }
+        }
+        
+        // Handles adjusting the _times_PMILLIS and _data arrays if the new time
+        // requires them to be rearranged to stay in time order. Returns the new
+        // index assigned to the data point.
+        setData( index : number, value : number, time? : number ) : number {
+            if ( this._data[index] !== value || ( hasval( time ) && this._times_PMILLIS[index] !== time ) ) {
+                if ( hasval( time ) ) {
+                    // the new time value would maintain the sorted order of the array
+                    if ( ( index === 0 || time > this._times_PMILLIS[index-1] ) &&
+                         ( index === this._times_PMILLIS.length-1 || time < this._times_PMILLIS[index+1] ) ) {
+                        this._times_PMILLIS[index] = time;
+                        this._data[index] = value;
+                        this._dataChanged.fire( index, index+1 );
+                    }
+                    else {
+                        // remove the current point at index
+                        this._times_PMILLIS.splice( index, 1 );
+                        this._data.splice( index, 1 );
+                        
+                        // find the index to reinsert new data at
+                        index = indexOf( this._times_PMILLIS, time );
+                        if ( index < 0 ) index = -index-1;
+                        
+                        this._times_PMILLIS.splice( index, 0, time );
+                        this._data.splice( index, 0, value );
+                        this._dataChanged.fire( index, index+1 );
+                    }
+                }
+                else {
+                    this._data[index] = value;
+                    this._dataChanged.fire( index, index+1 );
+                }
+            }
+            
+            return index;
+        }
+        
         get start_PMILLIS( ) : number {
             return this._times_PMILLIS[ 0 ];
         }
@@ -266,18 +349,21 @@ module Webglimpse {
         get end_PMILLIS( ) : number {
             return this._times_PMILLIS.slice( -1 )[ 0 ];
         }
-
-        get times_PMILLIS( ) : number[] {
-            return this._times_PMILLIS;
+        
+        get userEditMode( ) : string {
+            return this._userEditMode;
         }
 
-        set times_PMILLIS( _times_PMILLIS : number[] ) {
-            this._times_PMILLIS = _times_PMILLIS;
-            // XXX: Fire notification ... separate data notification, maybe
+        set userEditMode( userEditMode : string ) {
+            if ( userEditMode !== this._userEditMode ) {
+                this._userEditMode = userEditMode;
+                this._attrsChanged.fire( );
+            }
         }
 
         snapshot( ) : TimelineTimeseriesFragment {
             return {
+                userEditMode: this._userEditMode,
                 fragmentGuid: this._fragmentGuid,
                 data: this._data.slice( ),
                 times_ISO8601: this._times_PMILLIS.map( formatTime_ISO8601 )
@@ -383,8 +469,22 @@ module Webglimpse {
             return this._userEditable;
         }
 
+        set userEditable( userEditable : boolean ) {
+            if ( userEditable !== this._userEditable ) {
+                this._userEditable = userEditable;
+                this._attrsChanged.fire( );
+            }
+        }
+
         get styleGuid( ) : string {
             return this._styleGuid;
+        }
+        
+        set styleGuid( styleGuid : string ) {
+            if ( styleGuid !== this._styleGuid ) {
+                this._styleGuid = styleGuid;
+                this._attrsChanged.fire( );
+            }
         }
 
         get fgColor( ) : Color {
@@ -440,6 +540,7 @@ module Webglimpse {
     export class TimelineRowModel {
         private _rowGuid : string;
         private _attrsChanged : Notification;
+        private _hidden : boolean;
         private _label : string;
         private _uiHint : string;
         private _eventGuids : OrderedStringSet;
@@ -471,6 +572,16 @@ module Webglimpse {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
             this._label = row.label;
             this._uiHint = row.uiHint;
+            this._hidden = row.hidden;
+            this._attrsChanged.fire( );
+        }
+        
+        get hidden( ) : boolean {
+            return this._hidden;
+        }
+        
+        set hidden( hidden : boolean ) {
+            this._hidden = hidden;
             this._attrsChanged.fire( );
         }
         
@@ -517,6 +628,7 @@ module Webglimpse {
             return {
                 rowGuid: this._rowGuid,
                 label: this._label,
+                hidden: this._hidden,
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
@@ -528,6 +640,7 @@ module Webglimpse {
     export class TimelineGroupModel {
         private _groupGuid : string;
         private _attrsChanged : Notification;
+        private _hidden : boolean;
         private _label : string;
         private _collapsed : boolean;
         private _rowGuids : OrderedStringSet;
@@ -549,8 +662,18 @@ module Webglimpse {
 
         setAttrs( group : TimelineGroup ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
+            this._attrsChanged.fire( );
+        }
+        
+        get hidden( ) : boolean {
+            return this._hidden;
+        }
+        
+        set hidden( hidden : boolean ) {
+            this._hidden = hidden;
             this._attrsChanged.fire( );
         }
 
@@ -584,6 +707,7 @@ module Webglimpse {
             return {
                 groupGuid: this._groupGuid,
                 label: this._label,
+                hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),
                 rowGuids: this._rowGuids.toArray( )
             };
