@@ -690,9 +690,6 @@ module Webglimpse {
         var addGroup = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
 
-            // if the group is currently hidden, don't add it
-            if ( hasval( group.hidden ) && group.hidden ) return;
-            
             var groupLabel = new Label( font, groupLabelColor, group.label );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
@@ -721,9 +718,8 @@ module Webglimpse {
             groupHeaderPane.addPane( groupHeaderUnderlay, true );
             groupHeaderPane.addPane( newInsetPane( groupHeaderOverlay, groupHeaderOverlayInsets, null, false ), false );
 
-
             var groupContentPane = new Pane( newRowLayout( ) );
-
+            
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
                 var shift = ( isNumber( layoutArg ) && layoutArg >= 2*groupIndex );
                 return ( shift ? layoutArg + 2 : layoutArg );
@@ -734,11 +730,6 @@ module Webglimpse {
             groupContentPanes[ groupGuid ] = groupContentPane;
 
             var groupAttrsChanged = function( ) {
-                // If the group is currently hidden, ignore notification
-                // Note: when the group is hidden its Pane is disposed and this listener is unregistered
-                //       but this listener will still see the attrsChanged event caused by hiding the group
-                if ( hasval( group.hidden ) && group.hidden ) return;
-                
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
@@ -750,7 +741,12 @@ module Webglimpse {
             groupButton.mouseDown.on( function( ) {
                 group.collapsed = !group.collapsed;
             } );
-
+            
+            // Handle hidden property
+            //
+            
+            timelineContentPane.layoutOptions( groupContentPane ).hide = group.hidden;
+            timelineContentPane.layoutOptions( groupHeaderPane ).hide = group.hidden;
 
             // Row panes
             //
@@ -769,9 +765,6 @@ module Webglimpse {
                 var row = model.row( rowGuid );
                 var rowUi = ui.rowUi( rowGuid );
                 
-                // if the row is currently hidden, don't add it
-                if ( hasval( row.hidden ) && row.hidden ) return;
-
                 var rowLabel = new Label( font, rowLabelColor, row.label );
                 var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
                 rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
@@ -839,6 +832,11 @@ module Webglimpse {
                 } );
                 groupContentPane.addPane( rowPane, rowIndex );
                 rowPanes[ rowGuid ] = rowPane;
+                
+                            
+                // Handle hidden property
+                //
+                groupContentPane.layoutOptions( rowPane ).hide = row.hidden;
 
                 drawable.redraw( );
                 
@@ -889,13 +887,9 @@ module Webglimpse {
             var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
                 var row = model.row( rowGuid );
                 var attrsChangedListener = function( ) {
-                    if ( hasval( row.hidden ) ) {
-                        if ( !row.hidden && !hasval( rowPanes[rowGuid] ) ) {
-                            addRow( rowGuid, rowIndex );
-                        }
-                        else if ( row.hidden && hasval( rowPanes[rowGuid] ) ) {
-                            removeRow( rowGuid, rowIndex );
-                        }
+                    if ( hasval( row.hidden && hasval( rowPanes[rowGuid] ) ) ) {
+                        groupContentPane.layoutOptions( rowPanes[rowGuid] ).hide = row.hidden;
+                        drawable.redraw( );
                     }
                 };
                 attrsChangedListeners[ rowGuid ] = attrsChangedListener;
@@ -972,13 +966,11 @@ module Webglimpse {
         var attachGroupAttrsChangedListener = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
             var groupAttrsChangedListener = function( ) {
-                if ( hasval( group.hidden ) ) {
-                    if ( !group.hidden && !hasval( groupContentPanes[groupGuid] ) ) {
-                        addGroup( groupGuid, groupIndex );
-                    }
-                    else if ( group.hidden && hasval( groupContentPanes[groupGuid] ) ) {
-                        removeGroup( groupGuid, groupIndex );
-                    }
+                if ( hasval( group.hidden ) && hasval( groupContentPanes[groupGuid] ) ) {
+                    
+                    timelineContentPane.layoutOptions( groupContentPanes[groupGuid] ).hide = group.hidden;
+                    timelineContentPane.layoutOptions( groupHeaderPanes[groupGuid] ).hide = group.hidden;
+                    drawable.redraw( );
                 }
             };
             groupAttrsChangedListeners[ groupGuid ] = groupAttrsChangedListener;
