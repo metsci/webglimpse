@@ -17,3 +17,6 @@ Webglimpse is written in [Typescript](http://www.typescriptlang.org/), an open-s
 Webglimpse can be used as if it were a pure Javascript library – you don’t have to know anything about Typescript unless you want to.
 
 
+## Demo
+
+[http://glimpse.metsci.com/webglimpse/1.5.1/examples/timeline/](http://glimpse.metsci.com/webglimpse/1.5.1/examples/timeline/)
