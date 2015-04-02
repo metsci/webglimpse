@@ -42,13 +42,11 @@ module Webglimpse {
     }
     
     export interface TimelineTimeseriesRowPaneOptions {
-        rowHeight? : number;
-        rowTopPadding? : number;
+        rowHeight?        : number;
+        rowTopPadding?    : number;
         rowBottomPadding? : number;
-        tickLabeler? : TickLabeler;
-        tickSpacing? : number;
-        tickSize? : number;
-        axisLabel?: string;
+        axisOptions?      : EdgeAxisPainterOptions;
+        axisWidth?        : number
         painterFactories? : TimelineTimeseriesPainterFactory[];
     }
     
@@ -58,12 +56,9 @@ module Webglimpse {
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
             var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
-            var tickLabeler         = ( hasval( rowOptions ) && hasval( rowOptions.tickLabeler ) ? rowOptions.tickLabeler : undefined );
-            var axisLabel           = ( hasval( rowOptions ) && hasval( rowOptions.axisLabel ) ? rowOptions.axisLabel : '' );
-            var showAxisLabel       = ( hasval( axisLabel ) && axisLabel !== '' );
-            var tickSize            = ( hasval( rowOptions ) && hasval( rowOptions.tickSize ) ? rowOptions.tickSize : 5 );
-            var tickSpacing         = ( hasval( rowOptions ) && hasval( rowOptions.tickSpacing ) ? rowOptions.tickSpacing : 34 );
+            var axisWidth           = ( hasval( rowOptions ) && hasval( rowOptions.axisWidth ) ? rowOptions.axisWidth : 60 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
+            var axisOptions         = ( hasval( rowOptions ) && hasval( rowOptions.axisOptions ) ? rowOptions.axisOptions : {} );
             
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
@@ -73,9 +68,14 @@ module Webglimpse {
             var input = ui.input;
             var selection = ui.selection;
             
+            if ( !hasval( axisOptions.font ) ) axisOptions.font = timelineFont;
+            if ( !hasval( axisOptions.tickColor ) ) axisOptions.tickColor = timelineFgColor;
+            if ( !hasval( axisOptions.textColor ) ) axisOptions.textColor = timelineFgColor;
+            if ( !hasval( axisOptions.showLabel ) ) axisOptions.showLabel = true;
+            if ( !hasval( axisOptions.shortenLabels ) ) axisOptions.shortenLabels = false;
             
             // setup pane for data (y) axis painter and mouse listener
-            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, rowHeight ) } );
+            var yAxisPane = new Pane( { updatePrefSize: fixedSize( axisWidth, rowHeight ) } );
             dataAxis.limitsChanged.on( drawable.redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
@@ -93,7 +93,7 @@ module Webglimpse {
                 rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, selection, painterOptions ) );
             }
             
-            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { tickLabeler: tickLabeler, label: axisLabel, showLabel: showAxisLabel, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: tickSpacing, tickSize: tickSize, font: timelineFont } ) );
+            yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
             rowContentPane.addPane( yAxisPane, 0 );
             
             
