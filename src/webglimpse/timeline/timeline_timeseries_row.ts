@@ -45,6 +45,10 @@ module Webglimpse {
         rowHeight? : number;
         rowTopPadding? : number;
         rowBottomPadding? : number;
+        tickLabeler? : TickLabeler;
+        tickSpacing? : number;
+        tickSize? : number;
+        showAxisLabel?: boolean;
         painterFactories? : TimelineTimeseriesPainterFactory[];
     }
     
@@ -54,13 +58,17 @@ module Webglimpse {
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
             var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
+            var tickLabeler         = ( hasval( rowOptions ) && hasval( rowOptions.tickLabeler ) ? rowOptions.tickLabeler : undefined );
+            var showAxisLabel       = ( hasval( rowOptions ) && hasval( rowOptions.showAxisLabel ) ? rowOptions.showAxisLabel : false );
+            var tickSize            = ( hasval( rowOptions ) && hasval( rowOptions.tickSize ) ? rowOptions.tickSize : 5 );
+            var tickSpacing         = ( hasval( rowOptions ) && hasval( rowOptions.tickSpacing ) ? rowOptions.tickSpacing : 34 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
             
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
-            
+
             var input = ui.input;
             var selection = ui.selection;
             
@@ -84,7 +92,7 @@ module Webglimpse {
                 rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, selection, painterOptions ) );
             }
             
-            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { showLabel: false, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: 34, tickSize: 5, font: timelineFont } ) );
+            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { tickLabeler: tickLabeler, showLabel: showAxisLabel, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: tickSpacing, tickSize: tickSize, font: timelineFont } ) );
             rowContentPane.addPane( yAxisPane, 0 );
             
             

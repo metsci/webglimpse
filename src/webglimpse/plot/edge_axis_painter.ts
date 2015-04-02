@@ -73,6 +73,18 @@ module Webglimpse {
         '  }                                                                                '
     );
 
+    // provides a custom labeler for axis tick marks
+    //
+    // value        : the tick value to create a label string for
+    // axis         : the axis associated with the tick value
+    // tickInterval : the requested spacing in pixels between ticks
+    // precision    : number of decimal points which should be used for tick labels
+    // orderAxis    : order( Math.abs( axis.vSize ) ) then rounded to nearest multiple of three (-3, 0, 3, 6...)
+    // orderFactor  : Math.pow( 10, -orderAxis )
+    export interface TickLabeler {
+        ( value : number, axis : Axis1D, tickInterval : number, orderAxis : number, orderFactor : number, precision : number ): string;
+    }
+    
 
     export interface EdgeAxisPainterOptions {
         tickSpacing? : number;
@@ -85,6 +97,7 @@ module Webglimpse {
         showLabel?   : boolean;
         showBorder?  : boolean;
         gradientFill?: Gradient;
+        tickLabeler? : TickLabeler;
     }
 
 
@@ -99,6 +112,7 @@ module Webglimpse {
         var showLabel     = ( hasval( options ) && hasval( options.showLabel     ) ? options.showLabel     : true  );
         var showBorder    = ( hasval( options ) && hasval( options.showBorder    ) ? options.showBorder    : false );
         var gradientFill  = ( hasval( options ) && hasval( options.gradientFill  ) ? options.gradientFill  : undefined );
+        var tickLabeler   = ( hasval( options ) && hasval( options.tickLabeler   ) ? options.tickLabeler   : undefined );
         
         var tickPositions = new Float32Array( 0 );
 
@@ -288,7 +302,10 @@ module Webglimpse {
                 if ( vFrac < 0 || vFrac >= 1 ) continue;
 
                 var tickLabel;
-                if ( showLabel ) {
+                if ( tickLabeler ) {
+                    tickLabel = tickLabeler( v, axis, tickInterval, orderAxis, orderFactor, precision );
+                }
+                else if ( showLabel ) {
                     tickLabel = Number( v * orderFactor ).toFixed( precision );
                 }
                 else {
