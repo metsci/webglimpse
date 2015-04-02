@@ -48,7 +48,7 @@ module Webglimpse {
         tickLabeler? : TickLabeler;
         tickSpacing? : number;
         tickSize? : number;
-        showAxisLabel?: boolean;
+        axisLabel?: string;
         painterFactories? : TimelineTimeseriesPainterFactory[];
     }
     
@@ -59,7 +59,8 @@ module Webglimpse {
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
             var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
             var tickLabeler         = ( hasval( rowOptions ) && hasval( rowOptions.tickLabeler ) ? rowOptions.tickLabeler : undefined );
-            var showAxisLabel       = ( hasval( rowOptions ) && hasval( rowOptions.showAxisLabel ) ? rowOptions.showAxisLabel : false );
+            var axisLabel           = ( hasval( rowOptions ) && hasval( rowOptions.axisLabel ) ? rowOptions.axisLabel : '' );
+            var showAxisLabel       = ( hasval( axisLabel ) && axisLabel !== '' );
             var tickSize            = ( hasval( rowOptions ) && hasval( rowOptions.tickSize ) ? rowOptions.tickSize : 5 );
             var tickSpacing         = ( hasval( rowOptions ) && hasval( rowOptions.tickSpacing ) ? rowOptions.tickSpacing : 34 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
@@ -92,7 +93,7 @@ module Webglimpse {
                 rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, selection, painterOptions ) );
             }
             
-            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { tickLabeler: tickLabeler, showLabel: showAxisLabel, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: tickSpacing, tickSize: tickSize, font: timelineFont } ) );
+            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { tickLabeler: tickLabeler, label: axisLabel, showLabel: showAxisLabel, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: tickSpacing, tickSize: tickSize, font: timelineFont } ) );
             rowContentPane.addPane( yAxisPane, 0 );
             
             
