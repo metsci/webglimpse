@@ -71,7 +71,8 @@ module Webglimpse {
             model.rows.valueRemoved.on( removeRowUi );
 
             this._eventStyles = new OrderedSet<TimelineEventStyleUi>( [], (s)=>s.styleGuid );
-
+            this._annotationStyles = new OrderedSet<TimelineAnnotationStyleUi>( [], (s)=>s.styleGuid );
+            
             this._millisPerPx = new SimpleModel<number>( 1000 );
 
             this._imageStatus = {};
@@ -115,6 +116,14 @@ module Webglimpse {
 
         eventStyle( styleGuid : string ) : TimelineEventStyleUi {
             return ( ( hasval( styleGuid ) && this._eventStyles.valueFor( styleGuid ) ) || timelineEventStyle_DEFAULT );
+        }
+        
+        get annotationStyles( ) : OrderedSet<TimelineAnnotationStyleUi> {
+            return this._annotationStyles;
+        }
+
+        annotationStyle( styleGuid : string ) : TimelineAnnotationStyleUi {
+            return ( ( hasval( styleGuid ) && this._annotationStyles.valueFor( styleGuid ) ) || timelineAnnotationStyle_DEFAULT );
         }
 
         get millisPerPx( ) : SimpleModel<number> {
@@ -188,6 +197,13 @@ module Webglimpse {
         }
     }
 
+
+    var timelineAnnotationStyle_DEFAULT = new TimelineAnnotationStyleUi( {
+        styleGuid: 'DEFAULT',
+        color: 'white',
+        font: defaultFont,
+        icons: []
+    } );
 
 
     var timelineEventStyle_DEFAULT = new TimelineEventStyleUi( {

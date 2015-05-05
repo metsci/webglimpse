@@ -28,6 +28,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 module Webglimpse {
+    
+    
+    export interface TimelineAnnotation {
+        annotationGuid : string;
+        // time (x axis position) of annotation
+        time_ISO8601 : string;
+        // y axis position of annotion
+        y : number;
+        label : string;
+        styleGuid : string;
+    }
+    
 
     export interface TimelineTimeseries {
         timeseriesGuid : string;
@@ -81,6 +93,7 @@ module Webglimpse {
         uiHint? : string;
         eventGuids? : string[];
         timeseriesGuids? : string[];
+        annotationGuids? : string[];
     }
 
 
@@ -99,6 +112,7 @@ module Webglimpse {
 
 
     export interface Timeline {
+        annotations : TimelineAnnotation[];
         timeseriesFragments : TimelineTimeseriesFragment[];
         timeseries : TimelineTimeseries[];
         events : TimelineEvent[];
@@ -107,6 +121,101 @@ module Webglimpse {
         root : TimelineRoot;
     }
 
+    
+    export class TimelineAnnotationModel {
+        private _annotationGuid : string;
+        private _attrsChanged : Notification;
+        private _time_PMILLIS : number;
+        private _y : number;
+        private _label : string;
+        private _styleGuid : string;
+        
+        constructor( annotation : TimelineAnnotation ) {
+            this._annotationGuid = annotation.annotationGuid;
+            this._attrsChanged = new Notification( );
+            this.setAttrs( annotation );
+        }
+        
+        get annotationGuid( ) : string {
+            return this._annotationGuid;
+        }
+
+        get attrsChanged( ) : Notification {
+            return this._attrsChanged;
+        }
+        
+        setLocation( time_PMILLIS : number, y : number ) {
+            if ( time_PMILLIS !== this._time_PMILLIS || y !== this.y ) {
+                this._y = y;
+                this._time_PMILLIS = time_PMILLIS;
+                this._attrsChanged.fire( );
+
+            }
+        }
+        
+        get time_PMILLIS( ) : number {
+            return this._time_PMILLIS;
+        }
+        
+        set time_PMILLIS( time_PMILLIS : number ) {
+            if ( time_PMILLIS !== this._time_PMILLIS ) {
+                this._time_PMILLIS = time_PMILLIS;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get y( ) : number {
+            return this._y;
+        }
+        
+        set y( y : number ) {
+            if ( y !== this.y ) {
+                this._y = y;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get label( ) : string {
+            return this._label;
+        }
+        
+        set label( label : string ) {
+            if ( label !== this.label ) {
+                this._label = label;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get styleGuid( ) : string {
+            return this._styleGuid;
+        }
+        
+        set styleGuid( styleGuid : string ) {
+            if ( styleGuid !== this.styleGuid ) {
+                this._styleGuid = styleGuid;
+                this._attrsChanged.fire( );
+            }
+        }
+
+        setAttrs( annotation : TimelineAnnotation ) {
+            // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._time_PMILLIS = parseTime_PMILLIS( annotation.time_ISO8601 );
+            this._y = annotation.y;
+            this._label = annotation.label;
+            this._styleGuid = annotation.styleGuid;
+            this._attrsChanged.fire( );
+        }
+        
+        snapshot( ) : TimelineAnnotation {
+            return {
+                annotationGuid: this._annotationGuid,
+                label: this._label,
+                styleGuid: this._styleGuid,
+                time_ISO8601 : formatTime_ISO8601( this._time_PMILLIS ),
+                y: this._y,
+            };
+        }
+    }
 
 
     export class TimelineTimeseriesModel {
@@ -545,6 +654,7 @@ module Webglimpse {
         private _uiHint : string;
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
+        private _annotationGuids : OrderedStringSet;
         private _dataAxis : Axis1D;
 
         constructor( row : TimelineRow ) {
@@ -558,6 +668,7 @@ module Webglimpse {
             this.setAttrs( row );
             this._eventGuids = new OrderedStringSet( row.eventGuids || [] );
             this._timeseriesGuids = new OrderedStringSet( row.timeseriesGuids || [] );
+            this._annotationGuids = new OrderedStringSet( row.annotationGuids || [] );
         }
 
         get rowGuid( ) : string {
@@ -623,6 +734,10 @@ module Webglimpse {
         get timeseriesGuids( ) : OrderedStringSet {
             return this._timeseriesGuids;
         }
+        
+        get annotationGuids( ) : OrderedStringSet {
+            return this._annotationGuids;
+        }
 
         snapshot( ) : TimelineRow {
             return {
@@ -632,6 +747,7 @@ module Webglimpse {
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
+                annotationGuids: this._annotationGuids.toArray( ),
             };
         }
     }
@@ -748,6 +864,7 @@ module Webglimpse {
 
 
     export interface TimelineMergeStrategy {
+        updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation );
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment );
         updateTimeseriesModel( timeseriesModel : TimelineTimeseriesModel, newTimeseries : TimelineTimeseries );
         updateEventModel( eventModel : TimelineEventModel, newEvent : TimelineEvent );
@@ -758,6 +875,7 @@ module Webglimpse {
 
 
     export class TimelineModel {
+        private _annotations : OrderedSet<TimelineAnnotationModel>;
         private _timeseriesFragments : OrderedSet<TimelineTimeseriesFragmentModel>;
         private _timeseries : OrderedSet<TimelineTimeseriesModel>;
         private _events : OrderedSet<TimelineEventModel>;
@@ -767,6 +885,12 @@ module Webglimpse {
 
         constructor( timeline? : Timeline ) {
         
+            var annotations = ( hasval( timeline ) && hasval( timeline.annotations ) ? timeline.annotations : [] );
+            this._annotations = new OrderedSet<TimelineAnnotationModel>( [], (g)=>g.annotationGuid );
+            for ( var n = 0; n < annotations.length; n++ ) {
+                this._annotations.add( new TimelineAnnotationModel( annotations[ n ] ) );
+            }
+            
             var timeseriesFragments = ( hasval( timeline ) && hasval( timeline.timeseriesFragments ) ? timeline.timeseriesFragments : [] );
             this._timeseriesFragments = new OrderedSet<TimelineTimeseriesFragmentModel>( [], (e)=>e.fragmentGuid );
             for ( var n = 0; n < timeseriesFragments.length; n++ ) {
@@ -801,6 +925,7 @@ module Webglimpse {
             this._root = new TimelineRootModel( root );
         }
         
+        get annotations( ) : OrderedSet<TimelineAnnotationModel> { return this._annotations; }
         get timeseriesFragments( ) : OrderedSet<TimelineTimeseriesFragmentModel> { return this._timeseriesFragments; }
         get timeseriesSets( ) : OrderedSet<TimelineTimeseriesModel> { return this._timeseries; }
         get events( ) : OrderedSet<TimelineEventModel> { return this._events; }
@@ -808,6 +933,7 @@ module Webglimpse {
         get groups( ) : OrderedSet<TimelineGroupModel> { return this._groups; }
         get root( ) : TimelineRootModel { return this._root; }
 
+        annotation( annotationGuid : string ) : TimelineAnnotationModel { return this._annotations.valueFor( annotationGuid ); }
         timeseriesFragment( fragmentGuid : string ) : TimelineTimeseriesFragmentModel { return this._timeseriesFragments.valueFor( fragmentGuid ); }
         timeseries( timeseriesGuid : string ) : TimelineTimeseriesModel { return this._timeseries.valueFor( timeseriesGuid ); }
         event( eventGuid : string ) : TimelineEventModel { return this._events.valueFor( eventGuid ); }
@@ -885,8 +1011,31 @@ module Webglimpse {
             }
             this._timeseriesFragments.retainIds( retainedTimeseriesFragmentGuids );
             
+            var freshAnnotations = newTimeline.annotations;
+            var retainedAnnotationGuids : string[] = [];
+            for ( var n = 0; n < freshAnnotations.length; n++ ) {
+                var freshAnnotation = freshAnnotations[ n ];
+                var annotationGuid = freshAnnotation.annotationGuid;
+                var oldAnnotation = this._annotations.valueFor( annotationGuid );
+                if ( hasval( oldAnnotation ) ) {
+                    retainedAnnotationGuids.push( annotationGuid );
+                }
+            }
+            this._annotations.retainIds( retainedAnnotationGuids );
+            
             // Add new items
             //
+            
+            for ( var n = 0; n < freshAnnotations.length; n++ ) {
+                var freshAnnotation = freshAnnotations[ n ];
+                var oldAnnotation = this._annotations.valueFor( freshAnnotation.annotationGuid );
+                if ( hasval( oldAnnotation ) ) {
+                    oldAnnotation.setAttrs( freshAnnotation );
+                }
+                else {
+                    this._annotations.add( new TimelineAnnotationModel( freshAnnotation ) );
+                }
+            }
             
             for ( var n = 0; n < freshTimeseriesFragments.length; n++ ) {
                 var freshTimeseriesFragment = freshTimeseriesFragments[ n ];
@@ -951,6 +1100,18 @@ module Webglimpse {
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
         
+            var newAnnotations = hasval( newData.annotations ) ? newData.annotations : [];
+            for ( var n = 0; n < newAnnotations.length; n++ ) {
+                var newAnnotation = newAnnotations[ n ];
+                var annotationModel = this._annotations.valueFor( newAnnotation.annotationGuid );
+                if ( hasval( annotationModel ) ) {
+                    strategy.updateAnnotationModel( annotationModel, newAnnotation );
+                }
+                else {
+                    this._annotations.add( new TimelineAnnotationModel( newAnnotation ) );
+                }
+            }
+            
             var newTimeseriesFragments = hasval( newData.timeseriesFragments ) ? newData.timeseriesFragments : [];
             for ( var n = 0; n < newTimeseriesFragments.length; n++ ) {
                 var newTimeseriesFragment = newTimeseriesFragments[ n ];
@@ -1017,6 +1178,7 @@ module Webglimpse {
 
         snapshot( ) : Timeline {
             return {
+                annotations : this._annotations.map( (e)=>e.snapshot() ),
                 timeseriesFragments : this._timeseriesFragments.map( (e)=>e.snapshot() ),
                 timeseries : this._timeseries.map( (e)=>e.snapshot() ),
                 events : this._events.map( (e)=>e.snapshot() ),
@@ -1036,6 +1198,11 @@ module Webglimpse {
 
 
     export var timelineMergeNewBeforeOld : TimelineMergeStrategy = {
+        
+        updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
+            annotationModel.setAttrs( newAnnotation );
+        },
+        
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment ) {
             timeseriesFragmentModel.setAttrs( newTimeseriesFragment );
         },
@@ -1067,6 +1234,11 @@ module Webglimpse {
 
 
     export var timelineMergeNewAfterOld : TimelineMergeStrategy = {
+        
+        updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
+            annotationModel.setAttrs( newAnnotation );
+        },
+        
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment ) {
             timeseriesFragmentModel.setAttrs( newTimeseriesFragment );
         },
@@ -1083,6 +1255,8 @@ module Webglimpse {
         updateRowModel: function( rowModel : TimelineRowModel, newRow : TimelineRow ) {
             rowModel.setAttrs( newRow );
             rowModel.eventGuids.addAll( newRow.eventGuids || [] );
+            rowModel.timeseriesGuids.addAll( newRow.timeseriesGuids || [] );
+            rowModel.annotationGuids.addAll( newRow.annotationGuids || [] );
         },
 
         updateGroupModel: function( groupModel : TimelineGroupModel, newGroup : TimelineGroup ) {

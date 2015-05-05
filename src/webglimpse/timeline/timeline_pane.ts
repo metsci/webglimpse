@@ -29,6 +29,7 @@
  */
 module Webglimpse {
 
+    export var defaultFont : string = '11px verdana,sans-serif';
 
     export class TimelinePane extends Pane {
         private _model : TimelineModel;
@@ -91,8 +92,8 @@ module Webglimpse {
     export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
 
         // Misc
-        var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var selectedIntervalMode = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
+        var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : defaultFont );
+        var selectedIntervalMode   = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
         var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
 

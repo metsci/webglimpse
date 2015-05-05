@@ -64,6 +64,7 @@
 
 
 //grunt-start
+/// <reference path="webglimpse/timeline/timeline_annotation_painter.ts" />
 /// <reference path="webglimpse/timeline/timeline_annotation_style.ts" />
 //grunt-end
 

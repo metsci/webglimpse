@@ -38,7 +38,7 @@ module Webglimpse {
     }
     
     export interface TimelineTimeseriesPainterFactory {
-        ( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, selection : TimelineSelectionModel, options : TimelineTimeseriesPainterOptions ) : Painter;
+        ( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi, options : TimelineTimeseriesPainterOptions ) : Painter;
     }
     
     export interface TimelineTimeseriesRowPaneOptions {
@@ -90,7 +90,7 @@ module Webglimpse {
             var painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, timelineThickness: 1, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding };
             for ( var n = 0; n < painterFactories.length; n++ ) {
                 var createPainter = painterFactories[ n ];
-                rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, selection, painterOptions ) );
+                rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, ui, painterOptions ) );
             }
             
             yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
@@ -353,8 +353,9 @@ module Webglimpse {
                     
     export function newTimeseriesPainterFactory( options? : TimelineTimeseriesPainterOptions ) : TimelineTimeseriesPainterFactory {
         // Painter Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, selection : TimelineSelectionModel ) : Painter {
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi ) : Painter {
             
+            var selection : TimelineSelectionModel = ui.selection;
             var defaultColor = hasval( options ) && hasval( options.timelineFgColor ) ? options.timelineFgColor : white;
             var defaultThickness = hasval( options ) && hasval( options.timelineThickness ) ? options.timelineThickness : 1;
             

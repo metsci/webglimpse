@@ -39,6 +39,8 @@ module Webglimpse {
 
     export interface TimelineAnnotationStyle {
         styleGuid : string;
+        color? : string;
+        font? : string;
         icons : TimelineAnnotationIcon[];
     }
     
@@ -82,18 +84,30 @@ module Webglimpse {
 
     export class TimelineAnnotationStyleUi {
         private _styleGuid : string;
+        private _color : string;
+        private _font : string;
         private _icons : TimelineAnnotationIconUi[];
 
         constructor( style : TimelineAnnotationStyle ) {
             this._styleGuid = style.styleGuid;
             this._setAttrs( style );
         }
+        
+        get color( ) : string {
+            return this._color;
+        }
 
+        get font( ) : string {
+            return this._font;
+        }
+        
         get styleGuid( ) : string {
             return this._styleGuid;
         }
 
         private _setAttrs( style : TimelineAnnotationStyle ) {
+            this._color = style.color;
+            this._font  = style.font;
             this._icons = style.icons.map( ( icon )=>{ return new TimelineAnnotationIconUi( icon ); } );
         }
 
@@ -108,6 +122,8 @@ module Webglimpse {
         snapshot( ) : TimelineAnnotationStyle {
             return {
                 styleGuid: this._styleGuid,
+                color: this._color,
+                font: this._font,
                 icons: this._icons.map( (ui)=>ui.snapshot() )
             };
         }
