@@ -1,5 +1,11 @@
 {
-
+    "annotations": [ {
+        "annotationGuid": "metsci.timelineExample.annotation01",
+        "time_ISO8601": "2014-01-01T01:00:00Z",
+        "y": 5,
+        "label": "Warning Level",
+        "styleGuid": "metsci.timelineExample.annotationStyle01"
+    } ],
     "events": [ {
         "eventGuid": "metsci.timelineExample.event01",
         "start_ISO8601": "2014-01-01T01:00:00Z",
@@ -124,6 +130,9 @@
         	"metsci.timelineExample.timeseries02",
         	"metsci.timelineExample.timeseries04",
         	"metsci.timelineExample.timeseries05"
+        ],
+        "annotationGuids": [
+            "metsci.timelineExample.annotation01"
         ]
     }, {
         "rowGuid": "metsci.timelineExample.row03b",

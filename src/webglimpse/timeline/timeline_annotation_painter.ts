@@ -42,12 +42,54 @@ module Webglimpse {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
                 
+                textTextures.resetTouches( );
+                textureRenderer.begin( gl, viewport );
+                
                 for ( var i = 0 ; i < rowModel.annotationGuids.length ; i++ ) {
                     var annotationGuid : string = rowModel.annotationGuids.valueAt(i);
                     var annotation : TimelineAnnotationModel = model.annotation( annotationGuid );
                     var annotationStyle : TimelineAnnotationStyleUi = ui.annotationStyle( annotation.styleGuid );
                     
+                    var font = hasval( annotationStyle.font ) ? annotationStyle.font : '11px verdana,sans-serif';
+                    var color = hasval( annotationStyle.color ) ? annotationStyle.color : white;
+                    
+                    var hTextOffset = hasval( annotationStyle.hTextOffset ) ? annotationStyle.hTextOffset : 0;
+                    var vTextOffset = hasval( annotationStyle.vTextOffset ) ? annotationStyle.vTextOffset : 0;
+                    
+                    var xFrac = timeAxis.tFrac( annotation.time_PMILLIS );
+                    var yFrac = dataAxis.vFrac( annotation.y );
+                    
+                    for ( var n = 0; n < annotationStyle.numIcons; n++ ) {
+                        var icon : TimelineAnnotationIcon = annotationStyle.icon( n );
+                        
+                        var xFracOffset = xFrac + ( hasval( icon.hOffset ) ? icon.hOffset : 0 ) / viewport.w;
+                        var yFracOffset = yFrac + ( hasval( icon.vOffset ) ? icon.vOffset : 0 ) / viewport.h;
+                        
+                        var iconTexture = ui.loadImage( icon.url, function( ) { drawable.redraw( ); } );
+                        if ( iconTexture ) {
+                            textureRenderer.draw( gl, iconTexture, xFracOffset, yFracOffset, { xAnchor: ( hasval( icon.hAlign ) ? icon.hAlign : 0.5 ),
+                                                                                               yAnchor: ( hasval( icon.hAlign ) ? icon.hAlign : 0.5 ),
+                                                                                               width: icon.displayWidth,
+                                                                                               height: icon.displayHeight,
+                                                                                               rotation_CCWRAD: 0 } );
+                        
+                            // draw the next icon forward by the width 
+                        }
+                    }
+                    
+                    if ( hasval( annotation.label ) ) {
+                        
+                        var xFracOffset = xFrac + hTextOffset / viewport.w;
+                        var yFracOffset = yFrac + vTextOffset / viewport.h;
+                        
+                        var textTexture = textTextures.value( font, color.rgbaString, annotation.label );
+                        textureRenderer.draw( gl, textTexture, xFracOffset, yFracOffset, { xAnchor: 0,
+                                                                                           yAnchor: textTexture.yAnchor( 0.5 ) } );
+                    }
                 }
+                
+                textureRenderer.end( gl );
+                textTextures.retainTouched( );
             };
         };
     }

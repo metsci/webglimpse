@@ -35,12 +35,16 @@ module Webglimpse {
         displayHeight : number; // vertical size of icon in pixels
         hAlign : number; // relative location of center pixel of icon (0=left side, 1=right side)
         vAlign : number; // relative location of center pixel of icon (0=left side, 1=right side)
+        hOffset : number; // center pixel offset in pixels
+        vOffset : number; // center pixel offset in pixels
     }
 
     export interface TimelineAnnotationStyle {
         styleGuid : string;
         color? : string;
         font? : string;
+        vTextOffset? : number;
+        hTextOffset? : number;
         icons : TimelineAnnotationIcon[];
     }
     
@@ -50,6 +54,8 @@ module Webglimpse {
         private _displayHeight : number;
         private _hAlign : number;
         private _vAlign : number;
+        private _hOffset : number;
+        private _vOffset : number;
 
         constructor( icon : TimelineAnnotationIcon ) {
             this._setAttrs( icon );
@@ -61,6 +67,8 @@ module Webglimpse {
             this._displayHeight = icon.displayHeight;
             this._hAlign = icon.hAlign;
             this._vAlign = icon.vAlign;
+            this._hOffset = icon.hOffset;
+            this._vOffset = icon.vOffset;
         }
 
         get url( ) : string { return this._url; }
@@ -68,14 +76,18 @@ module Webglimpse {
         get displayHeight( ) : number { return this._displayHeight; }
         get hAlign( ) : number { return this._hAlign; }
         get vAlign( ) : number { return this._vAlign; }
-
+        get hOffset( ) : number { return this._hOffset; }
+        get vOffset( ) : number { return this._vOffset; }
+        
         snapshot( ) : TimelineAnnotationIcon {
             return {
                 url: this._url,
                 displayWidth: this._displayWidth,
                 displayHeight: this._displayHeight,
                 hAlign: this._hAlign,
-                vAlign: this._vAlign
+                vAlign: this._vAlign,
+                hOffset: this._hOffset,
+                vOffset: this._vOffset
             };
         }
     }
@@ -84,8 +96,10 @@ module Webglimpse {
 
     export class TimelineAnnotationStyleUi {
         private _styleGuid : string;
-        private _color : string;
+        private _color : Color;
         private _font : string;
+        private _vTextOffset : number;
+        private _hTextOffset : number;
         private _icons : TimelineAnnotationIconUi[];
 
         constructor( style : TimelineAnnotationStyle ) {
@@ -93,21 +107,15 @@ module Webglimpse {
             this._setAttrs( style );
         }
         
-        get color( ) : string {
-            return this._color;
-        }
-
-        get font( ) : string {
-            return this._font;
-        }
-        
         get styleGuid( ) : string {
             return this._styleGuid;
         }
 
         private _setAttrs( style : TimelineAnnotationStyle ) {
-            this._color = style.color;
-            this._font  = style.font;
+            this._color = hasval( style.color ) ? parseCssColor( style.color ) : undefined;
+            this._font  = style.font ;
+            this._hTextOffset = style.hTextOffset;
+            this._vTextOffset = style.vTextOffset;
             this._icons = style.icons.map( ( icon )=>{ return new TimelineAnnotationIconUi( icon ); } );
         }
 
@@ -118,12 +126,30 @@ module Webglimpse {
         icon( index : number ) : TimelineAnnotationIconUi {
             return this._icons[ index ];
         }
+        
+        get color( ) : Color {
+            return this._color;
+        }
+
+        get font( ) : string {
+            return this._font;
+        }
+        
+        get hTextOffset( ) : number {
+            return this._hTextOffset;
+        }
+        
+        get vTextOffset( ) : number {
+            return this._vTextOffset;
+        }
 
         snapshot( ) : TimelineAnnotationStyle {
             return {
                 styleGuid: this._styleGuid,
-                color: this._color,
+                color: this._color.cssString,
                 font: this._font,
+                vTextOffset: this._hTextOffset,
+                hTextOffset: this._vTextOffset,
                 icons: this._icons.map( (ui)=>ui.snapshot() )
             };
         }

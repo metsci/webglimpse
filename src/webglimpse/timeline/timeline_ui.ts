@@ -201,7 +201,6 @@ module Webglimpse {
     var timelineAnnotationStyle_DEFAULT = new TimelineAnnotationStyleUi( {
         styleGuid: 'DEFAULT',
         color: 'white',
-        font: defaultFont,
         icons: []
     } );
 

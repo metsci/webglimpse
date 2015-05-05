@@ -32,5 +32,28 @@
             "hAlign": 0.5,
             "hPos": 0.5
         } ]
+    } ],
+    "annotationStyles": [ {
+        "styleGuid": "metsci.timelineExample.annotationStyle01",
+        "color": "white",
+        "vTextOffset": 0,
+        "hTextOffset": 10,
+        "icons": [ {
+            "url": "images/fugue/marker--exclamation.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "vAlign": 0.5,
+            "hOffset": 0,
+            "vOffset": 9
+        }, {
+            "url": "images/fugue/minus-shield.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "vAlign": 0.5,
+            "hOffset": 0,
+            "vOffset": -9
+        } ]
     } ]
 }
