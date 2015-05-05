@@ -37,6 +37,7 @@ module Webglimpse {
         private _groupUis : OrderedSet<TimelineGroupUi>;
         private _rowUis : OrderedSet<TimelineRowUi>;
         private _eventStyles : OrderedSet<TimelineEventStyleUi>;
+        private _annotationStyles : OrderedSet<TimelineAnnotationStyleUi>;
 
         private _millisPerPx : SimpleModel<number>;
 

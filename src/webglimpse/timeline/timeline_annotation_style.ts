@@ -29,67 +29,62 @@
  */
 module Webglimpse {
 
-
-    export interface TimelineEventIcon {
+    export interface TimelineAnnotationIcon {
         url : string;
-        displayWidth : number;  // horizontal size of icon in pixels
+        displayWidth : number; // horizontal size of icon in pixels
         displayHeight : number; // vertical size of icon in pixels
         hAlign : number; // relative location of center pixel of icon (0=left side, 1=right side)
-        hPos : number; // relative icon position along event bar (0=left side, 1=right side)
+        vAlign : number; // relative location of center pixel of icon (0=left side, 1=right side)
     }
 
-
-
-    export interface TimelineEventStyle {
+    export interface TimelineAnnotationStyle {
         styleGuid : string;
-        icons : TimelineEventIcon[];
+        icons : TimelineAnnotationIcon[];
     }
-
-
-
-    export class TimelineEventIconUi {
+    
+    export class TimelineAnnotationIconUi {
         private _url : string;
         private _displayWidth : number;
         private _displayHeight : number;
         private _hAlign : number;
-        private _hPos : number;
+        private _vAlign : number;
 
-        constructor( icon : TimelineEventIcon ) {
+        constructor( icon : TimelineAnnotationIcon ) {
             this._setAttrs( icon );
         }
 
-        private _setAttrs( icon : TimelineEventIcon ) {
+        private _setAttrs( icon : TimelineAnnotationIcon ) {
             this._url = icon.url;
             this._displayWidth = icon.displayWidth;
             this._displayHeight = icon.displayHeight;
             this._hAlign = icon.hAlign;
-            this._hPos = icon.hPos;
+            this._vAlign = icon.vAlign;
         }
 
         get url( ) : string { return this._url; }
         get displayWidth( ) : number { return this._displayWidth; }
         get displayHeight( ) : number { return this._displayHeight; }
         get hAlign( ) : number { return this._hAlign; }
-        get hPos( ) : number { return this._hPos; }
+        get vAlign( ) : number { return this._vAlign; }
 
-        snapshot( ) : TimelineEventIcon {
+        snapshot( ) : TimelineAnnotationIcon {
             return {
                 url: this._url,
                 displayWidth: this._displayWidth,
                 displayHeight: this._displayHeight,
                 hAlign: this._hAlign,
-                hPos: this._hPos
+                vAlign: this._vAlign
             };
         }
     }
 
 
 
-    export class TimelineEventStyleUi {
+    export class TimelineAnnotationStyleUi {
         private _styleGuid : string;
-        private _icons : TimelineEventIconUi[];
+        private _icons : TimelineAnnotationIconUi[];
 
-        constructor( style : TimelineEventStyle ) {
+        constructor( style : TimelineAnnotationStyle ) {
             this._styleGuid = style.styleGuid;
             this._setAttrs( style );
         }
@@ -98,26 +93,24 @@ module Webglimpse {
             return this._styleGuid;
         }
 
-        private _setAttrs( style : TimelineEventStyle ) {
-            this._icons = style.icons.map( ( icon )=>{ return new TimelineEventIconUi( icon ); } );
+        private _setAttrs( style : TimelineAnnotationStyle ) {
+            this._icons = style.icons.map( ( icon )=>{ return new TimelineAnnotationIconUi( icon ); } );
         }
 
         get numIcons( ) : number {
             return this._icons.length;
         }
 
-        icon( index : number ) : TimelineEventIconUi {
+        icon( index : number ) : TimelineAnnotationIconUi {
             return this._icons[ index ];
         }
 
-        snapshot( ) : TimelineEventStyle {
+        snapshot( ) : TimelineAnnotationStyle {
             return {
                 styleGuid: this._styleGuid,
                 icons: this._icons.map( (ui)=>ui.snapshot() )
             };
         }
     }
-
-
 
 }
