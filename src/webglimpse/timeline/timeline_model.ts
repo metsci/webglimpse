@@ -33,9 +33,9 @@ module Webglimpse {
     export interface TimelineAnnotation {
         annotationGuid : string;
         // time (x axis position) of annotation
-        time_ISO8601 : string;
+        time_ISO8601? : string;
         // y axis position of annotion
-        y : number;
+        y? : number;
         label : string;
         styleGuid : string;
     }
@@ -199,7 +199,7 @@ module Webglimpse {
 
         setAttrs( annotation : TimelineAnnotation ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
-            this._time_PMILLIS = parseTime_PMILLIS( annotation.time_ISO8601 );
+            this._time_PMILLIS = hasval( annotation.time_ISO8601 ) ? parseTime_PMILLIS( annotation.time_ISO8601 ) : undefined;
             this._y = annotation.y;
             this._label = annotation.label;
             this._styleGuid = annotation.styleGuid;

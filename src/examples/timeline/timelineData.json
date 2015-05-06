@@ -5,6 +5,15 @@
         "y": 5,
         "label": "Warning Level",
         "styleGuid": "metsci.timelineExample.annotationStyle01"
+    }, {
+        "annotationGuid": "metsci.timelineExample.annotation02",
+        "y": 0,
+        "label": "Baseline",
+        "styleGuid": "metsci.timelineExample.annotationStyle02"
+    }, {
+        "annotationGuid": "metsci.timelineExample.annotation03",
+        "time_ISO8601": "2013-12-31T21:00:00.000Z",
+        "styleGuid": "metsci.timelineExample.annotationStyle03"
     } ],
     "events": [ {
         "eventGuid": "metsci.timelineExample.event01",
@@ -132,7 +141,8 @@
         	"metsci.timelineExample.timeseries05"
         ],
         "annotationGuids": [
-            "metsci.timelineExample.annotation01"
+            "metsci.timelineExample.annotation01",
+            "metsci.timelineExample.annotation03"
         ]
     }, {
         "rowGuid": "metsci.timelineExample.row03b",
@@ -148,6 +158,9 @@
         "yMax": 15,
         "timeseriesGuids": [
             "metsci.timelineExample.timeseries03"
+        ],
+        "annotationGuids": [
+            "metsci.timelineExample.annotation02"
         ]
     }],
 

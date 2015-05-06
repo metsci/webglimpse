@@ -135,14 +135,10 @@ module Webglimpse {
         //
 
         $.getJSON( 'timelineUi.json', function( uiStyles : { eventStyles : TimelineEventStyle[]; annotationStyles : TimelineAnnotationStyle[] } ) {
-            console.log( 'loaded' );
-            console.log( uiStyles );
             uiStyles.eventStyles.forEach( function( s ) {
                 ui.eventStyles.add( new TimelineEventStyleUi( s ) );
             } );
             uiStyles.annotationStyles.forEach( function( s ) {
-                console.log( 'running' );
-                console.log( s );
                 ui.annotationStyles.add( new TimelineAnnotationStyleUi( s ) );
             } );
         } );
