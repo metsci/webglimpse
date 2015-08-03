@@ -134,9 +134,12 @@ module Webglimpse {
         // Load UI styles
         //
 
-        $.getJSON( 'timelineUi.json', function( uiStyles : { eventStyles : TimelineEventStyle[] } ) {
+        $.getJSON( 'timelineUi.json', function( uiStyles : { eventStyles : TimelineEventStyle[]; annotationStyles : TimelineAnnotationStyle[] } ) {
             uiStyles.eventStyles.forEach( function( s ) {
                 ui.eventStyles.add( new TimelineEventStyleUi( s ) );
+            } );
+            uiStyles.annotationStyles.forEach( function( s ) {
+                ui.annotationStyles.add( new TimelineAnnotationStyleUi( s ) );
             } );
         } );
 
@@ -399,8 +402,6 @@ module Webglimpse {
         // also, ensure that fragment1 data values never exceed 20
         fragment3.dataChanged.on( function( startIndex : number, endIndex : number ) {
             for ( var i = startIndex ; i < endIndex ; i++ ) {
-                console.log( 'Value changed: index: ' + i + ' value: ' + fragment3.data[i] + ' time: ' + fragment3.times_PMILLIS[i] );
-                
                 if ( fragment3.data[i] > 20 ) {
                     fragment3.setData( i, 20 );
                 }

@@ -29,7 +29,6 @@
  */
 module Webglimpse {
 
-
     export class TimelinePane extends Pane {
         private _model : TimelineModel;
         private _ui : TimelineUi;
@@ -92,7 +91,7 @@ module Webglimpse {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var selectedIntervalMode = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
+        var selectedIntervalMode   = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
         var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
 

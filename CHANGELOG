@@ -1,4 +1,9 @@
 
+Webglimpse 1.6.0
+
+  * Annotation support (horizontal/vertical line or point with icons and text)
+  * Custom axis label support
+
 Webglimpse 1.5.1
 
   * fixed bug with Webglimpse 1.4.2-pre3 feature enabling hidden attribute for row and group

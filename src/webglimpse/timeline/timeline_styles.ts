@@ -34,7 +34,9 @@ module Webglimpse {
     //
 
     export var timeseriesRowPainterFactories_DEFAULT = [
-        newTimeseriesPainterFactory( )
+        newTimeseriesPainterFactory( ),
+        newTimeseriesAnnotationPainterFactory( )
+        
     ];
     
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {

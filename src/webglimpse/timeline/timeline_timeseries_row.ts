@@ -38,13 +38,15 @@ module Webglimpse {
     }
     
     export interface TimelineTimeseriesPainterFactory {
-        ( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, selection : TimelineSelectionModel, options : TimelineTimeseriesPainterOptions ) : Painter;
+        ( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi, options : TimelineTimeseriesPainterOptions ) : Painter;
     }
     
     export interface TimelineTimeseriesRowPaneOptions {
-        rowHeight? : number;
-        rowTopPadding? : number;
+        rowHeight?        : number;
+        rowTopPadding?    : number;
         rowBottomPadding? : number;
+        axisOptions?      : EdgeAxisPainterOptions;
+        axisWidth?        : number
         painterFactories? : TimelineTimeseriesPainterFactory[];
     }
     
@@ -54,19 +56,26 @@ module Webglimpse {
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
             var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
+            var axisWidth           = ( hasval( rowOptions ) && hasval( rowOptions.axisWidth ) ? rowOptions.axisWidth : 60 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
+            var axisOptions         = ( hasval( rowOptions ) && hasval( rowOptions.axisOptions ) ? rowOptions.axisOptions : {} );
             
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
-            
+
             var input = ui.input;
             var selection = ui.selection;
             
+            if ( !hasval( axisOptions.font ) ) axisOptions.font = timelineFont;
+            if ( !hasval( axisOptions.tickColor ) ) axisOptions.tickColor = timelineFgColor;
+            if ( !hasval( axisOptions.textColor ) ) axisOptions.textColor = timelineFgColor;
+            if ( !hasval( axisOptions.showLabel ) ) axisOptions.showLabel = true;
+            if ( !hasval( axisOptions.shortenLabels ) ) axisOptions.shortenLabels = false;
             
             // setup pane for data (y) axis painter and mouse listener
-            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, rowHeight ) } );
+            var yAxisPane = new Pane( { updatePrefSize: fixedSize( axisWidth, rowHeight ) } );
             dataAxis.limitsChanged.on( drawable.redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
@@ -81,10 +90,10 @@ module Webglimpse {
             var painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, timelineThickness: 1, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding };
             for ( var n = 0; n < painterFactories.length; n++ ) {
                 var createPainter = painterFactories[ n ];
-                rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, selection, painterOptions ) );
+                rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, ui, painterOptions ) );
             }
             
-            rowContentPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, { showLabel: false, textColor: timelineFgColor, tickColor: timelineFgColor, tickSpacing: 34, tickSize: 5, font: timelineFont } ) );
+            yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
             rowContentPane.addPane( yAxisPane, 0 );
             
             
@@ -344,8 +353,9 @@ module Webglimpse {
                     
     export function newTimeseriesPainterFactory( options? : TimelineTimeseriesPainterOptions ) : TimelineTimeseriesPainterFactory {
         // Painter Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, selection : TimelineSelectionModel ) : Painter {
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi ) : Painter {
             
+            var selection : TimelineSelectionModel = ui.selection;
             var defaultColor = hasval( options ) && hasval( options.timelineFgColor ) ? options.timelineFgColor : white;
             var defaultThickness = hasval( options ) && hasval( options.timelineThickness ) ? options.timelineThickness : 1;
             
