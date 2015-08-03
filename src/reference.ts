@@ -51,6 +51,8 @@
 /// <reference path="webglimpse/timeline/time_grid_painter.ts" />
 /// <reference path="webglimpse/timeline/timeline_model.ts" />
 /// <reference path="webglimpse/timeline/timeline_layout.ts" />
+/// <reference path="webglimpse/timeline/timeline_annotation_painter.ts" />
+/// <reference path="webglimpse/timeline/timeline_annotation_style.ts" />
 /// <reference path="webglimpse/timeline/timeline_event_style.ts" />
 /// <reference path="webglimpse/timeline/timeline_ui.ts" />
 /// <reference path="webglimpse/timeline/timeline_row.ts" />
@@ -62,10 +64,8 @@
 
 
 
-
 //grunt-start
 //grunt-end
-
 
 
 

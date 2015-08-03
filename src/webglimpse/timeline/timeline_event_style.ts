@@ -32,10 +32,10 @@ module Webglimpse {
 
     export interface TimelineEventIcon {
         url : string;
-        displayWidth : number;
-        displayHeight : number;
-        hAlign : number;
-        hPos : number;
+        displayWidth : number;  // horizontal size of icon in pixels
+        displayHeight : number; // vertical size of icon in pixels
+        hAlign : number; // relative location of center pixel of icon (0=left side, 1=right side)
+        hPos : number; // relative icon position along event bar (0=left side, 1=right side)
     }
 
 

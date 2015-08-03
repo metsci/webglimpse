@@ -73,11 +73,24 @@ module Webglimpse {
         '  }                                                                                '
     );
 
+    // provides a custom labeler for axis tick marks
+    //
+    // value        : the tick value to create a label string for
+    // axis         : the axis associated with the tick value
+    // tickInterval : the requested spacing in pixels between ticks
+    // precision    : number of decimal points which should be used for tick labels
+    // orderAxis    : order( Math.abs( axis.vSize ) ) then rounded to nearest multiple of three (-3, 0, 3, 6...)
+    // orderFactor  : Math.pow( 10, -orderAxis )
+    export interface TickLabeler {
+        ( value : number, axis : Axis1D, tickInterval : number ): string;
+    }
+    
 
     export interface EdgeAxisPainterOptions {
         tickSpacing? : number;
         label?       : string;
         units?       : string;
+        shortenLabels? : boolean;
         font?        : string;
         textColor?   : Color;
         tickColor?   : Color;
@@ -85,6 +98,7 @@ module Webglimpse {
         showLabel?   : boolean;
         showBorder?  : boolean;
         gradientFill?: Gradient;
+        tickLabeler? : TickLabeler;
     }
 
 
@@ -92,6 +106,7 @@ module Webglimpse {
         var tickSpacing   = ( hasval( options ) && hasval( options.tickSpacing   ) ? options.tickSpacing   : 100   );
         var label         = ( hasval( options ) && hasval( options.label         ) ? options.label         : ''    );
         var units         = ( hasval( options ) && hasval( options.units         ) ? options.units         : ''    );
+        var shortenLabels = ( hasval( options ) && hasval( options.shortenLabels ) ? options.shortenLabels : true );
         var font          = ( hasval( options ) && hasval( options.font          ) ? options.font          : '11px verdana,sans-serif' );
         var textColor     = ( hasval( options ) && hasval( options.textColor     ) ? options.textColor     : black );
         var tickColor     = ( hasval( options ) && hasval( options.tickColor     ) ? options.tickColor     : black );
@@ -99,6 +114,7 @@ module Webglimpse {
         var showLabel     = ( hasval( options ) && hasval( options.showLabel     ) ? options.showLabel     : true  );
         var showBorder    = ( hasval( options ) && hasval( options.showBorder    ) ? options.showBorder    : false );
         var gradientFill  = ( hasval( options ) && hasval( options.gradientFill  ) ? options.gradientFill  : undefined );
+        var tickLabeler   = ( hasval( options ) && hasval( options.tickLabeler   ) ? options.tickLabeler   : undefined );
         
         var tickPositions = new Float32Array( 0 );
 
@@ -268,12 +284,13 @@ module Webglimpse {
             gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
             gl.enable( GL.BLEND );
 
-            var orderAxis = order( Math.abs( axis.vSize ) );
-            if ( orderAxis > 0 ) {
-                orderAxis = Math.floor( ( orderAxis - 1 ) / 3 ) * 3;
+            var orderAxisRaw = order( Math.abs( axis.vSize ) );
+            var orderAxis = 0;
+            if ( orderAxisRaw > 0 ) {
+                orderAxis = Math.floor( ( orderAxisRaw - 1 ) / 3 ) * 3;
             }
-            else if ( orderAxis < 0 ) {
-                orderAxis = ( Math.ceil( orderAxis / 3 ) - 1 ) * 3;
+            else if ( orderAxisRaw < 0 ) {
+                orderAxis = ( Math.ceil( orderAxisRaw / 3 ) - 1 ) * 3;
             }
             var orderFactor = Math.pow( 10, -orderAxis );
             var orderTick = order( tickInterval );
@@ -288,8 +305,22 @@ module Webglimpse {
                 if ( vFrac < 0 || vFrac >= 1 ) continue;
 
                 var tickLabel;
-                if ( showLabel ) {
+                if ( tickLabeler ) {
+                    // show custom tick value
+                    tickLabel = tickLabeler( v, axis, tickInterval );
+                }
+                else if ( shortenLabels && showLabel ) {
+                    // show shortened tick value
                     tickLabel = Number( v * orderFactor ).toFixed( precision );
+                }
+                else if ( !shortenLabels ) {
+                    // show actual tick value
+                    if ( orderAxisRaw >= 0 ) {
+                        tickLabel = Number( v ).toFixed( 0 );
+                    }
+                    else {
+                        tickLabel = Number( v ).toFixed( -orderAxisRaw );
+                    }
                 }
                 else {
                     // show magnitude inline for each tick
@@ -339,31 +370,34 @@ module Webglimpse {
             //
 
             if ( showLabel ) {
-                var unitsString = units + ( orderAxis === 0 ? '' : ' x 10^' + orderAxis.toFixed( 0 ) );
+                var unitsString = units + ( !shortenLabels || orderAxis === 0 ? '' : ' x 10^' + orderAxis.toFixed( 0 ) );
                 var axisLabel = label + ( unitsString ? ' (' + unitsString + ')' : '' );
-                var textTexture = textTextures.value( axisLabel );
-
-                var xFrac : number;
-                var yFrac : number;
-                var textOpts : TextureDrawOptions;
-                if ( labelSide === Side.LEFT || labelSide === Side.RIGHT ) {
-                    // Using hTickLabels here works out about right, even though the tick-label text is horizontal
-                    var xFrac0 = 0.5 * ( viewport.w - tickSize - 2 - hTickLabels ) / viewport.w;
-                    xFrac = ( labelSide === Side.LEFT ? xFrac0 : 1 - xFrac0 );
-                    yFrac = 0.5;
-                    textOpts = { xAnchor: textTexture.yAnchor( 0.5 ),
-                                 yAnchor: 0.5,
-                                 rotation_CCWRAD: 0.5 * Math.PI };
+                
+                if ( axisLabel !== '' ) {
+                    var textTexture = textTextures.value( axisLabel );
+    
+                    var xFrac : number;
+                    var yFrac : number;
+                    var textOpts : TextureDrawOptions;
+                    if ( labelSide === Side.LEFT || labelSide === Side.RIGHT ) {
+                        // Using hTickLabels here works out about right, even though the tick-label text is horizontal
+                        var xFrac0 = 0.5 * ( viewport.w - tickSize - 2 - hTickLabels ) / viewport.w;
+                        xFrac = ( labelSide === Side.LEFT ? xFrac0 : 1 - xFrac0 );
+                        yFrac = 0.5;
+                        textOpts = { xAnchor: textTexture.yAnchor( 0.5 ),
+                                     yAnchor: 0.5,
+                                     rotation_CCWRAD: 0.5 * Math.PI };
+                    }
+                    else {
+                        var yFrac0 = 0.5 * ( viewport.h - tickSize - 2 - hTickLabels ) / viewport.h;
+                        yFrac = ( labelSide === Side.BOTTOM ? yFrac0 : 1 - yFrac0 );
+                        xFrac = 0.5;
+                        textOpts = { xAnchor: 0.5,
+                                     yAnchor: textTexture.yAnchor( 0.5 ),
+                                     rotation_CCWRAD: 0 };
+                    }
+                    textureRenderer.draw( gl, textTexture, xFrac, yFrac, textOpts );
                 }
-                else {
-                    var yFrac0 = 0.5 * ( viewport.h - tickSize - 2 - hTickLabels ) / viewport.h;
-                    yFrac = ( labelSide === Side.BOTTOM ? yFrac0 : 1 - yFrac0 );
-                    xFrac = 0.5;
-                    textOpts = { xAnchor: 0.5,
-                                 yAnchor: textTexture.yAnchor( 0.5 ),
-                                 rotation_CCWRAD: 0 };
-                }
-                textureRenderer.draw( gl, textTexture, xFrac, yFrac, textOpts );
             }
 
 
