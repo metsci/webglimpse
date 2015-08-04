@@ -51,7 +51,8 @@ module Webglimpse {
     } );
     
     export var timeseriesRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newTimeseriesRowPaneFactory( {
-        painterFactories: timeseriesRowPainterFactories_DEFAULT
+        painterFactories: timeseriesRowPainterFactories_DEFAULT,
+        axisOptions: { tickSpacing: 34 }
     } );
 
     export function rowPaneFactoryChooser_DEFAULT( row : TimelineRowModel ) : TimelineRowPaneFactory {
