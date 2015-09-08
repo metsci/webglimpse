@@ -632,9 +632,12 @@ module Webglimpse {
                 var wBorder = borderThickness / viewport.w;
                 var hBorder = borderThickness / viewport.h;
                 
-                var jTop = rowTopPadding + ( laneIndex )*laneHeight + topMargin;
+                var _topMargin = hasval( event.topMargin ) ? event.topMargin : topMargin;
+                var _bottomMargin = hasval( event.bottomMargin ) ? event.bottomMargin : bottomMargin;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + _topMargin;
                 var yTop = ( viewport.h - jTop ) / viewport.h;
-                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight - bottomMargin;
+                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight - _bottomMargin;
                 var yBottom =  ( viewport.h - jBottom ) / viewport.h;
                 
                 var xLeft = timeAxis.tFrac( event.start_PMILLIS );

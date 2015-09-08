@@ -78,7 +78,8 @@ module Webglimpse {
         userEditable? : boolean;
         styleGuid? : string;
         order? : number;
-
+        topMargin? : number;
+        bottomMargin? : number;
         fgColor? : string;
         bgColor? : string;
         borderColor? : string;
@@ -492,6 +493,8 @@ module Webglimpse {
         private _userEditable : boolean;
         private _styleGuid : string;
         private _order : number;
+        private _topMargin : number;
+        private _bottomMargin : number;
         private _fgColor : Color;
         private _bgColor : Color;
         private _borderColor : Color;
@@ -519,6 +522,8 @@ module Webglimpse {
             this._userEditable = ( hasval( event.userEditable ) ? event.userEditable : false );
             this._styleGuid = event.styleGuid;
             this._order = event.order;
+            this._topMargin = event.topMargin;
+            this._bottomMargin = event.bottomMargin;
             this._fgColor = ( hasval( event.fgColor ) ? parseCssColor( event.fgColor ) : null );
             this._bgColor = ( hasval( event.bgColor ) ? parseCssColor( event.bgColor ) : null );
             this._borderColor = ( hasval( event.borderColor ) ? parseCssColor( event.borderColor ) : null );
@@ -609,6 +614,28 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get topMargin( ) : number {
+            return this._topMargin;
+        }
+        
+        set topMargin( topMargin : number ) {
+            if ( topMargin !== this._topMargin ) {
+                this._topMargin = topMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get bottomMargin( ) : number {
+            return this._bottomMargin;
+        }
+        
+        set bottomMargin( bottomMargin : number ) {
+            if ( bottomMargin !== this._bottomMargin ) {
+                this._bottomMargin = bottomMargin;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get fgColor( ) : Color {
             return this._fgColor;
@@ -653,6 +680,8 @@ module Webglimpse {
                 userEditable: this._userEditable,
                 styleGuid: this._styleGuid,
                 order: this._order,
+                topMargin: this._topMargin,
+                bottomMargin: this._bottomMargin,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 fgColor: ( hasval( this._fgColor ) ? this._fgColor.cssString : null ),
                 borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null )
