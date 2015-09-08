@@ -76,7 +76,6 @@ module Webglimpse {
         rowTopPadding: 0,
         rowBottomPadding: 0,
         laneHeight: 23,
-        allowMultipleLanes: false,
         painterFactories: [
             newEventBarsPainterFactory( {
                 bottomMargin: 0,
@@ -112,6 +111,50 @@ module Webglimpse {
             return null;
         }
     }
-
+    
+    export var eventsRowPaneFactory_SINGLE : TimelineRowPaneFactory = newEventsRowPaneFactory( {
+        rowTopPadding: 0,
+        rowBottomPadding: 0,
+        laneHeight: 23,
+        allowMultipleLanes: false,
+        
+        painterFactories: [
+            newCombinedEventPainterFactory( 
+                {
+                    bottomMargin: 0,
+                    topMargin: 13,
+                    minimumVisibleWidth: 0,
+                    cornerType: JointType.MITER
+                },
+                {
+                    bottomMargin: 12,
+                    topMargin: 0,
+                    leftMargin: 2,
+                    rightMargin: 2,
+                    vAlign: 0.0,
+                    spacing: 2,
+                    extendBeyondBar: true,
+                    forceVisible: true
+                },
+                {
+                    bottomMargin: 0,
+                    topMargin: 13,
+                    vAlign: 0.0
+                }
+            )
+        ]
+    } );
+    
+    export function rowPaneFactoryChooser_SINGLE( row : TimelineRowModel ) : TimelineRowPaneFactory {
+        if ( !row.eventGuids.isEmpty ) {
+            return eventsRowPaneFactory_SINGLE;
+        }
+        else if ( !row.timeseriesGuids.isEmpty ) {
+            return timeseriesRowPaneFactory_DEFAULT;
+        }
+        else {
+            return null;
+        }
+    }
 
 }

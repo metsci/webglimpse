@@ -812,6 +812,8 @@ module Webglimpse {
         textEnabled? : boolean;
         textDefaultColor? : Color;
         textFont? : string;
+        
+        forceVisible? : boolean;
     }
 
 
@@ -835,6 +837,7 @@ module Webglimpse {
         var iconsSizeFactor  = ( hasval( labelOpts ) && hasval( labelOpts.iconsSizeFactor  ) ? labelOpts.iconsSizeFactor  : 1      );
 
         // Text options
+        var forceVisible     = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible     ) ? labelOpts.forceVisible     : false );
         var textEnabled      = ( hasval( labelOpts ) && hasval( labelOpts.textEnabled      ) ? labelOpts.textEnabled      : true );
         var textDefaultColor = ( hasval( labelOpts ) && hasval( labelOpts.textDefaultColor ) ? labelOpts.textDefaultColor : options.timelineFgColor );
         var textFont         = ( hasval( labelOpts ) && hasval( labelOpts.textFont         ) ? labelOpts.textFont         : options.timelineFont );
@@ -911,7 +914,7 @@ module Webglimpse {
                             }
     
                             wIcon = ( iconWidth / viewport.w );
-                            if ( wIcon <= wVisible ) {
+                            if ( forceVisible || wIcon <= wVisible ) {
                                 textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: vAlign, width: iconWidth, height: iconHeight } );
                             }
                         }
@@ -942,7 +945,7 @@ module Webglimpse {
     
                         var wShift = ( iconsEnabled ? wIcon + ( spacing / viewport.w ) : 0 );
                         var wText = ( textTexture.w / viewport.w );
-                        if ( wShift + wText <= wVisible ) {
+                        if ( forceVisible || wShift + wText <= wVisible ) {
                             textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( vAlign ) } );
                         }
                     }
@@ -975,5 +978,46 @@ module Webglimpse {
                 helper.textTextures.retainTouched( );
             };
         };
+    }
+    
+    export function newCombinedEventPainterFactory( barOpts? : TimelineEventBarsPainterOptions, labelOpts? : TimelineEventLabelOptions, iconOpts? : TimelineEventIconsPainterOptions ) : TimelineEventsPainterFactory {
+        
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
+
+            var labelHelper = eventLabelsPainterHelper( labelOpts, drawable, timeAxis, lanes, ui, options );
+            var iconHelper = eventIconsPainterHelper( iconOpts, drawable, timeAxis, lanes, ui, options );
+            var barHelper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
+
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                gl.enable( GL.BLEND );
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane : TimelineLane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        
+                        // draw bar
+                        barHelper.ensureCapacity( 1 );
+                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport );
+                        
+                        // draw label
+                        labelHelper.textTextures.resetTouches( );
+                        labelHelper.textureRenderer.begin( gl, viewport );
+                        labelHelper.paintEvent( l, e, gl, viewport );
+                        labelHelper.textureRenderer.end( gl );
+                        labelHelper.textTextures.retainTouched( );
+                        
+                        // draw icon
+                        iconHelper.textureRenderer.begin( gl, viewport );
+                        iconHelper.paintEvent( l, e, gl, viewport );
+                        iconHelper.textureRenderer.end( gl );
+                    }
+                }
+                
+            }
+        }
     }
 }
