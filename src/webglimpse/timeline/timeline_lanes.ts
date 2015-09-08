@@ -74,7 +74,7 @@ module Webglimpse {
 
             function addEventToLane( event : TimelineEventModel, laneNum : number ) {
                 if ( !self._lanes[ laneNum ] ) {
-                    self._lanes[ laneNum ] = allowMultipleLanes ? new TimelineLane( ui ) : new TimelineLaneNoStack( ui );
+                    self._lanes[ laneNum ] = allowMultipleLanes ? new TimelineLaneStack( ui ) : new TimelineLaneSimple( ui );
                 }
                 self._lanes[ laneNum ].add( event );
                 self._laneNums[ event.eventGuid ] = laneNum;
@@ -273,8 +273,21 @@ module Webglimpse {
     }
 
 
+    export interface TimelineLane {
+        length : number;
+        event( index : number ) : TimelineEventModel;
+        isEmpty( ) : boolean;
+        eventAtTime( time_PMILLIS : number ) : TimelineEventModel;
+        add( event : TimelineEventModel );
+        remove( event : TimelineEventModel );
+        eventStillFits( event : TimelineEventModel ) : boolean;
+        update( event : TimelineEventModel );
+        collisionsWithInterval( start_PMILLIS : number, end_PMILLIS : number ) : TimelineEventModel[];
+        couldFitEvent( event : TimelineEventModel ) : boolean;
+    }
 
-    export class TimelineLane {
+    // a TimelineLane where no events start/end time overlap
+    export class TimelineLaneStack implements TimelineLane {
         private _events : TimelineEventModel[];
         private _starts_PMILLIS : number[];
         private _ends_PMILLIS : number[];
@@ -357,7 +370,7 @@ module Webglimpse {
             }
         }
 
-        eventStillFits( event : TimelineEventModel ) {
+        eventStillFits( event : TimelineEventModel ) : boolean {
             var i = this._indices[ event.eventGuid ];
             if ( !hasval( i ) ) throw new Error( 'Event not found in this lane: event = ' + formatEvent( event ) );
 
@@ -424,15 +437,119 @@ module Webglimpse {
         }
     }
     
-    export class TimelineLaneNoStack extends TimelineLane {
+    // a TimelineLane where events are allowed to overlap arbitrarily
+    // because of this assumptions like the index for an event in the _starts_PMILLIS
+    // and _ends_PMILLIS arrays being the same no longer hold
+    //
+    // does not make any assumptions about event overlapping and uses
+    // an inefficient O(n) brute force search to find events (an interval tree
+    // would be needed for efficient search in the general case)
+    export class TimelineLaneSimple implements TimelineLane {
         
-        // we can alwasy fit more events
-        _eventFitsBetween( event : TimelineEventModel, iBefore : number, iAfter : number ) : boolean {
+        private _events : TimelineEventModel[];
+        private _orders : number[];
+        private _ids : StringMap<any>;
+        private _ui : TimelineUi;
+        
+        constructor( ui : TimelineUi ) {
+            this._events = [];
+            this._orders = [];
+            this._ids = {};
+            this._ui = ui;
+        }
+        
+        get length( ) : number {
+            return this._events.length;
+        }
+        
+        event( index : number ) : TimelineEventModel {
+            return this._events[ index ];
+        }
+        
+        isEmpty( ) : boolean {
+            return ( this._events.length === 0 );
+        }
+        
+        eventAtTime( time_PMILLIS : number ) : TimelineEventModel {
+            
+            var bestEvent : TimelineEventModel;
+            
+            for ( var n = 0; n < this._events.length; n++ ) {
+                var event : TimelineEventModel = this._events[n];
+                
+                if ( time_PMILLIS > event.start_PMILLIS &&
+                     time_PMILLIS < event.end_PMILLIS &&
+                     ( bestEvent === undefined || bestEvent.order < event.order ) ) {
+                    bestEvent = event;
+                }
+            }
+            
+            return bestEvent;
+        }
+        
+        add( event : TimelineEventModel ) {
+            var eventGuid = event.eventGuid;
+            if ( hasval( this._ids[ eventGuid ] ) ) throw new Error( 'Lane already contains this event: event = ' + formatEvent( event ) );
+            
+            // for events with undefined order, replace with largest possible negative order so sort is correct
+            var order = hasval( event.order ) ? event.order : Number.NEGATIVE_INFINITY;
+
+            var i : number = indexAtOrAfter( this._orders, order );
+
+            this._ids[ eventGuid ] = eventGuid;
+            this._orders.splice( i, 0, order );
+            this._events.splice( i, 0, event );
+        }
+        
+        remove( event : TimelineEventModel ) {
+            var eventGuid = event.eventGuid;
+            if ( !hasval( this._ids[ eventGuid ] ) ) throw new Error( 'Event not found in this lane: event = ' + formatEvent( event ) );
+            
+            delete this._ids[ eventGuid ];
+            var i : number = this._getIndex( event );
+            this._orders.splice( i, 1 );
+            this._events.splice( i, 1 );
+        }
+        
+        update( event : TimelineEventModel ) {
+            // no action is necessary since we don't maintain any time indexed data structures
+        }
+        
+        collisionsWithInterval( start_PMILLIS : number, end_PMILLIS : number ) : TimelineEventModel[] {
+            
+            var results = [];
+            
+            for ( var n = 0; n < this._events.length; n++ ) {
+                var event : TimelineEventModel = this._events[n];
+                
+                if ( !(start_PMILLIS > event.end_PMILLIS || end_PMILLIS < event.start_PMILLIS) ) {
+                    results.push( event );
+                }
+            }
+            
+            return results;
+        }
+   
+        // we can always fit more events because overlaps are allowed
+        eventStillFits( event : TimelineEventModel ) : boolean {
             return true;
         }
+        
+        // we can always fit more events because overlaps are allowed
+        couldFitEvent( event : TimelineEventModel ) : boolean {
+            return true;
+        }
+    
+        _getIndex( queryEvent : TimelineEventModel ) : number {
+            for ( var n = 0; n < this._events.length; n++ ) {
+                var event : TimelineEventModel = this._events[n];
+                if ( queryEvent.eventGuid === event.eventGuid ) {
+                    return n;
+                }
+            }
+            throw new Error( 'Event not found in this lane: event = ' + formatEvent( queryEvent ) );
+        }
     }
-
-
 
     function formatEvent( event : TimelineEventModel ) : string {
         if ( !hasval( event ) ) {
@@ -442,6 +559,4 @@ module Webglimpse {
             return ( event.label + ' [ ' + formatTime_ISO8601( event.start_PMILLIS ) + ' ... ' + formatTime_ISO8601( event.end_PMILLIS ) + ' ]' );
         }
     }
-
-
 }

@@ -77,6 +77,7 @@ module Webglimpse {
         labelIcon? : string;
         userEditable? : boolean;
         styleGuid? : string;
+        order? : number;
 
         fgColor? : string;
         bgColor? : string;
@@ -490,6 +491,7 @@ module Webglimpse {
         private _labelIcon : string;
         private _userEditable : boolean;
         private _styleGuid : string;
+        private _order : number;
         private _fgColor : Color;
         private _bgColor : Color;
         private _borderColor : Color;
@@ -516,6 +518,7 @@ module Webglimpse {
             this._labelIcon = event.labelIcon;
             this._userEditable = ( hasval( event.userEditable ) ? event.userEditable : false );
             this._styleGuid = event.styleGuid;
+            this._order = event.order;
             this._fgColor = ( hasval( event.fgColor ) ? parseCssColor( event.fgColor ) : null );
             this._bgColor = ( hasval( event.bgColor ) ? parseCssColor( event.bgColor ) : null );
             this._borderColor = ( hasval( event.borderColor ) ? parseCssColor( event.borderColor ) : null );
@@ -595,6 +598,17 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get order( ) : number {
+            return this._order;
+        }
+        
+        set order( order : number ) {
+            if ( order !== this._order ) {
+                this._order = order;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get fgColor( ) : Color {
             return this._fgColor;
@@ -638,6 +652,7 @@ module Webglimpse {
                 labelIcon: this._labelIcon,
                 userEditable: this._userEditable,
                 styleGuid: this._styleGuid,
+                order: this._order,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 fgColor: ( hasval( this._fgColor ) ? this._fgColor.cssString : null ),
                 borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null )
