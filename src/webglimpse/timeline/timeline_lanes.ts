@@ -474,7 +474,10 @@ module Webglimpse {
             
             var bestEvent : TimelineEventModel;
             
-            for ( var n = 0; n < this._events.length; n++ ) {
+            // start at end of events list so that eventAtTime result
+            // favors events drawn on top (in cases where events are unordered
+            // those that happen to be at end end of th
+            for ( var n = this._events.length-1; n >= 0; n-- ) {
                 var event : TimelineEventModel = this._events[n];
                 
                 if ( time_PMILLIS > event.start_PMILLIS &&
