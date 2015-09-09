@@ -116,8 +116,8 @@ module Webglimpse {
 
         // Sizing
         var groupLabelInsets   = ( hasval( options ) && hasval( options.groupLabelInsets   ) ? options.groupLabelInsets   : newInsets( 6, 10 ) );
-        var rowLabelInsets     = ( hasval( options ) && hasval( options.rowLabelInsets     ) ? options.rowLabelInsets     : newInsets( 0, 20 ) );
-        var rowLabelPaneWidth  = ( hasval( options ) && hasval( options.rowLabelPaneWidth  ) ? options.rowLabelPaneWidth  : 120 );
+        var rowLabelInsets     = ( hasval( options ) && hasval( options.rowLabelInsets     ) ? options.rowLabelInsets     : newInsets( 0, 35 ) );
+        var rowLabelPaneWidth  = ( hasval( options ) && hasval( options.rowLabelPaneWidth  ) ? options.rowLabelPaneWidth  : 140 );
         var rowSeparatorHeight = ( hasval( options ) && hasval( options.rowSeparatorHeight ) ? options.rowSeparatorHeight : 2   );
         var scrollbarWidth     = ( hasval( options ) && hasval( options.scrollbarWidth     ) ? options.scrollbarWidth     : 16  );
         var axisPaneHeight     = ( hasval( options ) && hasval( options.axisPaneHeight     ) ? options.axisPaneHeight     : 40  );
@@ -614,8 +614,76 @@ module Webglimpse {
             }
         };
     }
+    
+    function newGroupCollapseExpandArrowPainter( group : TimelineGroupModel ) {
+        
+        var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var u_Color = new UniformColor( program, 'u_Color' );
 
+        // holds vertices for triangle
+        var coords = new Float32Array( 6 );
+        var coordsBuffer = newDynamicBuffer( );
+        
+        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
 
+            var sizeFracX = 0.5;
+            var sizeX = sizeFracX * viewport.w;
+            var sizeY = sizeX * Math.sqrt(3)/2;
+            var sizeFracY = sizeY / viewport.h;
+            
+            var bufferFracX = 0.05;
+            var bufferSize = bufferFracX * viewport.w;
+            var bufferFracY = bufferSize / viewport.h;
+            
+            var centerFracX = 0.5;
+            var centerFracY = bufferFracY + sizeFracY/2;
+            
+            if ( group.collapsed ) {
+                
+                sizeFracX = sizeY / viewport.w;
+                sizeFracY = sizeX / viewport.h;
+                
+                var fracStartX = centerFracX - sizeFracX / 2;
+                var fracEndX = centerFracX + sizeFracX / 2;
+                
+                var fracStartY = 1 - ( centerFracY - sizeFracY / 2 ) ;
+                var fracEndY = 1 - ( centerFracY + sizeFracY / 2 ) ;
+                
+                var index = 0;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = fracEndX;
+                coords[ index++ ] = ( fracStartY + fracEndY ) / 2;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracEndY;
+            } else {
+                var fracStartX = centerFracX - sizeFracX / 2;
+                var fracEndX = centerFracX + sizeFracX / 2;
+                
+                var fracStartY = 1 - ( centerFracY - sizeFracY / 2 ) ;
+                var fracEndY = 1 - ( centerFracY + sizeFracY / 2 ) ;
+                
+                var index = 0;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = fracEndX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = ( fracStartX + fracEndX ) / 2;
+                coords[ index++ ] = fracEndY;
+            }
+            
+            program.use( gl );
+            coordsBuffer.setData( coords );
+            a_XyFrac.setDataAndEnable( gl, coordsBuffer, 2, GL.FLOAT );
+            
+            u_Color.setData( gl, white );
+            gl.drawArrays( GL.TRIANGLES, 0, 3 );
+            
+            a_XyFrac.disable( gl );
+            program.endUse( gl );
+        }
+    }
 
     interface TimelineContentPaneOptions {
         selectedIntervalMode : string;
@@ -692,7 +760,19 @@ module Webglimpse {
             var groupLabel = new Label( font, groupLabelColor, group.label );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
-            var groupButton = newInsetPane( groupLabelPane, groupLabelInsets, bgColor );
+
+            var groupArrowPane = new Pane( { updatePrefSize: function( parentPrefSize : Size ) {
+                parentPrefSize.w = 16;
+                parentPrefSize.h = 0;
+            } }, false );
+            groupArrowPane.addPainter( newGroupCollapseExpandArrowPainter( group ) );
+                      
+            var groupPane = new Pane( newColumnLayout( ), false );
+            groupPane.addPane( groupArrowPane, 0 );
+            groupPane.addPane( groupLabelPane, 1 );
+            
+            var groupButton = newInsetPane( groupPane, groupLabelInsets, bgColor );
+            
             
             var redrawLabel = function( ) {
                 groupLabel.text = group.label;
