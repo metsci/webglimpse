@@ -181,7 +181,31 @@ module Webglimpse {
         };
     }
 
+    // mouse listener for scolling while panning on the timeline itself
+    export function attachTimelineVerticalScrollMouseListeners( pane : Pane, scrollLayout : VerticalScrollLayout, drawable : Drawable ) {
+        
+        // Used when dragging inside pane
+        var grab : number = null;
+        var jOffset : number = null;
+        
+        pane.mouseDown.on( function( ev : PointerEvent ) {
+            grab = ev.j;
+            jOffset = scrollLayout.jOffset;
+        } );
+            
+        pane.mouseMove.on( function( ev : PointerEvent ) {
+            if ( hasval( grab ) ) {
+                scrollLayout.jOffset = jOffset - ( grab - ev.j );
+                drawable.redraw( );
+            }
+        } );
 
+        pane.mouseUp.on( function( ev : PointerEvent ) {
+            grab = null;
+        } );
+    }
+
+    // mouse listener for scrolling while interacting with the scrollbar
     export function attachVerticalScrollMouseListeners( scrollbar : Pane, scrollLayout : VerticalScrollLayout, drawable : Drawable ) {
 
         // Used when dragging the handle

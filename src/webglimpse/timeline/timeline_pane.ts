@@ -137,12 +137,13 @@ module Webglimpse {
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
 
-        var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
-        var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
-
         var scrollLayout = newVerticalScrollLayout( );
         var scrollable = new Pane( scrollLayout, false );
+        
+        var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPane = newTimelineContentPane( drawable, scrollLayout, timeAxis, model, ui, contentPaneOpts );
+
         scrollable.addPane( contentPane, 0 );
 
         var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
@@ -156,13 +157,13 @@ module Webglimpse {
 
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
-            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, scrollLayout, drawable, selectedIntervalMode );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
         }
         underlayPane.addPane( scrollPane );
         if ( showBottomAxis ) {
-            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, scrollLayout, drawable,  selectedIntervalMode );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), Side.BOTTOM );
         }
@@ -179,16 +180,16 @@ module Webglimpse {
         timelinePane.addPane( underlayPane, true );
         
         if ( selectedIntervalMode === 'single' ) {
-            var overlayPane = new Pane( null, false, alwaysFalse );
+            var overlayPane = new Pane( null, false, alwaysTrue );
             overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
         else if ( selectedIntervalMode === 'range' ) {
-            var overlayPane = new Pane( null, false, alwaysFalse );
+            var overlayPane = new Pane( null, false, alwaysTrue );
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
-        
+                
         timelinePane.dispose.on( function( ) {
             ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
@@ -217,10 +218,11 @@ module Webglimpse {
 
 
 
-    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, selectedIntervalMode : string ) : Pane {
+    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, scrollLayout : VerticalScrollLayout, drawable : Drawable, selectedIntervalMode : string ) : Pane {
         var input = ui.input;
 
         var axisPane = new Pane( newOverlayLayout( ) );
+        attachTimelineVerticalScrollMouseListeners( axisPane, scrollLayout, drawable );
         attachAxisMouseListeners1D( axisPane, timeAxis, false );
 
         var onMouseMove = function( ev : PointerEvent ) {
@@ -713,7 +715,7 @@ module Webglimpse {
 
 
 
-    function newTimelineContentPane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, ui : TimelineUi, options : TimelineContentPaneOptions ) : Pane {
+    function newTimelineContentPane( drawable : Drawable, scrollLayout : VerticalScrollLayout, timeAxis : TimeAxis1D, model : TimelineModel, ui : TimelineUi, options : TimelineContentPaneOptions ) : Pane {
         var root = model.root;
 
         var selectedIntervalMode = options.selectedIntervalMode;
@@ -843,7 +845,7 @@ module Webglimpse {
                 groupHeaderUnderlay.addPane( groupButton, 0 );
                 groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
     
-                var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+                var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, scrollLayout, drawable, selectedIntervalMode );
                 var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
     
                 var groupHeaderPane = new Pane( newOverlayLayout( ) );
@@ -894,7 +896,7 @@ module Webglimpse {
             }
             
             function newRowBackgroundPanes( row : TimelineRowModel ) {
-                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
+                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, scrollLayout, drawable, selectedIntervalMode );
                 rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
 
                 var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
