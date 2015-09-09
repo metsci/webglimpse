@@ -702,6 +702,11 @@ module Webglimpse {
 
             /// handle rollup group row ///
             
+            var groupHeaderStripe = new Pane( newRowLayout( ) );
+            groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
+            groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
+            groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
+            
             var rollupRow = model.row( group.rollupGuid );
             if ( rollupRow ) {
 
@@ -740,19 +745,18 @@ module Webglimpse {
                 rollupRow.timeseriesGuids.valueRemoved.on( refreshRollupContentPane );
                 refreshRollupContentPane( );
                 
+                var groupButtonHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupButtonHeaderUnderlay.addPane( groupButton, 0 );
+                groupButtonHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
+                
                 var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
                 groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
-                groupHeaderUnderlay.addPane( groupButton, 0, { width: rowLabelPaneWidth } );
+                groupHeaderUnderlay.addPane( groupButtonHeaderUnderlay, 0, { width: rowLabelPaneWidth } );
                 groupHeaderUnderlay.addPane( rowBackgroundPane, 1, { width: null } );
             
                 var groupHeaderPane = groupHeaderUnderlay;
             }
             else {
-            
-                var groupHeaderStripe = new Pane( newRowLayout( ) );
-                groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
-                groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
-                groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
     
                 var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
                 groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
