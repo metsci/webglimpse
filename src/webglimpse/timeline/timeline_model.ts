@@ -101,6 +101,7 @@ module Webglimpse {
 
     export interface TimelineGroup {
         groupGuid : string;
+        rollupGuid? : string;
         label : string;
         hidden? : boolean;
         collapsed? : boolean;
@@ -799,6 +800,7 @@ module Webglimpse {
 
     export class TimelineGroupModel {
         private _groupGuid : string;
+        private _rollupGuid : string;
         private _attrsChanged : Notification;
         private _hidden : boolean;
         private _label : string;
@@ -816,12 +818,22 @@ module Webglimpse {
             return this._groupGuid;
         }
 
+        get rollupGuid( ) : string {
+            return this._rollupGuid;
+        }
+        
+        set rollupGuid( rollupGuid : string ) {
+            this._rollupGuid = rollupGuid;
+            this._attrsChanged.fire( );
+        }
+        
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
 
         setAttrs( group : TimelineGroup ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._rollupGuid = group.rollupGuid;
             this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
@@ -866,6 +878,7 @@ module Webglimpse {
         snapshot( ) : TimelineGroup {
             return {
                 groupGuid: this._groupGuid,
+                rollupGuid: this._rollupGuid,
                 label: this._label,
                 hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),

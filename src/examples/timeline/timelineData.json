@@ -24,7 +24,9 @@
         "styleGuid": "metsci.timelineExample.eventStyle01",
         "fgColor": "white",
         "bgColor": "#196EED",
-        "order": 10
+        "order": 10,
+        "topMargin": 12,
+        "bottomMargin": 0
     }, {
         "eventGuid": "metsci.timelineExample.event02",
         "start_ISO8601": "2014-01-01T02:30:00Z",
@@ -34,7 +36,9 @@
         "styleGuid": "metsci.timelineExample.eventStyle02",
         "fgColor": "white",
         "bgColor": "#FFB403",
-        "order": 2
+        "order": 2,
+        "topMargin": 12,
+        "bottomMargin": 0
     }, {
         "eventGuid": "metsci.timelineExample.event12",
         "start_ISO8601": "2014-01-01T08:30:00Z",
@@ -43,7 +47,9 @@
         "userEditable": true,
         "fgColor": "white",
         "bgColor": "#FFB403",
-        "order": 3
+        "order": 3,
+        "topMargin": 0,
+        "bottomMargin": 0
     }, {
         "eventGuid": "metsci.timelineExample.event03",
         "start_ISO8601": "2014-01-01T03:00:00Z",
@@ -195,6 +201,7 @@
         ]
     }, {
         "groupGuid": "metsci.timelineExample.group03",
+        "rollupGuid": "metsci.timelineExample.row01a",
         "label": "Group #3",
         "rowGuids": [
             "metsci.timelineExample.row03a",

@@ -700,23 +700,74 @@ module Webglimpse {
             }
             group.attrsChanged.on( redrawLabel );
 
-            var groupHeaderStripe = new Pane( newRowLayout( ) );
-            groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
-            groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
-            groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
+            /// handle rollup group row ///
+            
+            var rollupRow = model.row( group.rollupGuid );
+            if ( rollupRow ) {
 
-            var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
-            groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
-            groupHeaderUnderlay.addPane( groupButton, 0 );
-            groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
-
-            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
-            var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
-
-            var groupHeaderPane = new Pane( newOverlayLayout( ) );
-            groupHeaderPane.addPane( groupHeaderUnderlay, true );
-            groupHeaderPane.addPane( newInsetPane( groupHeaderOverlay, groupHeaderOverlayInsets, null, false ), false );
-
+                var rowBackgroundPanes = newRowBackgroundPanes( rollupRow ); 
+                var rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+                var rowInsetPane = rowBackgroundPanes.rowInsetPane;
+            
+                var rollupUi = ui.rowUi( rollupRow.rowGuid );
+                
+                var rollupDataAxis = rollupRow.dataAxis;
+                
+                var rollupContentPane : Pane = null;
+                var rollupPaneFactory : TimelineRowPaneFactory = null;
+                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+                var refreshRollupContentPane = function( ) {
+                    var newRollupPaneFactory = ( rollupUi.paneFactory || rowPaneFactoryChooser( rollupRow ) );
+                    if ( newRollupPaneFactory !== rollupPaneFactory ) {
+                        if ( rollupContentPane ) {
+                            rollupContentPane.dispose.fire( );
+                            rowInsetPane.removePane( rollupContentPane );
+                        }
+                        rollupPaneFactory = newRollupPaneFactory;
+                        rollupContentPane = ( rollupPaneFactory && rollupPaneFactory( drawable, timeAxis, rollupDataAxis, model, group, rollupRow, ui, rollupContentOptions ) );
+                        if ( rollupContentPane ) {
+                            rowInsetPane.addPane( rollupContentPane );
+                        }
+                        drawable.redraw( );
+                    }
+                };
+    
+                rollupUi.paneFactoryChanged.on( refreshRollupContentPane );
+                rollupRow.attrsChanged.on( refreshRollupContentPane );
+                rollupRow.eventGuids.valueAdded.on( refreshRollupContentPane );
+                rollupRow.eventGuids.valueRemoved.on( refreshRollupContentPane );
+                rollupRow.timeseriesGuids.valueAdded.on( refreshRollupContentPane );
+                rollupRow.timeseriesGuids.valueRemoved.on( refreshRollupContentPane );
+                refreshRollupContentPane( );
+                
+                var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
+                groupHeaderUnderlay.addPane( groupButton, 0, { width: rowLabelPaneWidth } );
+                groupHeaderUnderlay.addPane( rowBackgroundPane, 1, { width: null } );
+            
+                var groupHeaderPane = groupHeaderUnderlay;
+            }
+            else {
+            
+                var groupHeaderStripe = new Pane( newRowLayout( ) );
+                groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
+                groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
+                groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
+    
+                var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
+                groupHeaderUnderlay.addPane( groupButton, 0 );
+                groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
+    
+                var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+                var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
+    
+                var groupHeaderPane = new Pane( newOverlayLayout( ) );
+                groupHeaderPane.addPane( groupHeaderUnderlay, true );
+                groupHeaderPane.addPane( newInsetPane( groupHeaderOverlay, groupHeaderOverlayInsets, null, false ), false );
+                
+            }
+            
             var groupContentPane = new Pane( newRowLayout( ) );
             
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
@@ -757,6 +808,27 @@ module Webglimpse {
                     gl.clear( GL.COLOR_BUFFER_BIT );
                 };
             }
+            
+            function newRowBackgroundPanes( row : TimelineRowModel ) {
+                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
+                rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
+
+                var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
+                rowBackgroundPane.addPainter( newTimeGridPainter( timeAxis, false, gridTimeZone, timeGridOpts ) );
+
+                var rowInsetTop = rowSeparatorHeight/2;
+                var rowInsetBottom = rowSeparatorHeight - rowInsetTop;
+                var rowInsetPane = new Pane( newInsetLayout( newInsets( rowInsetTop, 0, rowInsetBottom, 0 ) ), false );
+                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetTop, drawRight: false, drawLeft: false, drawBottom: false } ) );
+                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetBottom, drawRight: false, drawLeft: false, drawTop: false } ) );
+                rowBackgroundPane.addPane( rowInsetPane, true );
+
+                var rowOverlayPane = new Pane( null, false );
+                rowOverlayPane.addPainter( newBorderPainter( rowLabelColor, { drawRight: false, drawTop: false, drawBottom: false } ) );
+                rowBackgroundPane.addPane( rowOverlayPane, false );
+                
+                return { rowInsetPane : rowInsetPane, rowBackgroundPane : rowBackgroundPane };
+            }
 
             var rowPanes : StringMap<Pane> = {};
 
@@ -775,22 +847,9 @@ module Webglimpse {
                 }
                 row.attrsChanged.on( rowAttrsChanged );
 
-                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
-                rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
-
-                var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
-                rowBackgroundPane.addPainter( newTimeGridPainter( timeAxis, false, gridTimeZone, timeGridOpts ) );
-
-                var rowInsetTop = rowSeparatorHeight/2;
-                var rowInsetBottom = rowSeparatorHeight - rowInsetTop;
-                var rowInsetPane = new Pane( newInsetLayout( newInsets( rowInsetTop, 0, rowInsetBottom, 0 ) ), false );
-                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetTop, drawRight: false, drawLeft: false, drawBottom: false } ) );
-                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetBottom, drawRight: false, drawLeft: false, drawTop: false } ) );
-                rowBackgroundPane.addPane( rowInsetPane, true );
-
-                var rowOverlayPane = new Pane( null, false );
-                rowOverlayPane.addPainter( newBorderPainter( rowLabelColor, { drawRight: false, drawTop: false, drawBottom: false } ) );
-                rowBackgroundPane.addPane( rowOverlayPane, false );
+                var rowBackgroundPanes = newRowBackgroundPanes( row ); 
+                var rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+                var rowInsetPane = rowBackgroundPanes.rowInsetPane;
 
                 var rowPane = new Pane( newColumnLayout( ) );
                 rowPane.addPane( rowHeaderPane, 0, { width: rowLabelPaneWidth } );
