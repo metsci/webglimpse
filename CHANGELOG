@@ -1,4 +1,13 @@
 
+Webglimpse 1.7.0-pre1 (released 2015-9-10)
+
+  * Event z-order specified using TimelineEvent.order when TimelineEventsRowPaneOptions.allowMultipleLanes = false
+  * Height of individual events can be controlled with TimelineEventModel.bottomMargin and .topMargin
+  * Added notification of mouse hovers over annotations TimelineSelectionModel.hoveredAnnotation
+  * Groups can have rollup rows instead of simple group divider by setting TimelineGroupModel.rollupGuid
+  * Group labels show expand/contract arrow
+  * Timeline can be scrolled horizontally as well as vertically with mouse drag
+
 Webglimpse 1.6.0
 
   * Annotation support (horizontal/vertical line or point with icons and text)

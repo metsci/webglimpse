@@ -318,6 +318,13 @@ module Webglimpse {
         // Fill these in with application-specific input-handling code
         //
         
+        selection.hoveredAnnotation.changed.on( function( ) {
+            if ( hasval( selection.hoveredTimeseries.fragment ) )
+            {
+                console.log( selection.hoveredAnnotation.value.annotationGuid );
+            }
+        });
+        
         selection.hoveredTimeseries.changed.on( function( ) {
             if ( hasval( selection.hoveredTimeseries.fragment ) )
             {
