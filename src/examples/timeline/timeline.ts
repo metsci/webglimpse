@@ -319,7 +319,7 @@ module Webglimpse {
         //
         
         selection.hoveredTimeseries.changed.on( function( ) {
-            if ( selection.hoveredTimeseries.fragment )
+            if ( hasval( selection.hoveredTimeseries.fragment ) )
             {
                 // Do something with the time and data value of the selected timeseries point 
                 var dataValue = selection.hoveredTimeseries.data;

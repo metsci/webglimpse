@@ -247,6 +247,7 @@ module Webglimpse {
 
         private _hoveredTimeseries = new TimelineTimeseriesFragmentSelectionModel( );
         
+        private _hoveredAnnotation = new SimpleModel<TimelineAnnotationModel>( );
         
         get mousePos( ) : XyModel { return this._mousePos; }
         
@@ -259,6 +260,8 @@ module Webglimpse {
         get selectedEvents( ) : OrderedSet<TimelineEventModel> { return this._selectedEvents; }
         
         get hoveredTimeseries( ) : TimelineTimeseriesFragmentSelectionModel { return this._hoveredTimeseries; }
+        
+        get hoveredAnnotation( ) : SimpleModel<TimelineAnnotationModel> { return this._hoveredAnnotation; }
     }
 
 
