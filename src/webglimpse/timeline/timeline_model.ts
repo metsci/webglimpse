@@ -88,6 +88,7 @@ module Webglimpse {
         rowGuid : string;
         label : string;
         hidden? : boolean;
+		bgColor? : string;
         yMin? : number;
         yMax? : number;
         uiHint? : string;
@@ -656,6 +657,7 @@ module Webglimpse {
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
         private _dataAxis : Axis1D;
+		private _bgColor : Color;
 
         constructor( row : TimelineRow ) {
             this._rowGuid = row.rowGuid;
@@ -684,6 +686,7 @@ module Webglimpse {
             this._label = row.label;
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
+			this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
             this._attrsChanged.fire( );
         }
         
@@ -694,6 +697,17 @@ module Webglimpse {
         set hidden( hidden : boolean ) {
             this._hidden = hidden;
             this._attrsChanged.fire( );
+        }
+		
+		get bgColor( ) : Color {
+            return this._bgColor;
+        }
+
+        set bgColor( bgColor : Color ) {
+            if ( bgColor !== this._bgColor ) {
+                this._bgColor = bgColor;
+                this._attrsChanged.fire( );
+            }
         }
         
         get dataAxis( ) : Axis1D {
@@ -744,6 +758,7 @@ module Webglimpse {
                 rowGuid: this._rowGuid,
                 label: this._label,
                 hidden: this._hidden,
+				bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
