@@ -362,25 +362,32 @@ module Webglimpse {
             var modelview_pointsize_VERTSHADER = concatLines(
                     '    uniform mat4 u_modelViewMatrix;                       ',
                     '    attribute vec4 a_Position;                            ',
+					'    attribute float a_Distance;                           ',
+					'    varying float v_Distance;                             ',
                     '    uniform float u_PointSize;                            ',
                     '                                                          ',
                     '    void main( ) {                                        ',
                     '        gl_PointSize = u_PointSize ;                      ',
                     '        gl_Position = u_modelViewMatrix * a_Position ;    ',
+					'        v_Distance = a_Distance;                          ',
                     '    }                                                     ',
                     '                                                          '
             );
             
-            var program = new Program( modelview_pointsize_VERTSHADER, solid_FRAGSHADER );
+            var program = new Program( modelview_pointsize_VERTSHADER, dash_FRAGSHADER );
             var u_Color = new UniformColor( program, 'u_Color' );
             var u_modelViewMatrix = new UniformMatrix4f( program, 'u_modelViewMatrix' );
             var a_Position = new Attribute( program, 'a_Position' );
+			var a_Distance = new Attribute( program, 'a_Distance' );
             var u_PointSize = new Uniform1f( program, 'u_PointSize' );
+			var u_Dash = new Uniform1f( program, 'u_Dash' );
             
             var axis = new Axis2D( timeAxis, dataAxis );
             
             var xys = new Float32Array( 0 );
+			var dists = new Float32Array( 0 );
             var xysBuffer = newDynamicBuffer( );
+			var distBuffer = newDynamicBuffer( );
            
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -393,8 +400,7 @@ module Webglimpse {
                 
                 u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
                 
-                for ( var i = 0 ; i < rowModel.timeseriesGuids.length ; i++ ) {
-                    
+                for ( var i = 0 ; i < rowModel.timeseriesGuids.length ; i++ ) {                    
                     // collect fragments and sort them by time
                     var totalSize = 0;
                     var sortedFragments = new Array<TimelineTimeseriesFragmentModel>( );
@@ -414,6 +420,7 @@ module Webglimpse {
                         var size = totalSize * 2;
                         
                         xys = ensureCapacityFloat32( xys, size );
+						dists = ensureCapacityFloat32( dists, totalSize );
                         
                         var index = 0;
                         for ( var j = 0 ; j < sortedFragments.length ; j++ ) {
@@ -424,17 +431,31 @@ module Webglimpse {
                             for ( var k = 0 ; k < data.length ; k++,index+=2 ) {
                                 xys[index] = timeAxis.vAtTime( times_PMILLIS[k] );
                                 xys[index+1] = data[k];
+								if(k != 0) {
+									var x = (timeAxis.vAtTime( times_PMILLIS[k] ) - timeAxis.vAtTime( times_PMILLIS[k - 1] ));
+									var y = data[k] - data[k - 1];
+									dists[k] = dists[k - 1] + Math.sqrt(x * x + y * y);
+								}
+								else {
+									dists[k] = 0;
+								}
                             }
                         }
                         
                         var lineColor = hasval( timeseries.lineColor ) ? timeseries.lineColor : defaultColor;
                         u_Color.setData( gl, lineColor );
+						
+						var dash = hasval( timeseries.dash ) ? timeseries.dash : 0;
+						u_Dash.setData(gl, dash);
                         
                         var lineThickness = hasval( timeseries.lineThickness ) ? timeseries.lineThickness : defaultThickness;
                         gl.lineWidth( lineThickness );
     
                         xysBuffer.setData( xys.subarray( 0, index ) );
                         a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+
+						distBuffer.setData( dists.subarray( 0, totalSize) );
+						a_Distance.setDataAndEnable( gl, distBuffer, 1, GL.FLOAT );
                         
                         if ( timeseries.uiHint == 'lines' || timeseries.uiHint == 'lines-and-points' || timeseries.uiHint == undefined ) {
                             // draw the lines

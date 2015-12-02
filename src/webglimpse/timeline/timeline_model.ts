@@ -52,7 +52,8 @@ module Webglimpse {
         lineColor? : string;
         pointColor? : string;
         lineThickness? : number;
-        pointSize? : number
+        pointSize? : number;
+		dash? : number;
         fragmentGuids? : string[];
     }
 
@@ -228,6 +229,7 @@ module Webglimpse {
         private _pointColor : Color;
         private _lineThickness : number;
         private _pointSize : number;
+		private _dash : number;
         private _fragmentGuids : OrderedStringSet;
 
         constructor( timeseries : TimelineTimeseries ) {
@@ -253,6 +255,7 @@ module Webglimpse {
             this._pointColor = ( hasval( timeseries.pointColor ) ? parseCssColor( timeseries.pointColor ) : null );
             this._lineThickness = timeseries.lineThickness;
             this._pointSize = timeseries.pointSize;
+			this._dash = timeseries.dash;
             this._fragmentGuids = new OrderedStringSet( timeseries.fragmentGuids || [] );
             this._attrsChanged.fire( );
         }
@@ -311,6 +314,17 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+		
+		get dash( ) : number {
+            return this._dash;
+        }
+
+        set dash( dash : number ) {
+            if ( dash !== this._dash ) {
+                this._dash = dash;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get uiHint( ) : string {
             return this._uiHint;
@@ -343,6 +357,7 @@ module Webglimpse {
                 pointColor: ( hasval( this._pointColor ) ? this._pointColor.cssString : null ),
                 lineThickness: this._lineThickness,
                 pointSize: this._pointSize,
+				dash: this._dash,
                 fragmentGuids: this._fragmentGuids.toArray( ),
             };
         }

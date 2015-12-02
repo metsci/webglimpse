@@ -160,6 +160,24 @@ module Webglimpse {
         '  }                            ',
         '                               '
     );
+	
+	
+	export var dash_FRAGSHADER = concatLines(
+		'  precision highp float;                                   ',
+		'  uniform mat4 u_modelViewMatrix;                          ',
+		'  varying float v_Distance;                                ',
+		'  uniform float u_Dash;                                    ',
+        '  uniform vec4 u_Color;                                    ',
+        '                                                           ',
+        '  void main( ) {                                           ',
+		'      float v = floor(2.0 * fract(v_Distance * (u_Dash * (10.0 * u_modelViewMatrix[0][0]))));   ',
+		'      if(v > 0.5)                                          ',
+		'          discard;                                         ',
+		'      else                                                 ',
+        '          gl_FragColor = u_Color;                          ',
+        '  }                                                        ',
+        '                                                           '
+	);
 
 
     export var varyingColor_FRAGSHADER = concatLines(

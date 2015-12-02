@@ -500,7 +500,7 @@ module Webglimpse {
 
     }
     
-    function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+    export function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
 
         var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
