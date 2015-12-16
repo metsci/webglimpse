@@ -104,6 +104,7 @@ module Webglimpse {
         label : string;
         hidden? : boolean;
         collapsed? : boolean;
+        highlighted?: boolean;
         rowGuids : string[];
     }
 
@@ -789,6 +790,7 @@ module Webglimpse {
         private _hidden : boolean;
         private _label : string;
         private _collapsed : boolean;
+        private _highlighted : boolean;
         private _rowGuids : OrderedStringSet;
 
         constructor( group : TimelineGroup ) {
@@ -811,6 +813,7 @@ module Webglimpse {
             this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
+            this._highlighted = hasval(group.highlighted) ? group.highlighted : false;
             this._attrsChanged.fire( );
         }
         
@@ -845,6 +848,17 @@ module Webglimpse {
             }
         }
 
+        get highlighted(): boolean {
+            return this._highlighted;
+        }
+
+        set highlighted(highlighted: boolean) {
+            if (highlighted !== this._highlighted) {
+                this._highlighted = highlighted;
+                this._attrsChanged.fire();
+            }
+        }
+
         get rowGuids( ) : OrderedStringSet {
             return this._rowGuids;
         }
@@ -855,6 +869,7 @@ module Webglimpse {
                 label: this._label,
                 hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),
+                highlighted: (hasval(this._highlighted) ? this._highlighted : false),
                 rowGuids: this._rowGuids.toArray( )
             };
         }

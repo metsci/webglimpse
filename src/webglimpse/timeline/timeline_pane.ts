@@ -61,6 +61,7 @@ module Webglimpse {
         fgColor? : Color;
         rowLabelColor? : Color;
         groupLabelColor? : Color;
+        groupHighlightColor? : Color;
         axisLabelColor? : Color;
         bgColor? : Color;
         rowBgColor? : Color;
@@ -99,6 +100,7 @@ module Webglimpse {
         var fgColor                     = ( hasval( options ) && hasval( options.fgColor                     ) ? options.fgColor                     : white                      );
         var rowLabelColor               = ( hasval( options ) && hasval( options.rowLabelColor               ) ? options.rowLabelColor               : fgColor                    );
         var groupLabelColor             = ( hasval( options ) && hasval( options.groupLabelColor             ) ? options.groupLabelColor             : fgColor                    );
+        var groupHighlightColor         = ( hasval(options  ) && hasval( options.groupHighlightColor         ) ? options.groupHighlightColor         : rgb( 0, 1, 1 )             );
         var axisLabelColor              = ( hasval( options ) && hasval( options.axisLabelColor              ) ? options.axisLabelColor              : fgColor                    );
         var bgColor                     = ( hasval( options ) && hasval( options.bgColor                     ) ? options.bgColor                     : rgb( 0.098, 0.165, 0.243 ) );
         var rowBgColor                  = ( hasval( options ) && hasval( options.rowBgColor                  ) ? options.rowBgColor                  : rgb( 0.020, 0.086, 0.165 ) );
@@ -138,7 +140,7 @@ module Webglimpse {
         selection.selectedEvents.valueRemoved.on( redraw );
 
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
 
         var scrollLayout = newVerticalScrollLayout( );
@@ -625,6 +627,7 @@ module Webglimpse {
         fgColor : Color;
         rowLabelColor : Color;
         groupLabelColor : Color;
+        groupHighlightColor : Color;
         axisLabelColor : Color;
         bgColor : Color;
         rowBgColor : Color;
@@ -655,6 +658,7 @@ module Webglimpse {
         var fgColor = options.fgColor;
         var rowLabelColor = options.rowLabelColor;
         var groupLabelColor = options.groupLabelColor;
+        var groupHighlightColor = options.groupHighlightColor;
         var axisLabelColor = options.axisLabelColor;
         var bgColor = options.bgColor;
         var rowBgColor = options.rowBgColor;
@@ -705,10 +709,15 @@ module Webglimpse {
             groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
             groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
 
+            //Testing adding a highlight
+            var groupHeaderHighlight = new Pane( newColumnLayout( ) );
+            groupHeaderHighlight.addPane(newSolidPane( groupHighlightColor ), 1, { width: 6, height: null });
+
             var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
             groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
-            groupHeaderUnderlay.addPane( groupButton, 0 );
-            groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
+            groupHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
+            groupHeaderUnderlay.addPane( groupButton, 1 );
+            groupHeaderUnderlay.addPane( groupHeaderStripe, 2, { ignoreHeight: true } );
 
             var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
             var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
@@ -728,14 +737,24 @@ module Webglimpse {
             groupHeaderPanes[ groupGuid ] = groupHeaderPane;
             groupContentPanes[ groupGuid ] = groupContentPane;
 
-            var groupAttrsChanged = function( ) {
+            var groupAttrsChanged = function( group ) {
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
+                var groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
+                var redraw = false;
+                if(group.highlighted !== (!groupHighlightLayoutOpts.hide)) {
+                    groupHighlightLayoutOpts.hide = !group.highlighted;
+                    redraw = true;
+                }
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
+                    redraw = true;
+                }
+                if(redraw) {
                     drawable.redraw( );
                 }
-            };
+            }.bind(this, group);
             group.attrsChanged.on( groupAttrsChanged );
+            groupAttrsChanged();
 
             groupButton.mouseDown.on( function( ) {
                 group.collapsed = !group.collapsed;
