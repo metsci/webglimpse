@@ -73,16 +73,31 @@ module Webglimpse {
         eventGuid : string;
         start_ISO8601 : string;
         end_ISO8601 : string;
+        // text to be displayed with the event
         label : string;
         labelIcon? : string;
+        // whether or not the event can be dragged / resized by user clicks
         userEditable? : boolean;
+        // see timeline_event_style.ts (determines what icons the event displays)
         styleGuid? : string;
+        // determines which events are drawn over others (higher numbers on top)
         order? : number;
+        // distance between event box and top of timeline row
         topMargin? : number;
+        // distance between event box and bottom of timeline row
         bottomMargin? : number;
+        // text label color
         fgColor? : string;
+        // event box color
         bgColor? : string;
+        // event box border color
         borderColor? : string;
+        // portion at the top of the timeline row not considered by labelVAlign when placing text
+        labelTopMargin? : number;
+        // portion at the bottom of the timeline row not considered by labelVAlign when placing text
+        labelBottomMargin? : number;
+        // center of the label text (0 = bottom of row, 1 = top of row)
+        labelVAlign? : number;
     }
 
 
@@ -499,6 +514,9 @@ module Webglimpse {
         private _fgColor : Color;
         private _bgColor : Color;
         private _borderColor : Color;
+        private _labelTopMargin : number;
+        private _labelBottomMargin : number;
+        private _labelVAlign : number;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -528,6 +546,9 @@ module Webglimpse {
             this._fgColor = ( hasval( event.fgColor ) ? parseCssColor( event.fgColor ) : null );
             this._bgColor = ( hasval( event.bgColor ) ? parseCssColor( event.bgColor ) : null );
             this._borderColor = ( hasval( event.borderColor ) ? parseCssColor( event.borderColor ) : null );
+            this._labelTopMargin = event.labelTopMargin;
+            this._labelBottomMargin = event.labelBottomMargin;
+            this._labelVAlign = event.labelVAlign;
             this._attrsChanged.fire( );
         }
 
@@ -670,6 +691,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get labelTopMargin( ) : number {
+            return this._labelTopMargin;
+        }
+        
+        set labelTopMargin( labelTopMargin : number ) {
+            if ( labelTopMargin !== this._labelTopMargin ) {
+                this._labelTopMargin = labelTopMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelBottomMargin( ) : number {
+            return this._labelBottomMargin;
+        }
+        
+        set labelBottomMargin( labelBottomMargin : number ) {
+            if ( labelBottomMargin !== this._labelBottomMargin ) {
+                this._labelBottomMargin = labelBottomMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelVAlign( ) : number {
+            return this._labelVAlign;
+        }
+        
+        set labelVAlign( labelVAlign : number ) {
+            if ( labelVAlign !== this._labelVAlign ) {
+                this._labelVAlign = labelVAlign;
+                this._attrsChanged.fire( );
+            }
+        }
 
         snapshot( ) : TimelineEvent {
             return {
@@ -685,7 +739,10 @@ module Webglimpse {
                 bottomMargin: this._bottomMargin,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 fgColor: ( hasval( this._fgColor ) ? this._fgColor.cssString : null ),
-                borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null )
+                borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null ),
+                labelTopMargin: this._labelTopMargin,
+                labelBottomMargin: this._labelBottomMargin,
+                labelVAlign: this._labelVAlign
             };
         }
     }

@@ -26,7 +26,11 @@
         "bgColor": "#196EED",
         "order": 10,
         "topMargin": 12,
-        "bottomMargin": 0
+        "bottomMargin": 0,
+        "labelTopMargin": 12,
+        "labelBottomMargin": 0,
+        "labelVAlign": 0.5,
+        "labelIcon": "images/fugue/weather.png"
     }, {
         "eventGuid": "metsci.timelineExample.event02",
         "start_ISO8601": "2014-01-01T02:30:00Z",
@@ -49,7 +53,11 @@
         "bgColor": "#FFB403",
         "order": 3,
         "topMargin": 0,
-        "bottomMargin": 0
+        "bottomMargin": 0,
+        "labelTopMargin": 10,
+        "labelBottomMargin": 0,
+        "labelVAlign": 0.5,
+        "labelIcon": "images/fugue/weather.png"
     }, {
         "eventGuid": "metsci.timelineExample.event03",
         "start_ISO8601": "2014-01-01T03:00:00Z",

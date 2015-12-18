@@ -854,11 +854,16 @@ module Webglimpse {
             textTextures : textTextures,
             textureRenderer : textureRenderer,
             paintEvent: function( laneIndex : number, eventIndex : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                
                 var lane : TimelineLane = lanes.lane( laneIndex );
                 var event : TimelineEventModel = lane.event( eventIndex );
+               
+                var labelTopMargin = hasval( event.labelTopMargin ) ? event.labelTopMargin : topMargin;
+                var labelBottomMargin = hasval( event.labelBottomMargin ) ? event.labelBottomMargin : bottomMargin;
+                var labelVAlign = hasval( event.labelVAlign ) ? event.labelVAlign : vAlign;
                 
-                var jTop = rowTopPadding + ( laneIndex )*laneHeight + topMargin;
-                var yFrac = ( viewport.h - jTop - ( 1.0 - vAlign )*( laneHeight - topMargin - bottomMargin ) ) / viewport.h;
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + labelTopMargin;
+                var yFrac = ( viewport.h - jTop - ( 1.0 - labelVAlign )*( laneHeight - labelTopMargin - labelBottomMargin ) ) / viewport.h;
                 
                 var xLeftMin = 2 / viewport.w;
                 var xRightMax = ( viewport.w - 2 ) / viewport.w;
@@ -900,7 +905,7 @@ module Webglimpse {
                             var wIconKnown = hasval( iconWidth );
                             var hIconKnown = hasval( iconHeight );
                             if ( !wIconKnown && !hIconKnown ) {
-                                iconHeight = Math.round( iconsSizeFactor * ( laneHeight - topMargin - bottomMargin ) );
+                                iconHeight = Math.round( iconsSizeFactor * ( laneHeight - labelTopMargin - labelBottomMargin ) );
                                 iconWidth = iconTexture.w * iconHeight / iconTexture.h;
                             }
                             else if ( !wIconKnown ) {
@@ -918,7 +923,7 @@ module Webglimpse {
     
                             wIcon = ( iconWidth / viewport.w );
                             if ( forceVisible || wIcon <= wVisible ) {
-                                textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: vAlign, width: iconWidth, height: iconHeight } );
+                                textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: labelVAlign, width: iconWidth, height: iconHeight } );
                             }
                         }
                         // A null in the map means a fetch has already been initiated
@@ -949,7 +954,7 @@ module Webglimpse {
                         var wShift = ( iconsEnabled ? wIcon + ( spacing / viewport.w ) : 0 );
                         var wText = ( textTexture.w / viewport.w );
                         if ( forceVisible || wShift + wText <= wVisible ) {
-                            textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( vAlign ) } );
+                            textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( labelVAlign ) } );
                         }
                     }
                 }
