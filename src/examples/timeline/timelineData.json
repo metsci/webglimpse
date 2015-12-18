@@ -123,6 +123,7 @@
     "rows": [ {
         "rowGuid": "metsci.timelineExample.row01a",
         "label": "Row #1A",
+        "bgColor" : "#C0C0C0",
         "eventGuids": [
             "metsci.timelineExample.event01",
             "metsci.timelineExample.event02",

@@ -111,6 +111,7 @@ module Webglimpse {
         eventGuids? : string[];
         timeseriesGuids? : string[];
         annotationGuids? : string[];
+        bgColor? : string;
     }
 
 
@@ -757,6 +758,7 @@ module Webglimpse {
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
+        private _bgColor : Color;
         private _dataAxis : Axis1D;
 
         constructor( row : TimelineRow ) {
@@ -786,6 +788,7 @@ module Webglimpse {
             this._label = row.label;
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
+            this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
             this._attrsChanged.fire( );
         }
         
@@ -828,6 +831,17 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get bgColor( ) : Color {
+            return this._bgColor;
+        }
+
+        set bgColor( bgColor : Color ) {
+            if ( bgColor !== this._bgColor ) {
+                this._bgColor = bgColor;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get eventGuids( ) : OrderedStringSet {
             return this._eventGuids;
@@ -850,6 +864,7 @@ module Webglimpse {
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
+                bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
             };
         }
     }

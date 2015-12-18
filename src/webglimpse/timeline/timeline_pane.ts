@@ -889,7 +889,7 @@ module Webglimpse {
 
             function newRowBackgroundPainter( group : TimelineGroupModel, row : TimelineRowModel ) {
                 return function( gl : WebGLRenderingContext ) {
-                    var color = ( group.rowGuids.indexOf( row.rowGuid ) % 2 ? rowBgColor : rowAltBgColor );
+                    var color = hasval( row.bgColor ) ? row.bgColor : ( group.rowGuids.indexOf( row.rowGuid ) % 2 ? rowBgColor : rowAltBgColor );
                     gl.clearColor( color.r, color.g, color.b, color.a );
                     gl.clear( GL.COLOR_BUFFER_BIT );
                 };
