@@ -1,4 +1,9 @@
 
+Webglimpse 1.7.0-pre2 (released) 2015-12-18)
+
+ * Background color of timeline rows can be independently set in json row description using bgColor attribute.
+ * Position of event text and icon can be set independently for each event using labelTopMargin, labelBottomMargin, and labelVAlign attributes.
+
 Webglimpse 1.7.0-pre1 (released 2015-9-10)
 
   * Event z-order specified using TimelineEvent.order when TimelineEventsRowPaneOptions.allowMultipleLanes = false
