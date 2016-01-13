@@ -798,6 +798,10 @@ module Webglimpse {
             
                 var rollupUi = ui.rowUi( rollupRow.rowGuid );
                 
+                // expose panes in api via TimelineRowUi
+                rollupUi.addPane( 'background', rowBackgroundPane );
+                rollupUi.addPane( 'inset', rowInsetPane );
+                
                 var rollupDataAxis = rollupRow.dataAxis;
                 
                 var rollupContentPane : Pane = null;
@@ -940,6 +944,12 @@ module Webglimpse {
                 var rowPane = new Pane( newColumnLayout( ) );
                 rowPane.addPane( rowHeaderPane, 0, { width: rowLabelPaneWidth } );
                 rowPane.addPane( rowBackgroundPane, 1, { width: null } );
+
+                // expose panes in api via TimelineRowUi
+                rowUi.addPane( 'background', rowBackgroundPane );
+                rowUi.addPane( 'inset', rowInsetPane );
+                rowUi.addPane( 'label', rowLabelPane );
+                rowUi.addPane( 'header', rowHeaderPane );
                 
                 var rowDataAxis = row.dataAxis;
 

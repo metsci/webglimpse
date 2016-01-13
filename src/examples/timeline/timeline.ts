@@ -556,9 +556,15 @@ module Webglimpse {
         //
         // Fetch timeline data from the server, and merge it into the existing timeline model
         //
-
         $.getJSON( 'timelineData.json', function( newTimeline : Timeline ) {
             model.merge( newTimeline, timelineMergeNewBeforeOld );
+            
+            // once the timeline has been loaded, add listeners to some of the Panes
+            var pane = ui.rowUi( 'metsci.timelineExample.row03a' ).getPane( 'y-axis' );
+            var clickListener = function( ev : PointerEvent ) {
+                console.log( 'y-axis click: ' + ev.clickCount );
+            };
+            pane.mouseDown.on( clickListener );
         } );
         
         // Example function for reloading TimelinePane with new TimelinePaneOptions. Takes care of

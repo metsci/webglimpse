@@ -65,6 +65,7 @@ module Webglimpse {
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
 
+            var rowUi = ui.rowUi( row.rowGuid );
             var input = ui.input;
             var selection = ui.selection;
             
@@ -99,6 +100,11 @@ module Webglimpse {
             rowContentPane.addPane( yAxisPane, 0 );
             underlayPane.addPane( rowContentPane, true );
             underlayPane.addPane( overlayPane, false );
+            
+            rowUi.addPane( 'content', rowContentPane );
+            rowUi.addPane( 'overlay', overlayPane );
+            rowUi.addPane( 'underlay', underlayPane );
+            rowUi.addPane( 'y-axis', yAxisPane );
             
             var redraw = function( ) {
                 drawable.redraw( );
@@ -395,6 +401,12 @@ module Webglimpse {
             } );
             
             rowContentPane.dispose.on( function( ) {
+                
+                rowUi.removePane( 'content' );
+                rowUi.removePane( 'overlay' );
+                rowUi.removePane( 'underlay' );
+                rowUi.removePane( 'y-axis' );
+                
                 dataAxis.limitsChanged.off( drawable.redraw );
                 
                 row.timeseriesGuids.valueAdded.off( redraw );

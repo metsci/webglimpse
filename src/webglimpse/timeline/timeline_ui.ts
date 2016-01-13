@@ -170,6 +170,7 @@ module Webglimpse {
         private _rowGuid : string;
         private _paneFactoryChanged : Notification;
         private _paneFactory : TimelineRowPaneFactory;
+        private _panes : { [ key : string ] : Pane } = { };
 
         constructor( rowGuid : string ) {
             this._rowGuid = rowGuid;
@@ -194,6 +195,18 @@ module Webglimpse {
                 this._paneFactory = paneFactory;
                 this._paneFactoryChanged.fire( );
             }
+        }
+        
+        removePane( paneId : string ) {
+            delete this._panes[ paneId ];
+        }
+        
+        addPane( paneId : string, pane : Pane ) {
+            this._panes[ paneId ] = pane;
+        }
+        
+        getPane( paneId : string ) {
+            return this._panes[ paneId ];
         }
     }
 

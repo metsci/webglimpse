@@ -71,9 +71,10 @@ module Webglimpse {
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
 
-
+            var rowUi = ui.rowUi( row.rowGuid );
             var input = ui.input;
             var selection = ui.selection;
+            
             var lanes = new TimelineLaneArray( model, row, ui, allowMultipleLanes );
 
             var timeAtCoords_PMILLIS = function( viewport : BoundsUnmodifiable, i : number ) : number {
@@ -110,6 +111,8 @@ module Webglimpse {
             };
             var rowContentPane = new Pane( layout, true, isInsideAnEvent );
 
+            rowUi.addPane( 'content', rowContentPane );
+            
             var painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding, laneHeight: laneHeight };
             for ( var n = 0; n < painterFactories.length; n++ ) {
                 var createPainter = painterFactories[ n ];
