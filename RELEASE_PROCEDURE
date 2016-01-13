@@ -1,0 +1,10 @@
+Release Procedure
+
+ * Peer review commits since last release using GitHub pull request
+ * Edit the CHANGELOG
+ * Change the version number in Gruntfile.js
+ * Run "grunt serve_release and check with browser to make sure everything works as expected
+ * Run "grunt release"
+ * Create tar.gz archive
+ * Upload to glimpse.metsci.com
+
