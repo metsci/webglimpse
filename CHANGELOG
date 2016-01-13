@@ -1,4 +1,9 @@
 
+Webglimpse 1.7.0-pre3 (released) 2016-1-13)
+
+ * Exposed various timeline Panes through TimelineRowUi.getPane( )
+ * Generalized Pane mouse listeners to report all mouseDown / mouseDrag events, not just left mouse button
+
 Webglimpse 1.7.0-pre2 (released) 2015-12-18)
 
  * Background color of timeline rows can be independently set in json row description using bgColor attribute.
