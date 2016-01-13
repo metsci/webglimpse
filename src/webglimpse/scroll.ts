@@ -189,8 +189,10 @@ module Webglimpse {
         var jOffset : number = null;
         
         pane.mouseDown.on( function( ev : PointerEvent ) {
-            grab = ev.j;
-            jOffset = scrollLayout.jOffset;
+            if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                grab = ev.j;
+                jOffset = scrollLayout.jOffset;
+            }
         } );
             
         pane.mouseMove.on( function( ev : PointerEvent ) {
@@ -216,7 +218,7 @@ module Webglimpse {
         var recentPointerFrac : number = null;
 
         scrollbar.mouseDown.on( function( ev : PointerEvent ) {
-            if ( !hasval( grab ) ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && !hasval( grab ) ) {
                 var topFrac = ( scrollLayout.hContent - scrollLayout.jOffset ) / scrollLayout.hContent;
                 var fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
                 var pointerFrac = yFrac( ev );

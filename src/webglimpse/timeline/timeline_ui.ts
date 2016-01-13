@@ -431,30 +431,34 @@ module Webglimpse {
         if ( allowMultiEventSelection ) {
             // XXX: A drag should preempt selection-toggle, which means waiting for some delay to see whether a drag starts
             input.mouseDown.on( function( ev : PointerEvent ) {
-                var event = selection.hoveredEvent.value;
-                if ( hasval( event ) ) {
-                    var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
-                    if ( multiSelectMode ) {
-                        if ( selection.selectedEvents.hasValue( event ) ) {
-                            selection.selectedEvents.removeValue( event );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
+                        var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
+                        if ( multiSelectMode ) {
+                            if ( selection.selectedEvents.hasValue( event ) ) {
+                                selection.selectedEvents.removeValue( event );
+                            }
+                            else {
+                                selection.selectedEvents.add( event );
+                            }
                         }
                         else {
+                            selection.selectedEvents.retainValues( [ event ] );
                             selection.selectedEvents.add( event );
                         }
-                    }
-                    else {
-                        selection.selectedEvents.retainValues( [ event ] );
-                        selection.selectedEvents.add( event );
                     }
                 }
             } );
         }
         else {
             input.mouseDown.on( function( ev : PointerEvent ) {
-                var event = selection.hoveredEvent.value;
-                if ( hasval( event ) ) {
-                    selection.selectedEvents.retainValues( [ event ] );
-                    selection.selectedEvents.add( event );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
+                        selection.selectedEvents.retainValues( [ event ] );
+                        selection.selectedEvents.add( event );
+                    }
                 }
             } );
         }

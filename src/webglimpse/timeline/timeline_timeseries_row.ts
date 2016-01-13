@@ -369,7 +369,9 @@ module Webglimpse {
             } );
             
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
-                timeseriesDragMode = chooseTimeseriesDragMode( ui, selection.hoveredTimeseries.fragment );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    timeseriesDragMode = chooseTimeseriesDragMode( ui, selection.hoveredTimeseries.fragment );
+                }
             } );
             
             rowContentPane.mouseMove.on( function( ev : PointerEvent ) {

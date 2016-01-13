@@ -291,7 +291,7 @@ module Webglimpse {
         if ( selectedIntervalMode === 'single' ) {
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                return 'center';
+                return isLeftMouseDown( ev.mouseEvent ) ? 'center' : null;
             }
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -311,27 +311,33 @@ module Webglimpse {
             var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
-                    // If interval isn't very wide, don't try to allow edge dragging
-                    return 'center';
-                }
-                else {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                    if ( mouseOffset < draggableEdgeWidth ) {
-                        // If mouse is near the left edge, drag the interval's start-time
-                        return 'start';
-                    }
-                    else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
-                        // If mouse is in the center, drag the whole interval
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                    if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
+                        // If interval isn't very wide, don't try to allow edge dragging
                         return 'center';
                     }
                     else {
-                        // If mouse is near the right edge, drag the interval's end-time
-                        return 'end';
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                        if ( mouseOffset < draggableEdgeWidth ) {
+                            // If mouse is near the left edge, drag the interval's start-time
+                            return 'start';
+                        }
+                        else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
+                            // If mouse is in the center, drag the whole interval
+                            return 'center';
+                        }
+                        else {
+                            // If mouse is near the right edge, drag the interval's end-time
+                            return 'end';
+                        }
                     }
                 }
+                else {
+                    return null;
+                }
+                    
             };
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -410,7 +416,7 @@ module Webglimpse {
         var dragPointer_PMILLIS : number = null;
 
         var updateDragPointer = function( ev : PointerEvent ) {
-            if ( dragMode ) {
+            if ( hasval( dragMode ) ) {
                 dragPointer_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
             }
         };
@@ -878,8 +884,10 @@ module Webglimpse {
             };
             group.attrsChanged.on( groupAttrsChanged );
 
-            groupButton.mouseDown.on( function( ) {
-                group.collapsed = !group.collapsed;
+            groupButton.mouseDown.on( function( ev : PointerEvent ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    group.collapsed = !group.collapsed;
+                }
             } );
             
             // Handle hidden property

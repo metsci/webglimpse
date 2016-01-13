@@ -285,22 +285,24 @@ module Webglimpse {
             selection.hoveredEvent.changed.on( updateCursor );
 
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
-                var eventDragEventsSet = selection.selectedEvents;
-                eventDragEvents = eventDragEventsSet.toArray( );
-                eventDragMode = chooseEventDragMode( ui, timeAtPointer_PMILLIS( ev ), eventDragEvents );
-
-                eventDragSnapTimes_PMILLIS = new Array( 2 * ( row.eventGuids.length - eventDragEvents.length ) );
-                var numSnapTimes = 0;
-                var allEventGuids = row.eventGuids;
-                for ( var n = 0; n < allEventGuids.length; n++ ) {
-                    var eventGuid = allEventGuids.valueAt( n );
-                    if ( !eventDragEventsSet.hasId( eventGuid ) ) {
-                        var event = model.event( eventGuid );
-                        eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.start_PMILLIS;
-                        eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.end_PMILLIS;
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var eventDragEventsSet = selection.selectedEvents;
+                    eventDragEvents = eventDragEventsSet.toArray( );
+                    eventDragMode = chooseEventDragMode( ui, timeAtPointer_PMILLIS( ev ), eventDragEvents );
+    
+                    eventDragSnapTimes_PMILLIS = new Array( 2 * ( row.eventGuids.length - eventDragEvents.length ) );
+                    var numSnapTimes = 0;
+                    var allEventGuids = row.eventGuids;
+                    for ( var n = 0; n < allEventGuids.length; n++ ) {
+                        var eventGuid = allEventGuids.valueAt( n );
+                        if ( !eventDragEventsSet.hasId( eventGuid ) ) {
+                            var event = model.event( eventGuid );
+                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.start_PMILLIS;
+                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.end_PMILLIS;
+                        }
                     }
+                    eventDragSnapTimes_PMILLIS.sort( );
                 }
-                eventDragSnapTimes_PMILLIS.sort( );
             } );
 
             function findSnapShift_MILLIS( t_PMILLIS : number, maxShift_MILLIS : number ) : number {
@@ -322,7 +324,7 @@ module Webglimpse {
             var eventDragPointer_PMILLIS : number = null;
 
             var updateEventDragPointer = function( ev : PointerEvent ) {
-                if ( eventDragMode ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) && eventDragMode ) {
                     eventDragPointer_PMILLIS = timeAtPointer_PMILLIS( ev );
                 }
             };
