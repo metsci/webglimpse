@@ -752,9 +752,23 @@ module Webglimpse {
         var createGroupLabelTexture = createTextTextureFactory( font );
         var createRowLabelTexture = createTextTextureFactory( font );
 
-
+        // pane which either shows timeline content, or only maximized rows
+        var timelineCardPane = new Pane( newCardLayout( ) );
+        var timelineMaximizedContentPane = new Pane( newRowLayout( ) );
         var timelineContentPane = new Pane( newRowLayout( ) );
 
+        var contentActive = model.root.maximizedRowGuids.isEmpty;
+        timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
+        timelineCardPane.addPane( timelineContentPane, contentActive );
+        
+        var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
+            var contentActive = model.root.maximizedRowGuids.isEmpty;
+            timelineCardPane.setLayoutArg( timelineMaximizedContentPane, !contentActive );
+            timelineCardPane.setLayoutArg( timelineContentPane, contentActive );
+        }
+        
+        model.root.maximizedRowGuids.valueAdded.on( updateMaximizedRows );
+        model.root.maximizedRowGuids.valueRemoved.on( updateMaximizedRows );
 
         // Group panes
         //
@@ -1151,13 +1165,16 @@ module Webglimpse {
         // Dispose
         //
         
-        timelineContentPane.dispose.on( function( ) {
+        timelineCardPane.dispose.on( function( ) {
             root.groupGuids.valueAdded.off( addGroup );
             root.groupGuids.valueMoved.off( moveGroup );
             root.groupGuids.valueRemoved.off( removeGroup );
+            
+            root.maximizedRowGuids.valueAdded.off( updateMaximizedRows );
+            root.maximizedRowGuids.valueRemoved.off( updateMaximizedRows );
         } );
 
-        return timelineContentPane;
+        return timelineCardPane;
     }
 
 

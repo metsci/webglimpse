@@ -360,9 +360,23 @@ module Webglimpse {
             // Handle event hovered
             var hoveredEvent = selection.hoveredEvent.value;
         } );
+        
+        var b = true;
 
         selection.selectedEvents.valueAdded.on( function( event : TimelineEventModel ) {
             // Handle event selected
+            
+            console.log( 'updating maximizedRowGuids' );
+            
+            if ( b ) {
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row01a' );
+            }
+            else {
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
+            }
+            
+            b = !b;
+            
         } );
 
         selection.selectedEvents.valueRemoved.on( function( event : TimelineEventModel ) {

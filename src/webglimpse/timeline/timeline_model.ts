@@ -127,6 +127,8 @@ module Webglimpse {
 
     export interface TimelineRoot {
         groupGuids : string[];
+        pinnedRowGuids : string[];
+        maximizedRowGuids : string[];
     }
 
 
@@ -963,11 +965,15 @@ module Webglimpse {
     export class TimelineRootModel {
         private _attrsChanged : Notification;
         private _groupGuids : OrderedStringSet;
+        private _pinnedRowGuids : OrderedStringSet;
+        private _maximizedRowGuids : OrderedStringSet;
 
         constructor( root : TimelineRoot ) {
             this._attrsChanged = new Notification( );
             this.setAttrs( root );
             this._groupGuids = new OrderedStringSet( root.groupGuids );
+            this._pinnedRowGuids = new OrderedStringSet( root.pinnedRowGuids );
+            this._maximizedRowGuids = new OrderedStringSet( root.maximizedRowGuids );
         }
 
         get attrsChanged( ) : Notification {
@@ -983,10 +989,20 @@ module Webglimpse {
         get groupGuids( ) : OrderedStringSet {
             return this._groupGuids;
         }
+        
+        get pinnedRowGuids( ) : OrderedStringSet {
+            return this._pinnedRowGuids;
+        }
+        
+        get maximizedRowGuids( ) : OrderedStringSet {
+            return this._maximizedRowGuids;
+        }
 
         snapshot( ) : TimelineRoot {
             return {
-                groupGuids: this._groupGuids.toArray( )
+                groupGuids: this._groupGuids.toArray( ),
+                pinnedRowGuids: this._pinnedRowGuids.toArray( ),
+                maximizedRowGuids: this._maximizedRowGuids.toArray( )
             };
         }
     }
@@ -1322,7 +1338,9 @@ module Webglimpse {
 
 
     export function newEmptyTimelineRoot( ) : TimelineRoot {
-        return { groupGuids: [] };
+        return { groupGuids: [],
+                 pinnedRowGuids: [],
+                 maximizedRowGuids: [] };
     }
 
 
