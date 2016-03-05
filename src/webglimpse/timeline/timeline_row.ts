@@ -44,7 +44,6 @@ module Webglimpse {
           timeAxis : TimeAxis1D,
           dataAxis : Axis1D,
           model : TimelineModel,
-          group : TimelineGroupModel,
           row : TimelineRowModel,
           ui : TimelineUi,
           options : TimelineRowPaneOptions ) : Pane;

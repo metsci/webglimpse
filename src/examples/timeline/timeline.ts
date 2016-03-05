@@ -228,6 +228,21 @@ module Webglimpse {
             }
         }
         
+        var b = true;
+        var a = document.getElementById("maximize-button");
+        a.onclick = function() {
+            console.log( 'updating maximizedRowGuids' );
+            
+            if ( b ) {
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row01a' );
+            }
+            else {
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
+            }
+            
+            b = !b;
+        }
+        
 
 
         // Example Event-Hover Overlay
@@ -360,23 +375,9 @@ module Webglimpse {
             // Handle event hovered
             var hoveredEvent = selection.hoveredEvent.value;
         } );
-        
-        var b = true;
 
         selection.selectedEvents.valueAdded.on( function( event : TimelineEventModel ) {
             // Handle event selected
-            
-            console.log( 'updating maximizedRowGuids' );
-            
-            if ( b ) {
-                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row01a' );
-            }
-            else {
-                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
-            }
-            
-            b = !b;
-            
         } );
 
         selection.selectedEvents.valueRemoved.on( function( event : TimelineEventModel ) {
@@ -451,7 +452,7 @@ module Webglimpse {
                 }
             }
            
-            var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+            var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
                 var axisColor = options.timelineFgColor;
 
                 // setup axes
@@ -500,7 +501,7 @@ module Webglimpse {
         // Create a heatmap row with programmatically generated data
         //
         
-        var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+        var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             var axisColor = options.timelineFgColor;
 
             // setup axes
