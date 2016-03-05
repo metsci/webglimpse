@@ -956,6 +956,8 @@ module Webglimpse {
         timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
         timelineCardPane.addPane( timelineContentPane, contentActive );
         
+        setupRowContainerPane( timelineMaximizedContentPane, model.root.maximizedRowGuids, 'maximized-' );
+        
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
             timelineCardPane.setLayoutArg( timelineMaximizedContentPane, !contentActive );

@@ -234,10 +234,10 @@ module Webglimpse {
             console.log( 'updating maximizedRowGuids' );
             
             if ( b ) {
-                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row01a' );
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
             }
             else {
-                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
             }
             
             b = !b;
