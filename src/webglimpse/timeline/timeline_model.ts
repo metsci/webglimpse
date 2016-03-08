@@ -127,7 +127,8 @@ module Webglimpse {
 
     export interface TimelineRoot {
         groupGuids : string[];
-        pinnedRowGuids : string[];
+        topPinnedRowGuids : string[];
+        bottomPinnedRowGuids : string[];
         maximizedRowGuids : string[];
     }
 
@@ -965,14 +966,16 @@ module Webglimpse {
     export class TimelineRootModel {
         private _attrsChanged : Notification;
         private _groupGuids : OrderedStringSet;
-        private _pinnedRowGuids : OrderedStringSet;
+        private _topPinnedRowGuids : OrderedStringSet;
+        private _bottomPinnedRowGuids : OrderedStringSet;
         private _maximizedRowGuids : OrderedStringSet;
 
         constructor( root : TimelineRoot ) {
             this._attrsChanged = new Notification( );
             this.setAttrs( root );
             this._groupGuids = new OrderedStringSet( root.groupGuids );
-            this._pinnedRowGuids = new OrderedStringSet( root.pinnedRowGuids );
+            this._topPinnedRowGuids = new OrderedStringSet( root.topPinnedRowGuids );
+            this._bottomPinnedRowGuids = new OrderedStringSet( root.bottomPinnedRowGuids );
             this._maximizedRowGuids = new OrderedStringSet( root.maximizedRowGuids );
         }
 
@@ -990,8 +993,12 @@ module Webglimpse {
             return this._groupGuids;
         }
         
-        get pinnedRowGuids( ) : OrderedStringSet {
-            return this._pinnedRowGuids;
+        get topPinnedRowGuids( ) : OrderedStringSet {
+            return this._topPinnedRowGuids;
+        }
+        
+        get bottomPinnedRowGuids( ) : OrderedStringSet {
+            return this._bottomPinnedRowGuids;
         }
         
         get maximizedRowGuids( ) : OrderedStringSet {
@@ -1001,7 +1008,8 @@ module Webglimpse {
         snapshot( ) : TimelineRoot {
             return {
                 groupGuids: this._groupGuids.toArray( ),
-                pinnedRowGuids: this._pinnedRowGuids.toArray( ),
+                topPinnedRowGuids: this._topPinnedRowGuids.toArray( ),
+                bottomPinnedRowGuids: this._bottomPinnedRowGuids.toArray( ),
                 maximizedRowGuids: this._maximizedRowGuids.toArray( )
             };
         }
@@ -1339,7 +1347,8 @@ module Webglimpse {
 
     export function newEmptyTimelineRoot( ) : TimelineRoot {
         return { groupGuids: [],
-                 pinnedRowGuids: [],
+                 bottomPinnedRowGuids: [],
+                 topPinnedRowGuids: [],
                  maximizedRowGuids: [] };
     }
 

@@ -183,25 +183,41 @@ module Webglimpse {
         
         model.root.maximizedRowGuids.valueAdded.on( updateMaximizedRows );
         model.root.maximizedRowGuids.valueRemoved.on( updateMaximizedRows );
-                
-        
+
         // Overlay and Underlay Panes
         //
 
-        var underlayPane = new Pane( newTimelineLayout( axisPaneHeight ) );
+        var underlayPane = new Pane( newRowLayout( ) );
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
 
+        // top time axis pane
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
-            underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
+            underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), 0, { height: axisPaneHeight, width: null } );
         }
-        underlayPane.addPane( timelineCardPane );
+
+        // pane containing pinned rows specified in TimelineRoot.topPinnedRowGuids
+        var topPinnedPane = new Pane( newRowLayout( ) );
+        var insetTopPinnedPane = newInsetPane( topPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false );
+        underlayPane.addPane( insetTopPinnedPane, 1 );
+
+        // main pane containing timeline groups and rows
+        underlayPane.addPane( timelineCardPane, 2, { height: null, width: null } );
+        
+        // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
+        var bottomPinnedPane = new Pane( newRowLayout( ) );
+        var insetBottomPinnedPane = newInsetPane( bottomPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false );
+        underlayPane.addPane( insetBottomPinnedPane, 3 );
+
+        // bottom time axis pane
         if ( showBottomAxis ) {
             var bottomAxisPane = newTimeAxisPane( contentPaneArgs, null );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
-            underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), Side.BOTTOM );
+            underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), 4, { height: axisPaneHeight, width: null } );
         }
 
         var updateMillisPerPx = function( ) {

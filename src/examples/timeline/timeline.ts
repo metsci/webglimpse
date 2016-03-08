@@ -190,7 +190,7 @@ module Webglimpse {
             drawable.redraw( );
         };
         
-        var a = document.getElementById("selected-time-calendar");
+        var a = document.getElementById( 'selected-time-calendar' );
         a.onclick = function() {
 
             var dateFormat = 'M/D/YYYY';
@@ -198,7 +198,7 @@ module Webglimpse {
 
             var calendardiv = document.getElementById(id);
             if ( !calendardiv ) {
-                calendardiv = document.createElement('div');
+                calendardiv = document.createElement( 'div' );
 
                 calendardiv.style.fontSize = '12';
                 
@@ -222,15 +222,15 @@ module Webglimpse {
                     drawable.redraw( );
                 }
 
-                var date = moment(selectedInterval.start_PMILLIS).format(dateFormat);
+                var date = moment( selectedInterval.start_PMILLIS ).format( dateFormat );
 
-                $(calendardiv).datepicker("dialog", date, callback, options, position);
+                $( calendardiv ).datepicker( 'dialog', date, callback, options, position );
             }
         }
         
         // Link a button to maximize / unmaximize two specific rows
         
-        var a = document.getElementById("maximize-button");
+        var a = document.getElementById( 'maximize-button' );
         a.onclick = function() {
             if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
                 model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
@@ -267,6 +267,32 @@ module Webglimpse {
                 }
             } );
         } );
+        
+        // Link a button to pin / unpin some rows to the top/bottom of the timeline
+        
+        var a = document.getElementById( 'pin-button' );
+        a.onclick = function() {    
+            if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01a' ) ) {
+                model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
+            }
+            else {
+                model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01a' );
+            }
+            
+            if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01b' ) ) {
+                model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01b' );
+            }
+            else {
+                model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01b' );
+            }
+            
+            if ( model.root.bottomPinnedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
+                model.root.bottomPinnedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+            }
+            else {
+                model.root.bottomPinnedRowGuids.add( 'metsci.timelineExample.row03a' );
+            }
+        }
 
         // Example Event-Hover Overlay
         //
