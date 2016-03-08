@@ -235,9 +235,11 @@ module Webglimpse {
             
             if ( b ) {
                 model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
             }
             else {
                 model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
             }
             
             b = !b;
@@ -455,6 +457,8 @@ module Webglimpse {
             var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
                 var axisColor = options.timelineFgColor;
 
+                var height = options.isMaximized ? null : 270;
+                
                 // setup axes
                 var colorAxis = new Axis1D( -0.7, 0.3 );
                 colorAxis.limitsChanged.on( drawable.redraw );
@@ -464,12 +468,12 @@ module Webglimpse {
                 
                 var rowAxis = new Axis2D( timeAxis, yAxis );
                 
-                var spacerPane = new Pane( { updatePrefSize: fixedSize( null, 270 ) }, false );
+                var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
                 
-                var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 270 ) } );
+                var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( yAxisPane, yAxis, true );
                 
-                var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+                var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
                 
                 var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
@@ -504,6 +508,8 @@ module Webglimpse {
         var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             var axisColor = options.timelineFgColor;
 
+            var height = options.isMaximized ? null : 270;
+            
             // setup axes
             var colorAxis = new Axis1D( 0, 30 );
             colorAxis.limitsChanged.on( drawable.redraw );
@@ -513,12 +519,12 @@ module Webglimpse {
             
             var rowAxis = new Axis2D( timeAxis, yAxis );
             
-            var spacerPane = new Pane( { updatePrefSize: fixedSize( null, 270 ) }, false );
+            var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
             
-            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( yAxisPane, yAxis, true );
             
-            var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+            var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
             
             var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
