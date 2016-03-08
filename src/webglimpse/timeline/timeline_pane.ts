@@ -1159,6 +1159,11 @@ module Webglimpse {
                 row.eventGuids.valueRemoved.off( refreshRowContentPane );
                 row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
                 row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
+                
+                rowUi.removePane( keyPrefix+'background' );
+                rowUi.removePane( keyPrefix+'inset' );
+                rowUi.removePane( keyPrefix+'label' );
+                rowUi.removePane( keyPrefix+'header' );
             } );
         };
         guidList.forEach( addRow );

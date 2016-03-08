@@ -170,12 +170,19 @@ module Webglimpse {
         private _rowGuid : string;
         private _paneFactoryChanged : Notification;
         private _paneFactory : TimelineRowPaneFactory;
-        private _panes : { [ key : string ] : Pane } = { };
+        private _panes : OrderedSet<Pane>;
 
         constructor( rowGuid : string ) {
             this._rowGuid = rowGuid;
             this._paneFactoryChanged = new Notification( );
             this._paneFactory = null;
+            
+            var getPaneId = function( pane ) {
+                var paneId = pane['webglimpse_PaneId']
+                return hasval( paneId ) ? paneId : getObjectId( pane );
+            }
+            
+            this._panes = new OrderedSet<Pane>( [], getPaneId );
         }
 
         get rowGuid( ) : string {
@@ -197,16 +204,21 @@ module Webglimpse {
             }
         }
         
-        removePane( paneId : string ) {
-            delete this._panes[ paneId ];
+        get panes( ) : OrderedSet<Pane> {
+            return this._panes;
         }
         
         addPane( paneId : string, pane : Pane ) {
-            this._panes[ paneId ] = pane;
+            pane['webglimpse_PaneId'] = paneId;
+            this._panes.add( pane );
         }
         
-        getPane( paneId : string ) {
-            return this._panes[ paneId ];
+        removePane( paneId : string ) {
+            this._panes.removeId( paneId );
+        }
+        
+        getPane( paneId : string ) : Pane {
+            return this._panes.valueFor( paneId );
         }
     }
 

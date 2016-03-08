@@ -228,24 +228,45 @@ module Webglimpse {
             }
         }
         
-        var b = true;
+        // Link a button to maximize / unmaximize two specific rows
+        
         var a = document.getElementById("maximize-button");
         a.onclick = function() {
-            console.log( 'updating maximizedRowGuids' );
-            
-            if ( b ) {
+            if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
                 model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
-                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
             }
             else {
                 model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+            }
+                
+            if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.dynamicRow02' ) ) {
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
+            }
+            else {
                 model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
             }
-            
-            b = !b;
         }
         
-
+        // Toggle row maximize by double clicking on row label
+        
+        ui.rowUis.valueAdded.on( function ( rowUi : TimelineRowUi ) {
+            rowUi.panes.valueAdded.on( function ( pane : Pane ) {
+                if ( rowUi.getPane( 'label' ) === pane ) {
+                    pane.mouseDown.on( function( event : PointerEvent ) {
+                        if ( event.clickCount === 2 ) {
+                            model.root.maximizedRowGuids.add( rowUi.rowGuid );
+                        }
+                    } );
+                }
+                else if ( rowUi.getPane( 'maximized-label' ) === pane ) {
+                    pane.mouseDown.on( function( event : PointerEvent ) {
+                        if ( event.clickCount === 2 ) {
+                            model.root.maximizedRowGuids.removeValue( rowUi.rowGuid );
+                        }
+                    } );
+                }
+            } );
+        } );
 
         // Example Event-Hover Overlay
         //
@@ -336,9 +357,9 @@ module Webglimpse {
         //
         
         selection.hoveredAnnotation.changed.on( function( ) {
-            if ( hasval( selection.hoveredTimeseries.fragment ) )
+            if ( hasval( selection.hoveredAnnotation.value.annotationGuid ) )
             {
-                console.log( selection.hoveredAnnotation.value.annotationGuid );
+                // Do something with the hovered annotation
             }
         });
         
