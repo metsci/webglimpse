@@ -357,7 +357,7 @@ module Webglimpse {
         //
         
         selection.hoveredAnnotation.changed.on( function( ) {
-            if ( hasval( selection.hoveredAnnotation.value.annotationGuid ) )
+            if ( hasval( selection.hoveredAnnotation.value ) )
             {
                 // Do something with the hovered annotation
             }
