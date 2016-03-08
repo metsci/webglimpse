@@ -233,17 +233,17 @@ module Webglimpse {
         var a = document.getElementById("maximize-button");
         a.onclick = function() {
             if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
-                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
             }
             else {
-                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
             }
                 
             if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.dynamicRow02' ) ) {
-                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
             }
             else {
-                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
             }
         }
         
