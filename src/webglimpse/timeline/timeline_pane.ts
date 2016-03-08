@@ -165,17 +165,18 @@ module Webglimpse {
         // Card Pane Switching Logic
         
         var timelineCardPane = new Pane( newCardLayout( ) );
-        var timelineMaximizedContentPane = new Pane( newRowLayout( ) );
+        var maximizedContentPane = new Pane( newRowLayout( ) );
+        var insetMaximizedContentPane = newInsetPane( maximizedContentPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
         
         var contentActive = model.root.maximizedRowGuids.isEmpty;
-        timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
+        timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
         timelineCardPane.addPane( scrollPane, contentActive );
         
-        setupRowContainerPane( contentPaneArgs, timelineMaximizedContentPane, model.root.maximizedRowGuids, true );
+        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true );
         
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
-            timelineCardPane.setLayoutArg( timelineMaximizedContentPane, !contentActive );
+            timelineCardPane.setLayoutArg( insetMaximizedContentPane, !contentActive );
             timelineCardPane.setLayoutArg( scrollPane, contentActive );
             drawable.redraw( );
         }
