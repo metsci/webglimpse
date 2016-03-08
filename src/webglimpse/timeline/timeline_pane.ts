@@ -136,13 +136,22 @@ module Webglimpse {
         selection.hoveredEvent.changed.on( redraw );
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
-
+        
+        // Scroll Pane and Maximized Row Pane
+        //
+        
+        // setup Pane which either shows timeline content, or only maximized rows
+        // able to switch between the two depending on model.root.maximizedRowGuids.isEmpty 
+        
+        // Scroll Pane
+        
         var scrollLayout = newVerticalScrollLayout( );
         var scrollable = new Pane( scrollLayout, false );
-        
+
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
         var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+        
         var contentPane = newTimelineContentPane( contentPaneArgs );
 
         scrollable.addPane( contentPane, 0 );
@@ -152,6 +161,31 @@ module Webglimpse {
         var scrollPane = new Pane( newColumnLayout( false ), false );
         scrollPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
         scrollPane.addPane( scrollable, 1 );
+        
+        // Card Pane Switching Logic
+        
+        var timelineCardPane = new Pane( newCardLayout( ) );
+        var timelineMaximizedContentPane = new Pane( newRowLayout( ) );
+        
+        var contentActive = model.root.maximizedRowGuids.isEmpty;
+        timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
+        timelineCardPane.addPane( scrollPane, contentActive );
+        
+        setupRowContainerPane( contentPaneArgs, timelineMaximizedContentPane, model.root.maximizedRowGuids, 'maximized-' );
+        
+        var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
+            var contentActive = model.root.maximizedRowGuids.isEmpty;
+            timelineCardPane.setLayoutArg( timelineMaximizedContentPane, !contentActive );
+            timelineCardPane.setLayoutArg( scrollPane, contentActive );
+            drawable.redraw( );
+        }
+        
+        model.root.maximizedRowGuids.valueAdded.on( updateMaximizedRows );
+        model.root.maximizedRowGuids.valueRemoved.on( updateMaximizedRows );
+                
+        
+        // Overlay and Underlay Panes
+        //
 
         var underlayPane = new Pane( newTimelineLayout( axisPaneHeight ) );
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
@@ -162,7 +196,7 @@ module Webglimpse {
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
         }
-        underlayPane.addPane( scrollPane );
+        underlayPane.addPane( timelineCardPane );
         if ( showBottomAxis ) {
             var bottomAxisPane = newTimeAxisPane( contentPaneArgs, null );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
@@ -199,6 +233,8 @@ module Webglimpse {
             selection.selectedEvents.valueRemoved.off( redraw );
             underlayPane.viewportChanged.off( updateMillisPerPx );
             timeAxis.limitsChanged.off( updateMillisPerPx );
+            model.root.maximizedRowGuids.valueAdded.off( updateMaximizedRows );
+            model.root.maximizedRowGuids.valueRemoved.off( updateMaximizedRows );
         } );
 
         return timelinePane;
@@ -774,38 +810,11 @@ module Webglimpse {
         var createGroupLabelTexture = createTextTextureFactory( font );
         var createRowLabelTexture = createTextTextureFactory( font );
         
-      
-        
-
-        // Maximized pane
-        //
-        
-        // setup Pane which either shows timeline content, or only maximized rows
-        // able to switch between the two depending on model.root.maximizedRowGuids.isEmpty 
-        
-        var timelineCardPane = new Pane( newCardLayout( ) );
-        var timelineMaximizedContentPane = new Pane( newRowLayout( ) );
-        var timelineContentPane = new Pane( newRowLayout( ) );
-
-        var contentActive = model.root.maximizedRowGuids.isEmpty;
-        timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
-        timelineCardPane.addPane( timelineContentPane, contentActive );
-        
-        setupRowContainerPane( args, timelineMaximizedContentPane, model.root.maximizedRowGuids, 'maximized-' );
-        
-        var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
-            var contentActive = model.root.maximizedRowGuids.isEmpty;
-            timelineCardPane.setLayoutArg( timelineMaximizedContentPane, !contentActive );
-            timelineCardPane.setLayoutArg( timelineContentPane, contentActive );
-            drawable.redraw( );
-        }
-        
-        model.root.maximizedRowGuids.valueAdded.on( updateMaximizedRows );
-        model.root.maximizedRowGuids.valueRemoved.on( updateMaximizedRows );
-
         // Group panes
         //
 
+        var timelineContentPane = new Pane( newRowLayout( ) );
+        
         var groupHeaderPanes : StringMap<Pane> = {};
         var groupContentPanes : StringMap<Pane> = {};
 
@@ -1016,16 +1025,13 @@ module Webglimpse {
         // Dispose
         //
         
-        timelineCardPane.dispose.on( function( ) {
+        timelineContentPane.dispose.on( function( ) {
             root.groupGuids.valueAdded.off( addGroup );
             root.groupGuids.valueMoved.off( moveGroup );
             root.groupGuids.valueRemoved.off( removeGroup );
-            
-            root.maximizedRowGuids.valueAdded.off( updateMaximizedRows );
-            root.maximizedRowGuids.valueRemoved.off( updateMaximizedRows );
         } );
 
-        return timelineCardPane;
+        return timelineContentPane;
     }
     
     // Row panes and painters
