@@ -35,6 +35,7 @@ module Webglimpse {
         timelineFgColor : Color;
         draggableEdgeWidth : number;
         snapToDistance : number;
+        isMaximized : boolean;
     }
 
 

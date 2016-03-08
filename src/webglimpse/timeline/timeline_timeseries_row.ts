@@ -56,6 +56,7 @@ module Webglimpse {
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
             var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
+            rowHeight               = options.isMaximized ? null : rowHeight; // maximized rows do not specifiy a height (they should fill available space
             var axisWidth           = ( hasval( rowOptions ) && hasval( rowOptions.axisWidth ) ? rowOptions.axisWidth : 60 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
             var axisOptions         = ( hasval( rowOptions ) && hasval( rowOptions.axisOptions ) ? rowOptions.axisOptions : {} );

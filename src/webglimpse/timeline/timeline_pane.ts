@@ -171,7 +171,7 @@ module Webglimpse {
         timelineCardPane.addPane( timelineMaximizedContentPane, !contentActive );
         timelineCardPane.addPane( scrollPane, contentActive );
         
-        setupRowContainerPane( contentPaneArgs, timelineMaximizedContentPane, model.root.maximizedRowGuids, 'maximized-' );
+        setupRowContainerPane( contentPaneArgs, timelineMaximizedContentPane, model.root.maximizedRowGuids, true );
         
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
@@ -868,7 +868,7 @@ module Webglimpse {
                 
                 var rollupContentPane : Pane = null;
                 var rollupPaneFactory : TimelineRowPaneFactory = null;
-                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false };
                 var refreshRollupContentPane = function( ) {
                     var newRollupPaneFactory = ( rollupUi.paneFactory || rowPaneFactoryChooser( rollupRow ) );
                     if ( newRollupPaneFactory !== rollupPaneFactory ) {
@@ -952,7 +952,7 @@ module Webglimpse {
             timelineContentPane.layoutOptions( groupContentPane ).hide = group.hidden;
             timelineContentPane.layoutOptions( groupHeaderPane ).hide = group.hidden;
 
-            setupRowContainerPane( args, groupContentPane, group.rowGuids, '' );
+            setupRowContainerPane( args, groupContentPane, group.rowGuids, false );
             
             groupContentPane.dispose.on( function( ) {
                 group.attrsChanged.off( redrawLabel );
@@ -1066,7 +1066,7 @@ module Webglimpse {
         return { rowInsetPane : rowInsetPane, rowBackgroundPane : rowBackgroundPane };
     }
     
-    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, keyPrefix : string ) {
+    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean ) {
         
         var drawable = args.drawable;
         var scrollLayout = args.scrollLayout;
@@ -1100,6 +1100,8 @@ module Webglimpse {
             rowPane.addPane( rowHeaderPane, 0, { width: options.rowLabelPaneWidth } );
             rowPane.addPane( rowBackgroundPane, 1, { width: null } );
         
+            var keyPrefix = isMaximized ? 'maximized-' : '';
+            
             // expose panes in api via TimelineRowUi
             rowUi.addPane( keyPrefix+'background', rowBackgroundPane );
             rowUi.addPane( keyPrefix+'inset', rowInsetPane );
@@ -1110,7 +1112,7 @@ module Webglimpse {
         
             var rowContentPane : Pane = null;
             var rowPaneFactory : TimelineRowPaneFactory = null;
-            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance };
+            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized };
             var refreshRowContentPane = function( ) {
                 var newRowPaneFactory = ( rowUi.paneFactory || options.rowPaneFactoryChooser( row ) );
                 if ( newRowPaneFactory !== rowPaneFactory ) {
