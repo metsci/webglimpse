@@ -55,11 +55,32 @@ module Webglimpse {
             
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
-            var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
-            rowHeight               = options.isMaximized ? null : rowHeight; // maximized rows do not specifiy a height (they should fill available space
             var axisWidth           = ( hasval( rowOptions ) && hasval( rowOptions.axisWidth ) ? rowOptions.axisWidth : 60 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
             var axisOptions         = ( hasval( rowOptions ) && hasval( rowOptions.axisOptions ) ? rowOptions.axisOptions : {} );
+            
+            var keyPrefix = options.isMaximized ? 'maximized-' : '';
+            
+            var getRowHeight = function( ) {
+                // maximized rows do not specifiy a height (they should fill available space)
+                if ( options.isMaximized ) {
+                    return null;
+                }
+                // if the row has a custom row specified, use it
+                else if ( hasval( row.rowHeight ) ) {
+                    return row.rowHeight;
+                }
+                // otherwise use the default for this RowPaneFactory
+                else if ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ) {
+                    return rowOptions.rowHeight;
+                }
+                // as a last resort use a hard coded default
+                else {
+                    return 135;
+                }
+            }
+            
+            var rowHeight : number = getRowHeight( );
             
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
@@ -81,6 +102,11 @@ module Webglimpse {
             dataAxis.limitsChanged.on( drawable.redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
+            // add listener to update the height of the row if the rowHeight attribute changes
+            var updateRowHeight = function( ) {
+                yAxisPane.layout = { updatePrefSize: fixedSize( axisWidth, getRowHeight( ) ) };
+            };
+            row.attrsChanged.on( updateRowHeight );
             
             var isDragMode : Mask2D = function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
                 var fragment = getNearestFragment( viewport, i, j ).fragment;
@@ -102,10 +128,10 @@ module Webglimpse {
             underlayPane.addPane( rowContentPane, true );
             underlayPane.addPane( overlayPane, false );
             
-            rowUi.addPane( 'content', rowContentPane );
-            rowUi.addPane( 'overlay', overlayPane );
-            rowUi.addPane( 'underlay', underlayPane );
-            rowUi.addPane( 'y-axis', yAxisPane );
+            rowUi.addPane( keyPrefix+'content', rowContentPane );
+            rowUi.addPane( keyPrefix+'overlay', overlayPane );
+            rowUi.addPane( keyPrefix+'underlay', underlayPane );
+            rowUi.addPane( keyPrefix+'y-axis', yAxisPane );
             
             var redraw = function( ) {
                 drawable.redraw( );
@@ -405,10 +431,10 @@ module Webglimpse {
             
             rowContentPane.dispose.on( function( ) {
                 
-                rowUi.removePane( 'content' );
-                rowUi.removePane( 'overlay' );
-                rowUi.removePane( 'underlay' );
-                rowUi.removePane( 'y-axis' );
+                rowUi.removePane( keyPrefix+'content' );
+                rowUi.removePane( keyPrefix+'overlay' );
+                rowUi.removePane( keyPrefix+'underlay' );
+                rowUi.removePane( keyPrefix+'y-axis' );
                 
                 dataAxis.limitsChanged.off( drawable.redraw );
                 
@@ -420,6 +446,8 @@ module Webglimpse {
                 row.timeseriesGuids.valueRemoved.off( removeRedraw );
                 
                 selection.hoveredTimeseries.changed.off( redraw );
+                
+                row.attrsChanged.off( updateRowHeight );
                 
                 row.timeseriesGuids.forEach( function( timeseriesGuid : string ) {
                     var timeseries = model.timeseries( timeseriesGuid );

@@ -226,7 +226,7 @@ module Webglimpse {
 
                 $( calendardiv ).datepicker( 'dialog', date, callback, options, position );
             }
-        }
+        };
         
         // Link a button to maximize / unmaximize two specific rows
         
@@ -245,7 +245,7 @@ module Webglimpse {
             else {
                 model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
             }
-        }
+        };
         
         // Toggle row maximize by double clicking on row label
         
@@ -292,7 +292,19 @@ module Webglimpse {
             else {
                 model.root.bottomPinnedRowGuids.add( 'metsci.timelineExample.row03a' );
             }
-        }
+        };
+        
+        // Link a button change the size of a particular row
+        
+        var customRowHeight = 135;
+        var a = document.getElementById( 'flag-button' );
+        a.onclick = function() {
+            
+            customRowHeight = customRowHeight + 10;
+            if ( customRowHeight > 200 ) customRowHeight = 135;
+            
+            model.row( 'metsci.timelineExample.row03a' ).rowHeight = customRowHeight;
+        };
 
         // Example Event-Hover Overlay
         //

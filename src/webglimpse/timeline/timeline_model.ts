@@ -105,6 +105,7 @@ module Webglimpse {
         rowGuid : string;
         label : string;
         hidden? : boolean;
+        rowHeight? : number;
         yMin? : number;
         yMax? : number;
         uiHint? : string;
@@ -755,6 +756,7 @@ module Webglimpse {
     export class TimelineRowModel {
         private _rowGuid : string;
         private _attrsChanged : Notification;
+        private _rowHeight : number;
         private _hidden : boolean;
         private _label : string;
         private _uiHint : string;
@@ -791,7 +793,17 @@ module Webglimpse {
             this._label = row.label;
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
+            this._rowHeight = row.rowHeight;
             this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
+            this._attrsChanged.fire( );
+        }
+        
+        get rowHeight( ) : number {
+            return this._rowHeight;
+        }
+        
+        set rowHeight( rowHeight : number ) {
+            this._rowHeight = rowHeight;
             this._attrsChanged.fire( );
         }
         
@@ -862,6 +874,7 @@ module Webglimpse {
             return {
                 rowGuid: this._rowGuid,
                 label: this._label,
+                rowHeight: this._rowHeight,
                 hidden: this._hidden,
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),

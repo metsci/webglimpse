@@ -113,7 +113,7 @@ module Webglimpse {
         private _childMouseCursorListener : Listener;
 
         private children : OrderedSet<PaneChild>;
-        private layout : Layout;
+        private _layout : Layout;
         private _viewport : Bounds;
         private _scissor : Bounds;
         private _viewportChanged : Notification;
@@ -130,7 +130,7 @@ module Webglimpse {
             this._childMouseCursorListener = ( ( ) => this._mouseCursorChanged.fire( ) );
 
             this.children = new OrderedSet<PaneChild>( [], (paneChild)=>getObjectId(paneChild.pane), false );
-            this.layout = layout;
+            this._layout = layout;
             this._viewport = newBoundsFromRect( 0, 0, 0, 0 );
             this._scissor = newBoundsFromRect( 0, 0, 0, 0 );
             this._viewportChanged = new Notification( );
@@ -151,6 +151,14 @@ module Webglimpse {
                     this.children.valueAt( i ).pane.dispose.fire( );
                 }
             } );
+        }
+        
+        get layout( ) : Layout {
+            return this.layout;
+        }
+        
+        set layout( layout : Layout ) {
+            this._layout = layout;
         }
 
         get mouseCursor( ) : string {
@@ -216,8 +224,8 @@ module Webglimpse {
                 child.pane.updatePrefSizes( child.prefSize );
             }
             // This pane
-            if ( hasval( this.layout ) && hasval( this.layout.updatePrefSize ) ) {
-                this.layout.updatePrefSize( result, this.children.toArray( ) );
+            if ( hasval( this._layout ) && hasval( this._layout.updatePrefSize ) ) {
+                this._layout.updatePrefSize( result, this.children.toArray( ) );
             }
             else {
                 result.w = null;
@@ -231,8 +239,8 @@ module Webglimpse {
             this._viewport.setBounds( viewport );
             this._scissor.setBounds( scissor );
             // Child panes
-            if ( hasval( this.layout ) && hasval( this.layout.updateChildViewports ) ) {
-                this.layout.updateChildViewports( this.children.toArray( ), viewport );
+            if ( hasval( this._layout ) && hasval( this._layout.updateChildViewports ) ) {
+                this._layout.updateChildViewports( this.children.toArray( ), viewport );
                 for ( var c = 0; c < this.children.length; c++ ) {
                     var child = this.children.valueAt( c );
                     child.scissor.setBounds( child.viewport.unmod );
