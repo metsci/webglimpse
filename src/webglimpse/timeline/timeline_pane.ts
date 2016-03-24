@@ -147,27 +147,37 @@ module Webglimpse {
         
         var scrollLayout = newVerticalScrollLayout( );
         var scrollable = new Pane( scrollLayout, false );
+        ui.addPane( 'scroll-content-pane', scrollable );
 
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
         var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
         
         var contentPane = newTimelineContentPane( contentPaneArgs );
+        ui.addPane( 'content-pane' );
 
         scrollable.addPane( contentPane, 0 );
 
         var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
-
+        ui.addPane( 'scrollbar', scrollbar );
+        
         var scrollPane = new Pane( newColumnLayout( false ), false );
+        ui.addPane( 'scroll-outer-pane', scrollPane );
+        
         scrollPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
         scrollPane.addPane( scrollable, 1 );
         
         // Card Pane Switching Logic
         
         var timelineCardPane = new Pane( newCardLayout( ) );
-        var maximizedContentPane = new Pane( newRowLayout( ) );
-        var insetMaximizedContentPane = newInsetPane( maximizedContentPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'switch-content-pane', timelineCardPane );
         
+        var maximizedContentPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'maximize-content-pane', maximizedContentPane );
+        
+        var insetMaximizedContentPane = newInsetPane( maximizedContentPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-maximize-content-pane', insetMaximizedContentPane );
+         
         var contentActive = model.root.maximizedRowGuids.isEmpty;
         timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
         timelineCardPane.addPane( scrollPane, contentActive );
@@ -188,19 +198,26 @@ module Webglimpse {
         //
 
         var underlayPane = new Pane( newRowLayout( ) );
-        var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
+        ui.addPane( 'underlay-pane', underlayPane );
 
+        var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
+        
         // top time axis pane
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
+            ui.addPane( 'top-axis-pane', topAxisPane );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), 0, { height: axisPaneHeight, width: null } );
         }
 
         // pane containing pinned rows specified in TimelineRoot.topPinnedRowGuids
         var topPinnedPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'top-pinned-pane', topPinnedPane );
+        
         var insetTopPinnedPane = newInsetPane( topPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-top-pinned-pane', insetTopPinnedPane );
+        
         setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false );
         underlayPane.addPane( insetTopPinnedPane, 1 );
 
@@ -209,13 +226,18 @@ module Webglimpse {
         
         // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
         var bottomPinnedPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'bottom-pinned-pane', bottomPinnedPane );
+        
         var insetBottomPinnedPane = newInsetPane( bottomPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-bottom-pinned-pane', insetBottomPinnedPane );
+
         setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false );
         underlayPane.addPane( insetBottomPinnedPane, 3 );
 
         // bottom time axis pane
         if ( showBottomAxis ) {
             var bottomAxisPane = newTimeAxisPane( contentPaneArgs, null );
+            ui.addPane( 'bottom-axis-pane', bottomAxisPane );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
             underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), 4, { height: axisPaneHeight, width: null } );
         }
@@ -228,16 +250,19 @@ module Webglimpse {
         timeAxis.limitsChanged.on( updateMillisPerPx );
 
         var timelinePane = new TimelinePane( newOverlayLayout( ), model, ui );
+        ui.addPane( 'timeline-pane', timelinePane );
         timelinePane.addPainter( newBackgroundPainter( bgColor ) );
         timelinePane.addPane( underlayPane, true );
         
         if ( selectedIntervalMode === 'single' ) {
             var overlayPane = new Pane( null, false, alwaysTrue );
+            ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
         else if ( selectedIntervalMode === 'range' ) {
             var overlayPane = new Pane( null, false, alwaysTrue );
+            ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }

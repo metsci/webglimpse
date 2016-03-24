@@ -46,10 +46,18 @@ module Webglimpse {
         
         private _dispose : Notification;
 
+        private _panes : OrderedSet<Pane>;
 
         constructor( model : TimelineModel ) {
             this._dispose = new Notification( );
             this._input = new TimelineInput( );
+            
+            var getPaneId = function( pane ) {
+                var paneId = pane['webglimpse_PaneId']
+                return hasval( paneId ) ? paneId : getObjectId( pane );
+            }
+            
+            this._panes = new OrderedSet<Pane>( [], getPaneId );
 
             this._selection = new TimelineSelectionModel( );
             attachTimelineInputToSelection( this._input, this._selection );
@@ -145,6 +153,19 @@ module Webglimpse {
                 image.src = url;
             }
             return this._imageCache[ url ];
+        }
+        
+        addPane( paneId : string, pane : Pane ) {
+            pane['webglimpse_PaneId'] = paneId;
+            this._panes.add( pane );
+        }
+        
+        removePane( paneId : string ) {
+            this._panes.removeId( paneId );
+        }
+        
+        getPane( paneId : string ) : Pane {
+            return this._panes.valueFor( paneId );
         }
         
         get dispose( ) { return this._dispose; }
