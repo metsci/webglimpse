@@ -154,7 +154,7 @@ module Webglimpse {
         var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
         
         var contentPane = newTimelineContentPane( contentPaneArgs );
-        ui.addPane( 'content-pane' );
+        ui.addPane( 'content-pane', contentPane );
 
         scrollable.addPane( contentPane, 0 );
 
