@@ -46,10 +46,18 @@ module Webglimpse {
         
         private _dispose : Notification;
 
+        private _panes : OrderedSet<Pane>;
 
         constructor( model : TimelineModel ) {
             this._dispose = new Notification( );
             this._input = new TimelineInput( );
+            
+            var getPaneId = function( pane ) {
+                var paneId = pane['webglimpse_PaneId']
+                return hasval( paneId ) ? paneId : getObjectId( pane );
+            }
+            
+            this._panes = new OrderedSet<Pane>( [], getPaneId );
 
             this._selection = new TimelineSelectionModel( );
             attachTimelineInputToSelection( this._input, this._selection );
@@ -147,6 +155,19 @@ module Webglimpse {
             return this._imageCache[ url ];
         }
         
+        addPane( paneId : string, pane : Pane ) {
+            pane['webglimpse_PaneId'] = paneId;
+            this._panes.add( pane );
+        }
+        
+        removePane( paneId : string ) {
+            this._panes.removeId( paneId );
+        }
+        
+        getPane( paneId : string ) : Pane {
+            return this._panes.valueFor( paneId );
+        }
+        
         get dispose( ) { return this._dispose; }
     }
 
@@ -170,11 +191,19 @@ module Webglimpse {
         private _rowGuid : string;
         private _paneFactoryChanged : Notification;
         private _paneFactory : TimelineRowPaneFactory;
+        private _panes : OrderedSet<Pane>;
 
         constructor( rowGuid : string ) {
             this._rowGuid = rowGuid;
             this._paneFactoryChanged = new Notification( );
             this._paneFactory = null;
+            
+            var getPaneId = function( pane ) {
+                var paneId = pane['webglimpse_PaneId']
+                return hasval( paneId ) ? paneId : getObjectId( pane );
+            }
+            
+            this._panes = new OrderedSet<Pane>( [], getPaneId );
         }
 
         get rowGuid( ) : string {
@@ -194,6 +223,23 @@ module Webglimpse {
                 this._paneFactory = paneFactory;
                 this._paneFactoryChanged.fire( );
             }
+        }
+        
+        get panes( ) : OrderedSet<Pane> {
+            return this._panes;
+        }
+        
+        addPane( paneId : string, pane : Pane ) {
+            pane['webglimpse_PaneId'] = paneId;
+            this._panes.add( pane );
+        }
+        
+        removePane( paneId : string ) {
+            this._panes.removeId( paneId );
+        }
+        
+        getPane( paneId : string ) : Pane {
+            return this._panes.valueFor( paneId );
         }
     }
 
@@ -247,6 +293,7 @@ module Webglimpse {
 
         private _hoveredTimeseries = new TimelineTimeseriesFragmentSelectionModel( );
         
+        private _hoveredAnnotation = new SimpleModel<TimelineAnnotationModel>( );
         
         get mousePos( ) : XyModel { return this._mousePos; }
         
@@ -259,6 +306,8 @@ module Webglimpse {
         get selectedEvents( ) : OrderedSet<TimelineEventModel> { return this._selectedEvents; }
         
         get hoveredTimeseries( ) : TimelineTimeseriesFragmentSelectionModel { return this._hoveredTimeseries; }
+        
+        get hoveredAnnotation( ) : SimpleModel<TimelineAnnotationModel> { return this._hoveredAnnotation; }
     }
 
 
@@ -415,30 +464,34 @@ module Webglimpse {
         if ( allowMultiEventSelection ) {
             // XXX: A drag should preempt selection-toggle, which means waiting for some delay to see whether a drag starts
             input.mouseDown.on( function( ev : PointerEvent ) {
-                var event = selection.hoveredEvent.value;
-                if ( hasval( event ) ) {
-                    var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
-                    if ( multiSelectMode ) {
-                        if ( selection.selectedEvents.hasValue( event ) ) {
-                            selection.selectedEvents.removeValue( event );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
+                        var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
+                        if ( multiSelectMode ) {
+                            if ( selection.selectedEvents.hasValue( event ) ) {
+                                selection.selectedEvents.removeValue( event );
+                            }
+                            else {
+                                selection.selectedEvents.add( event );
+                            }
                         }
                         else {
+                            selection.selectedEvents.retainValues( [ event ] );
                             selection.selectedEvents.add( event );
                         }
-                    }
-                    else {
-                        selection.selectedEvents.retainValues( [ event ] );
-                        selection.selectedEvents.add( event );
                     }
                 }
             } );
         }
         else {
             input.mouseDown.on( function( ev : PointerEvent ) {
-                var event = selection.hoveredEvent.value;
-                if ( hasval( event ) ) {
-                    selection.selectedEvents.retainValues( [ event ] );
-                    selection.selectedEvents.add( event );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
+                        selection.selectedEvents.retainValues( [ event ] );
+                        selection.selectedEvents.add( event );
+                    }
                 }
             } );
         }

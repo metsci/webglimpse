@@ -114,7 +114,7 @@ module Webglimpse {
             selectedIntervalFillColor: rgba( 0, 0.6, 0.8, 0.157 ),
             selectedIntervalBorderColor: rgb( 0, 0.2, 1.0 ),
 
-            rowPaneFactoryChooser: rowPaneFactoryChooser_THIN
+            rowPaneFactoryChooser: rowPaneFactoryChooser_SINGLE
 
         };
         var model = new TimelineModel( );
@@ -190,7 +190,7 @@ module Webglimpse {
             drawable.redraw( );
         };
         
-        var a = document.getElementById("selected-time-calendar");
+        var a = document.getElementById( 'selected-time-calendar' );
         a.onclick = function() {
 
             var dateFormat = 'M/D/YYYY';
@@ -198,7 +198,7 @@ module Webglimpse {
 
             var calendardiv = document.getElementById(id);
             if ( !calendardiv ) {
-                calendardiv = document.createElement('div');
+                calendardiv = document.createElement( 'div' );
 
                 calendardiv.style.fontSize = '12';
                 
@@ -222,13 +222,89 @@ module Webglimpse {
                     drawable.redraw( );
                 }
 
-                var date = moment(selectedInterval.start_PMILLIS).format(dateFormat);
+                var date = moment( selectedInterval.start_PMILLIS ).format( dateFormat );
 
-                $(calendardiv).datepicker("dialog", date, callback, options, position);
+                $( calendardiv ).datepicker( 'dialog', date, callback, options, position );
             }
-        }
+        };
         
-
+        // Link a button to maximize / unmaximize two specific rows
+        
+        var a = document.getElementById( 'maximize-button' );
+        a.onclick = function() {
+            if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+            }
+            else {
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
+            }
+                
+            if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.dynamicRow02' ) ) {
+                model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
+            }
+            else {
+                model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
+            }
+        };
+        
+        // Toggle row maximize by double clicking on row label
+        
+        ui.rowUis.valueAdded.on( function ( rowUi : TimelineRowUi ) {
+            rowUi.panes.valueAdded.on( function ( pane : Pane ) {
+                if ( rowUi.getPane( 'label' ) === pane ) {
+                    pane.mouseDown.on( function( event : PointerEvent ) {
+                        if ( event.clickCount === 2 ) {
+                            model.root.maximizedRowGuids.add( rowUi.rowGuid );
+                        }
+                    } );
+                }
+                else if ( rowUi.getPane( 'maximized-label' ) === pane ) {
+                    pane.mouseDown.on( function( event : PointerEvent ) {
+                        if ( event.clickCount === 2 ) {
+                            model.root.maximizedRowGuids.removeValue( rowUi.rowGuid );
+                        }
+                    } );
+                }
+            } );
+        } );
+        
+        // Link a button to pin / unpin some rows to the top/bottom of the timeline
+        
+        var a = document.getElementById( 'pin-button' );
+        a.onclick = function() {    
+            if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01a' ) ) {
+                model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
+            }
+            else {
+                model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01a' );
+            }
+            
+            if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01b' ) ) {
+                model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01b' );
+            }
+            else {
+                model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01b' );
+            }
+            
+            if ( model.root.bottomPinnedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
+                model.root.bottomPinnedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
+            }
+            else {
+                model.root.bottomPinnedRowGuids.add( 'metsci.timelineExample.row03a' );
+            }
+        };
+        
+        // Link a button change the size of a particular row
+        
+        var customRowHeight = 135;
+        var a = document.getElementById( 'flag-button' );
+        a.onclick = function() {
+            
+            customRowHeight = customRowHeight + 10;
+            if ( customRowHeight > 200 ) customRowHeight = 135;
+            
+            model.row( 'metsci.timelineExample.row03a' ).rowHeight = customRowHeight;
+        };
 
         // Example Event-Hover Overlay
         //
@@ -318,8 +394,15 @@ module Webglimpse {
         // Fill these in with application-specific input-handling code
         //
         
+        selection.hoveredAnnotation.changed.on( function( ) {
+            if ( hasval( selection.hoveredAnnotation.value ) )
+            {
+                // Do something with the hovered annotation
+            }
+        });
+        
         selection.hoveredTimeseries.changed.on( function( ) {
-            if ( selection.hoveredTimeseries.fragment )
+            if ( hasval( selection.hoveredTimeseries.fragment ) )
             {
                 // Do something with the time and data value of the selected timeseries point 
                 var dataValue = selection.hoveredTimeseries.data;
@@ -430,9 +513,11 @@ module Webglimpse {
                 }
             }
            
-            var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+            var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
                 var axisColor = options.timelineFgColor;
 
+                var height = options.isMaximized ? null : 270;
+                
                 // setup axes
                 var colorAxis = new Axis1D( -0.7, 0.3 );
                 colorAxis.limitsChanged.on( drawable.redraw );
@@ -442,12 +527,12 @@ module Webglimpse {
                 
                 var rowAxis = new Axis2D( timeAxis, yAxis );
                 
-                var spacerPane = new Pane( { updatePrefSize: fixedSize( null, 270 ) }, false );
+                var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
                 
-                var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 270 ) } );
+                var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( yAxisPane, yAxis, true );
                 
-                var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+                var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
                 
                 var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
@@ -479,9 +564,11 @@ module Webglimpse {
         // Create a heatmap row with programmatically generated data
         //
         
-        var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+        var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             var axisColor = options.timelineFgColor;
 
+            var height = options.isMaximized ? null : 270;
+            
             // setup axes
             var colorAxis = new Axis1D( 0, 30 );
             colorAxis.limitsChanged.on( drawable.redraw );
@@ -491,12 +578,12 @@ module Webglimpse {
             
             var rowAxis = new Axis2D( timeAxis, yAxis );
             
-            var spacerPane = new Pane( { updatePrefSize: fixedSize( null, 270 ) }, false );
+            var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
             
-            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+            var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( yAxisPane, yAxis, true );
             
-            var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, 135 ) } );
+            var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
             
             var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
@@ -549,9 +636,15 @@ module Webglimpse {
         //
         // Fetch timeline data from the server, and merge it into the existing timeline model
         //
-
         $.getJSON( 'timelineData.json', function( newTimeline : Timeline ) {
             model.merge( newTimeline, timelineMergeNewBeforeOld );
+            
+            // once the timeline has been loaded, add listeners to some of the Panes
+            var pane = ui.rowUi( 'metsci.timelineExample.row03a' ).getPane( 'y-axis' );
+            var clickListener = function( ev : PointerEvent ) {
+                console.log( 'y-axis click: ' + ev.clickCount );
+            };
+            pane.mouseDown.on( clickListener );
         } );
         
         // Example function for reloading TimelinePane with new TimelinePaneOptions. Takes care of

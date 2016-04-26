@@ -116,8 +116,8 @@ module Webglimpse {
 
         // Sizing
         var groupLabelInsets   = ( hasval( options ) && hasval( options.groupLabelInsets   ) ? options.groupLabelInsets   : newInsets( 6, 10 ) );
-        var rowLabelInsets     = ( hasval( options ) && hasval( options.rowLabelInsets     ) ? options.rowLabelInsets     : newInsets( 0, 20 ) );
-        var rowLabelPaneWidth  = ( hasval( options ) && hasval( options.rowLabelPaneWidth  ) ? options.rowLabelPaneWidth  : 120 );
+        var rowLabelInsets     = ( hasval( options ) && hasval( options.rowLabelInsets     ) ? options.rowLabelInsets     : newInsets( 0, 35 ) );
+        var rowLabelPaneWidth  = ( hasval( options ) && hasval( options.rowLabelPaneWidth  ) ? options.rowLabelPaneWidth  : 140 );
         var rowSeparatorHeight = ( hasval( options ) && hasval( options.rowSeparatorHeight ) ? options.rowSeparatorHeight : 2   );
         var scrollbarWidth     = ( hasval( options ) && hasval( options.scrollbarWidth     ) ? options.scrollbarWidth     : 16  );
         var axisPaneHeight     = ( hasval( options ) && hasval( options.axisPaneHeight     ) ? options.axisPaneHeight     : 40  );
@@ -136,35 +136,110 @@ module Webglimpse {
         selection.hoveredEvent.changed.on( redraw );
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
+        
+        // Scroll Pane and Maximized Row Pane
+        //
+        
+        // setup Pane which either shows timeline content, or only maximized rows
+        // able to switch between the two depending on model.root.maximizedRowGuids.isEmpty 
+        
+        // Scroll Pane
+        
+        var scrollLayout = newVerticalScrollLayout( );
+        var scrollable = new Pane( scrollLayout, false );
+        ui.addPane( 'scroll-content-pane', scrollable );
 
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
         var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
-        var contentPane = newTimelineContentPane( drawable, timeAxis, model, ui, contentPaneOpts );
+        var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+        
+        var contentPane = newTimelineContentPane( contentPaneArgs );
+        ui.addPane( 'content-pane', contentPane );
 
-        var scrollLayout = newVerticalScrollLayout( );
-        var scrollable = new Pane( scrollLayout, false );
         scrollable.addPane( contentPane, 0 );
 
         var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
-
+        ui.addPane( 'scrollbar', scrollbar );
+        
         var scrollPane = new Pane( newColumnLayout( false ), false );
+        ui.addPane( 'scroll-outer-pane', scrollPane );
+        
         scrollPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
         scrollPane.addPane( scrollable, 1 );
+        
+        // Card Pane Switching Logic
+        
+        var timelineCardPane = new Pane( newCardLayout( ) );
+        ui.addPane( 'switch-content-pane', timelineCardPane );
+        
+        var maximizedContentPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'maximize-content-pane', maximizedContentPane );
+        
+        var insetMaximizedContentPane = newInsetPane( maximizedContentPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-maximize-content-pane', insetMaximizedContentPane );
+         
+        var contentActive = model.root.maximizedRowGuids.isEmpty;
+        timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
+        timelineCardPane.addPane( scrollPane, contentActive );
+        
+        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true );
+        
+        var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
+            var contentActive = model.root.maximizedRowGuids.isEmpty;
+            timelineCardPane.setLayoutArg( insetMaximizedContentPane, !contentActive );
+            timelineCardPane.setLayoutArg( scrollPane, contentActive );
+            drawable.redraw( );
+        }
+        
+        model.root.maximizedRowGuids.valueAdded.on( updateMaximizedRows );
+        model.root.maximizedRowGuids.valueRemoved.on( updateMaximizedRows );
 
-        var underlayPane = new Pane( newTimelineLayout( axisPaneHeight ) );
+        // Overlay and Underlay Panes
+        //
+
+        var underlayPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'underlay-pane', underlayPane );
+
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
-
+        
+        // top time axis pane
         var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
         if ( showTopAxis ) {
-            var topAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+            var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
+            ui.addPane( 'top-axis-pane', topAxisPane );
             topAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts ) );
-            underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), Side.TOP );
+            underlayPane.addPane( newInsetPane( topAxisPane, axisInsets ), 0, { height: axisPaneHeight, width: null } );
         }
-        underlayPane.addPane( scrollPane );
+
+        // pane containing pinned rows specified in TimelineRoot.topPinnedRowGuids
+        var topPinnedPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'top-pinned-pane', topPinnedPane );
+        
+        var insetTopPinnedPane = newInsetPane( topPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-top-pinned-pane', insetTopPinnedPane );
+        
+        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false );
+        underlayPane.addPane( insetTopPinnedPane, 1 );
+
+        // main pane containing timeline groups and rows
+        underlayPane.addPane( timelineCardPane, 2, { height: null, width: null } );
+        
+        // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
+        var bottomPinnedPane = new Pane( newRowLayout( ) );
+        ui.addPane( 'bottom-pinned-pane', bottomPinnedPane );
+        
+        var insetBottomPinnedPane = newInsetPane( bottomPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
+        ui.addPane( 'inset-bottom-pinned-pane', insetBottomPinnedPane );
+
+        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false );
+        underlayPane.addPane( insetBottomPinnedPane, 3 );
+
+        // bottom time axis pane
         if ( showBottomAxis ) {
-            var bottomAxisPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
+            var bottomAxisPane = newTimeAxisPane( contentPaneArgs, null );
+            ui.addPane( 'bottom-axis-pane', bottomAxisPane );
             bottomAxisPane.addPainter( newTimeAxisPainter( timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts ) );
-            underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), Side.BOTTOM );
+            underlayPane.addPane( newInsetPane( bottomAxisPane, axisInsets ), 4, { height: axisPaneHeight, width: null } );
         }
 
         var updateMillisPerPx = function( ) {
@@ -175,20 +250,23 @@ module Webglimpse {
         timeAxis.limitsChanged.on( updateMillisPerPx );
 
         var timelinePane = new TimelinePane( newOverlayLayout( ), model, ui );
+        ui.addPane( 'timeline-pane', timelinePane );
         timelinePane.addPainter( newBackgroundPainter( bgColor ) );
         timelinePane.addPane( underlayPane, true );
         
         if ( selectedIntervalMode === 'single' ) {
-            var overlayPane = new Pane( null, false, alwaysFalse );
+            var overlayPane = new Pane( null, false, alwaysTrue );
+            ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
         else if ( selectedIntervalMode === 'range' ) {
-            var overlayPane = new Pane( null, false, alwaysFalse );
+            var overlayPane = new Pane( null, false, alwaysTrue );
+            ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
-        
+                
         timelinePane.dispose.on( function( ) {
             ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
@@ -197,6 +275,8 @@ module Webglimpse {
             selection.selectedEvents.valueRemoved.off( redraw );
             underlayPane.viewportChanged.off( updateMillisPerPx );
             timeAxis.limitsChanged.off( updateMillisPerPx );
+            model.root.maximizedRowGuids.valueAdded.off( updateMaximizedRows );
+            model.root.maximizedRowGuids.valueRemoved.off( updateMaximizedRows );
         } );
 
         return timelinePane;
@@ -217,10 +297,18 @@ module Webglimpse {
 
 
 
-    function newTimeAxisPane( timeAxis : TimeAxis1D, ui : TimelineUi, draggableEdgeWidth : number, row : TimelineRowModel, selectedIntervalMode : string ) : Pane {
+    function newTimeAxisPane( args : TimelineContentPaneArguments, row : TimelineRowModel ) : Pane {       
+        var timeAxis = args.timeAxis;
+        var ui = args.ui;
+        var draggableEdgeWidth = args.options.draggableEdgeWidth;
+        var scrollLayout = args.scrollLayout;
+        var drawable = args.drawable;
+        var selectedIntervalMode = args.options.selectedIntervalMode;
+        
         var input = ui.input;
 
         var axisPane = new Pane( newOverlayLayout( ) );
+        if ( scrollLayout ) attachTimelineVerticalScrollMouseListeners( axisPane, scrollLayout, drawable );
         attachAxisMouseListeners1D( axisPane, timeAxis, false );
 
         var onMouseMove = function( ev : PointerEvent ) {
@@ -289,7 +377,7 @@ module Webglimpse {
         if ( selectedIntervalMode === 'single' ) {
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                return 'center';
+                return isLeftMouseDown( ev.mouseEvent ) ? 'center' : null;
             }
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -309,27 +397,33 @@ module Webglimpse {
             var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
-                    // If interval isn't very wide, don't try to allow edge dragging
-                    return 'center';
-                }
-                else {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                    if ( mouseOffset < draggableEdgeWidth ) {
-                        // If mouse is near the left edge, drag the interval's start-time
-                        return 'start';
-                    }
-                    else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
-                        // If mouse is in the center, drag the whole interval
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                    if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
+                        // If interval isn't very wide, don't try to allow edge dragging
                         return 'center';
                     }
                     else {
-                        // If mouse is near the right edge, drag the interval's end-time
-                        return 'end';
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                        if ( mouseOffset < draggableEdgeWidth ) {
+                            // If mouse is near the left edge, drag the interval's start-time
+                            return 'start';
+                        }
+                        else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
+                            // If mouse is in the center, drag the whole interval
+                            return 'center';
+                        }
+                        else {
+                            // If mouse is near the right edge, drag the interval's end-time
+                            return 'end';
+                        }
                     }
                 }
+                else {
+                    return null;
+                }
+                    
             };
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -408,7 +502,7 @@ module Webglimpse {
         var dragPointer_PMILLIS : number = null;
 
         var updateDragPointer = function( ev : PointerEvent ) {
-            if ( dragMode ) {
+            if ( hasval( dragMode ) ) {
                 dragPointer_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
             }
         };
@@ -614,8 +708,76 @@ module Webglimpse {
             }
         };
     }
+    
+    function newGroupCollapseExpandArrowPainter( group : TimelineGroupModel ) {
+        
+        var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var u_Color = new UniformColor( program, 'u_Color' );
 
+        // holds vertices for triangle
+        var coords = new Float32Array( 6 );
+        var coordsBuffer = newDynamicBuffer( );
+        
+        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
 
+            var sizeFracX = 0.5;
+            var sizeX = sizeFracX * viewport.w;
+            var sizeY = sizeX * Math.sqrt(3)/2;
+            var sizeFracY = sizeY / viewport.h;
+            
+            var bufferFracX = 0.05;
+            var bufferSize = bufferFracX * viewport.w;
+            var bufferFracY = bufferSize / viewport.h;
+            
+            var centerFracX = 0.5;
+            var centerFracY = bufferFracY + sizeFracY/2;
+            
+            if ( group.collapsed ) {
+                
+                sizeFracX = sizeY / viewport.w;
+                sizeFracY = sizeX / viewport.h;
+                
+                var fracStartX = centerFracX - sizeFracX / 2;
+                var fracEndX = centerFracX + sizeFracX / 2;
+                
+                var fracStartY = 1 - ( centerFracY - sizeFracY / 2 ) ;
+                var fracEndY = 1 - ( centerFracY + sizeFracY / 2 ) ;
+                
+                var index = 0;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = fracEndX;
+                coords[ index++ ] = ( fracStartY + fracEndY ) / 2;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracEndY;
+            } else {
+                var fracStartX = centerFracX - sizeFracX / 2;
+                var fracEndX = centerFracX + sizeFracX / 2;
+                
+                var fracStartY = 1 - ( centerFracY - sizeFracY / 2 ) ;
+                var fracEndY = 1 - ( centerFracY + sizeFracY / 2 ) ;
+                
+                var index = 0;
+                coords[ index++ ] = fracStartX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = fracEndX;
+                coords[ index++ ] = fracStartY;
+                coords[ index++ ] = ( fracStartX + fracEndX ) / 2;
+                coords[ index++ ] = fracEndY;
+            }
+            
+            program.use( gl );
+            coordsBuffer.setData( coords );
+            a_XyFrac.setDataAndEnable( gl, coordsBuffer, 2, GL.FLOAT );
+            
+            u_Color.setData( gl, white );
+            gl.drawArrays( GL.TRIANGLES, 0, 3 );
+            
+            a_XyFrac.disable( gl );
+            program.endUse( gl );
+        }
+    }
 
     interface TimelineContentPaneOptions {
         selectedIntervalMode : string;
@@ -642,10 +804,24 @@ module Webglimpse {
         draggableEdgeWidth : number;
         snapToDistance : number;
     }
+    
+    interface TimelineContentPaneArguments {
+        drawable : Drawable;
+        scrollLayout : VerticalScrollLayout;
+        timeAxis : TimeAxis1D;
+        model : TimelineModel;
+        ui : TimelineUi;
+        options : TimelineContentPaneOptions;
+    }
 
-
-
-    function newTimelineContentPane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, ui : TimelineUi, options : TimelineContentPaneOptions ) : Pane {
+    function newTimelineContentPane( args : TimelineContentPaneArguments ) : Pane {
+        var drawable = args.drawable;
+        var scrollLayout = args.scrollLayout;
+        var timeAxis = args.timeAxis;
+        var model = args.model;
+        var ui = args.ui;
+        var options = args.options;
+        
         var root = model.root;
 
         var selectedIntervalMode = options.selectedIntervalMode;
@@ -675,14 +851,12 @@ module Webglimpse {
         var textureRenderer = new TextureRenderer( );
         var createGroupLabelTexture = createTextTextureFactory( font );
         var createRowLabelTexture = createTextTextureFactory( font );
-
-
-        var timelineContentPane = new Pane( newRowLayout( ) );
-
-
+        
         // Group panes
         //
 
+        var timelineContentPane = new Pane( newRowLayout( ) );
+        
         var groupHeaderPanes : StringMap<Pane> = {};
         var groupContentPanes : StringMap<Pane> = {};
 
@@ -692,7 +866,19 @@ module Webglimpse {
             var groupLabel = new Label( font, groupLabelColor, group.label );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
-            var groupButton = newInsetPane( groupLabelPane, groupLabelInsets, bgColor );
+
+            var groupArrowPane = new Pane( { updatePrefSize: function( parentPrefSize : Size ) {
+                parentPrefSize.w = 16;
+                parentPrefSize.h = 0;
+            } }, false );
+            groupArrowPane.addPainter( newGroupCollapseExpandArrowPainter( group ) );
+                      
+            var groupPane = new Pane( newColumnLayout( ), false );
+            groupPane.addPane( groupArrowPane, 0 );
+            groupPane.addPane( groupLabelPane, 1 );
+            
+            var groupButton = newInsetPane( groupPane, groupLabelInsets, bgColor );
+            
             
             var redrawLabel = function( ) {
                 groupLabel.text = group.label;
@@ -700,23 +886,82 @@ module Webglimpse {
             }
             group.attrsChanged.on( redrawLabel );
 
+            /// handle rollup group row ///
+            
             var groupHeaderStripe = new Pane( newRowLayout( ) );
             groupHeaderStripe.addPane( new Pane( null ), 0, { height: null } );
             groupHeaderStripe.addPane( newSolidPane( groupLabelColor ), 1, { height: 1 } );
             groupHeaderStripe.addPane( new Pane( null ), 2, { height: null } );
+            
+            var rollupRow = model.row( group.rollupGuid );
+            if ( rollupRow ) {
 
-            var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
-            groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
-            groupHeaderUnderlay.addPane( groupButton, 0 );
-            groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
-
-            var groupHeaderOverlay = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, null, selectedIntervalMode );
-            var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
-
-            var groupHeaderPane = new Pane( newOverlayLayout( ) );
-            groupHeaderPane.addPane( groupHeaderUnderlay, true );
-            groupHeaderPane.addPane( newInsetPane( groupHeaderOverlay, groupHeaderOverlayInsets, null, false ), false );
-
+                var rowBackgroundPanes = newRowBackgroundPanes( args, group.rowGuids, rollupRow ); 
+                var rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+                var rowInsetPane = rowBackgroundPanes.rowInsetPane;
+            
+                var rollupUi = ui.rowUi( rollupRow.rowGuid );
+                
+                // expose panes in api via TimelineRowUi
+                rollupUi.addPane( 'background', rowBackgroundPane );
+                rollupUi.addPane( 'inset', rowInsetPane );
+                
+                var rollupDataAxis = rollupRow.dataAxis;
+                
+                var rollupContentPane : Pane = null;
+                var rollupPaneFactory : TimelineRowPaneFactory = null;
+                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false };
+                var refreshRollupContentPane = function( ) {
+                    var newRollupPaneFactory = ( rollupUi.paneFactory || rowPaneFactoryChooser( rollupRow ) );
+                    if ( newRollupPaneFactory !== rollupPaneFactory ) {
+                        if ( rollupContentPane ) {
+                            rollupContentPane.dispose.fire( );
+                            rowInsetPane.removePane( rollupContentPane );
+                        }
+                        rollupPaneFactory = newRollupPaneFactory;
+                        rollupContentPane = ( rollupPaneFactory && rollupPaneFactory( drawable, timeAxis, rollupDataAxis, model, rollupRow, ui, rollupContentOptions ) );
+                        if ( rollupContentPane ) {
+                            rowInsetPane.addPane( rollupContentPane );
+                        }
+                        drawable.redraw( );
+                    }
+                };
+    
+                rollupUi.paneFactoryChanged.on( refreshRollupContentPane );
+                rollupRow.attrsChanged.on( refreshRollupContentPane );
+                rollupRow.eventGuids.valueAdded.on( refreshRollupContentPane );
+                rollupRow.eventGuids.valueRemoved.on( refreshRollupContentPane );
+                rollupRow.timeseriesGuids.valueAdded.on( refreshRollupContentPane );
+                rollupRow.timeseriesGuids.valueRemoved.on( refreshRollupContentPane );
+                refreshRollupContentPane( );
+                
+                var groupButtonHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupButtonHeaderUnderlay.addPane( groupButton, 0 );
+                groupButtonHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
+                
+                var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
+                groupHeaderUnderlay.addPane( groupButtonHeaderUnderlay, 0, { width: rowLabelPaneWidth } );
+                groupHeaderUnderlay.addPane( rowBackgroundPane, 1, { width: null } );
+            
+                var groupHeaderPane = groupHeaderUnderlay;
+            }
+            else {
+    
+                var groupHeaderUnderlay = new Pane( newColumnLayout( ) );
+                groupHeaderUnderlay.addPainter( newBackgroundPainter( bgColor ) );
+                groupHeaderUnderlay.addPane( groupButton, 0 );
+                groupHeaderUnderlay.addPane( groupHeaderStripe, 1, { ignoreHeight: true } );
+    
+                var groupHeaderOverlay = newTimeAxisPane( args, null );
+                var groupHeaderOverlayInsets = newInsets( 0, 0, 0, rowLabelPaneWidth );
+    
+                var groupHeaderPane = new Pane( newOverlayLayout( ) );
+                groupHeaderPane.addPane( groupHeaderUnderlay, true );
+                groupHeaderPane.addPane( newInsetPane( groupHeaderOverlay, groupHeaderOverlayInsets, null, false ), false );
+                
+            }
+            
             var groupContentPane = new Pane( newRowLayout( ) );
             
             timelineContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
@@ -737,8 +982,10 @@ module Webglimpse {
             };
             group.attrsChanged.on( groupAttrsChanged );
 
-            groupButton.mouseDown.on( function( ) {
-                group.collapsed = !group.collapsed;
+            groupButton.mouseDown.on( function( ev : PointerEvent ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    group.collapsed = !group.collapsed;
+                }
             } );
             
             // Handle hidden property
@@ -747,181 +994,13 @@ module Webglimpse {
             timelineContentPane.layoutOptions( groupContentPane ).hide = group.hidden;
             timelineContentPane.layoutOptions( groupHeaderPane ).hide = group.hidden;
 
-            // Row panes
-            //
-
-            function newRowBackgroundPainter( group : TimelineGroupModel, row : TimelineRowModel ) {
-                return function( gl : WebGLRenderingContext ) {
-                    var color = ( group.rowGuids.indexOf( row.rowGuid ) % 2 ? rowBgColor : rowAltBgColor );
-                    gl.clearColor( color.r, color.g, color.b, color.a );
-                    gl.clear( GL.COLOR_BUFFER_BIT );
-                };
-            }
-
-            var rowPanes : StringMap<Pane> = {};
-
-            var addRow = function( rowGuid : string, rowIndex : number ) {
-                var row = model.row( rowGuid );
-                var rowUi = ui.rowUi( rowGuid );
-                
-                var rowLabel = new Label( font, rowLabelColor, row.label );
-                var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
-                rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
-                var rowHeaderPane = newInsetPane( rowLabelPane, rowLabelInsets, bgColor );
-                
-                var rowAttrsChanged = function( ) {
-                    rowLabel.text = row.label;
-                    drawable.redraw( );
-                }
-                row.attrsChanged.on( rowAttrsChanged );
-
-                var rowBackgroundPane = newTimeAxisPane( timeAxis, ui, draggableEdgeWidth, row, selectedIntervalMode );
-                rowBackgroundPane.addPainter( newRowBackgroundPainter( group, row ) );
-
-                var timeGridOpts = { tickSpacing: gridTickSpacing, gridColor: gridColor };
-                rowBackgroundPane.addPainter( newTimeGridPainter( timeAxis, false, gridTimeZone, timeGridOpts ) );
-
-                var rowInsetTop = rowSeparatorHeight/2;
-                var rowInsetBottom = rowSeparatorHeight - rowInsetTop;
-                var rowInsetPane = new Pane( newInsetLayout( newInsets( rowInsetTop, 0, rowInsetBottom, 0 ) ), false );
-                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetTop, drawRight: false, drawLeft: false, drawBottom: false } ) );
-                rowInsetPane.addPainter( newBorderPainter( bgColor, { thickness: rowInsetBottom, drawRight: false, drawLeft: false, drawTop: false } ) );
-                rowBackgroundPane.addPane( rowInsetPane, true );
-
-                var rowOverlayPane = new Pane( null, false );
-                rowOverlayPane.addPainter( newBorderPainter( rowLabelColor, { drawRight: false, drawTop: false, drawBottom: false } ) );
-                rowBackgroundPane.addPane( rowOverlayPane, false );
-
-                var rowPane = new Pane( newColumnLayout( ) );
-                rowPane.addPane( rowHeaderPane, 0, { width: rowLabelPaneWidth } );
-                rowPane.addPane( rowBackgroundPane, 1, { width: null } );
-                
-                var rowDataAxis = row.dataAxis;
-
-                var rowContentPane : Pane = null;
-                var rowPaneFactory : TimelineRowPaneFactory = null;
-                var rowContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
-                var refreshRowContentPane = function( ) {
-                    var newRowPaneFactory = ( rowUi.paneFactory || rowPaneFactoryChooser( row ) );
-                    if ( newRowPaneFactory !== rowPaneFactory ) {
-                        if ( rowContentPane ) {
-                            rowContentPane.dispose.fire( );
-                            rowInsetPane.removePane( rowContentPane );
-                        }
-                        rowPaneFactory = newRowPaneFactory;
-                        rowContentPane = ( rowPaneFactory && rowPaneFactory( drawable, timeAxis, rowDataAxis, model, group, row, ui, rowContentOptions ) );
-                        if ( rowContentPane ) {
-                            rowInsetPane.addPane( rowContentPane );
-                        }
-                        drawable.redraw( );
-                    }
-                };
-
-                rowUi.paneFactoryChanged.on( refreshRowContentPane );
-                row.attrsChanged.on( refreshRowContentPane );
-                row.eventGuids.valueAdded.on( refreshRowContentPane );
-                row.eventGuids.valueRemoved.on( refreshRowContentPane );
-                row.timeseriesGuids.valueAdded.on( refreshRowContentPane );
-                row.timeseriesGuids.valueRemoved.on( refreshRowContentPane );
-                refreshRowContentPane( );
-
-                groupContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
-                    var shift = ( isNumber( layoutArg ) && layoutArg >= rowIndex );
-                    return ( shift ? layoutArg + 1 : layoutArg );
-                } );
-                groupContentPane.addPane( rowPane, rowIndex );
-                rowPanes[ rowGuid ] = rowPane;
-                
-                            
-                // Handle hidden property
-                //
-                groupContentPane.layoutOptions( rowPane ).hide = row.hidden;
-
-                drawable.redraw( );
-                
-                rowPane.dispose.on( function( ) {
-                    row.attrsChanged.off( rowAttrsChanged );
-                    rowUi.paneFactoryChanged.off( refreshRowContentPane );
-                    row.attrsChanged.off( refreshRowContentPane );
-                    row.eventGuids.valueAdded.off( refreshRowContentPane );
-                    row.eventGuids.valueRemoved.off( refreshRowContentPane );
-                    row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
-                    row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
-                } );
-            };
-            group.rowGuids.forEach( addRow );
-            group.rowGuids.valueAdded.on( addRow );
-
-            var valueMoved = function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
-                var nMin = Math.min( rowOldIndex, rowNewIndex );
-                var nMax = Math.max( rowOldIndex, rowNewIndex );
-                for ( var n = nMin; n <= nMax; n++ ) {
-                    var rowGuid = group.rowGuids.valueAt( n );
-                    groupContentPane.setLayoutArg( rowPanes[ rowGuid ], n );
-                }
-
-                drawable.redraw( );
-            };
-            group.rowGuids.valueMoved.on( valueMoved );
-
-            var removeRow = function( rowGuid : string, rowIndex : number ) {
-                var pane : Pane = rowPanes[ rowGuid ];
-                pane.dispose.fire( );
-                groupContentPane.removePane( pane );
-                groupContentPane.updateLayoutArgs( function( layoutArg : any ) : any {
-                    var shift = ( isNumber( layoutArg ) && layoutArg > rowIndex );
-                    return ( shift ? layoutArg - 1 : layoutArg );
-                } );
-                delete rowPanes[ rowGuid ];
-
-                drawable.redraw( );
-            };
-            group.rowGuids.valueRemoved.on( removeRow );
-
-            // Handle listing for hidden property
-            //
-            
-            var attrsChangedListeners = {};
-            
-            var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
-                var row = model.row( rowGuid );
-                var attrsChangedListener = function( ) {
-                    if ( hasval( row.hidden && hasval( rowPanes[rowGuid] ) ) ) {
-                        groupContentPane.layoutOptions( rowPanes[rowGuid] ).hide = row.hidden;
-                        drawable.redraw( );
-                    }
-                };
-                attrsChangedListeners[ rowGuid ] = attrsChangedListener;
-                row.attrsChanged.on( attrsChangedListener );
-            };
-            
-            var unattachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
-                var row = model.row( rowGuid );
-                row.attrsChanged.off( attrsChangedListeners[ rowGuid ] );
-            }
-            
-            group.rowGuids.forEach( attachAttrsChangedListener );
-            group.rowGuids.valueAdded.on( attachAttrsChangedListener );
-            group.rowGuids.valueRemoved.on( unattachAttrsChangedListener );
-            
-            // Redraw
-            //
-
-            drawable.redraw( );
-            
-            // Dispose
+            setupRowContainerPane( args, groupContentPane, group.rowGuids, false );
             
             groupContentPane.dispose.on( function( ) {
                 group.attrsChanged.off( redrawLabel );
                 group.attrsChanged.off( groupAttrsChanged );
-                
-                group.rowGuids.valueAdded.off( addRow );                
-                group.rowGuids.valueMoved.off( valueMoved );
-                group.rowGuids.valueRemoved.off( removeRow );
-                
-                group.rowGuids.valueAdded.off( attachAttrsChangedListener );
-                group.rowGuids.valueRemoved.off( unattachAttrsChangedListener );
-           } );
+            });
+         
         };
         root.groupGuids.forEach( addGroup );
         root.groupGuids.valueAdded.on( addGroup );
@@ -995,6 +1074,210 @@ module Webglimpse {
         } );
 
         return timelineContentPane;
+    }
+    
+    // Row panes and painters
+    //
+    
+    function newRowBackgroundPainter( args : TimelineContentPaneArguments, guidList : OrderedStringSet, row : TimelineRowModel ) {
+        return function( gl : WebGLRenderingContext ) {
+            var color = hasval( row.bgColor ) ? row.bgColor : ( guidList.indexOf( row.rowGuid ) % 2 ? args.options.rowBgColor : args.options.rowAltBgColor );
+            gl.clearColor( color.r, color.g, color.b, color.a );
+            gl.clear( GL.COLOR_BUFFER_BIT );
+        };
+    }
+    
+    function newRowBackgroundPanes( args : TimelineContentPaneArguments, guidList : OrderedStringSet, row : TimelineRowModel ) {
+        var rowBackgroundPane = newTimeAxisPane( args, row );
+        rowBackgroundPane.addPainter( newRowBackgroundPainter( args, guidList, row ) );
+    
+        var timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor };
+        rowBackgroundPane.addPainter( newTimeGridPainter( args.timeAxis, false, args.options.gridTimeZone, timeGridOpts ) );
+    
+        var rowInsetTop = args.options.rowSeparatorHeight/2;
+        var rowInsetBottom = args.options.rowSeparatorHeight - rowInsetTop;
+        var rowInsetPane = new Pane( newInsetLayout( newInsets( rowInsetTop, 0, rowInsetBottom, 0 ) ), false );
+        rowInsetPane.addPainter( newBorderPainter( args.options.bgColor, { thickness: rowInsetTop, drawRight: false, drawLeft: false, drawBottom: false } ) );
+        rowInsetPane.addPainter( newBorderPainter( args.options.bgColor, { thickness: rowInsetBottom, drawRight: false, drawLeft: false, drawTop: false } ) );
+        rowBackgroundPane.addPane( rowInsetPane, true );
+    
+        var rowOverlayPane = new Pane( null, false );
+        rowOverlayPane.addPainter( newBorderPainter( args.options.rowLabelColor, { drawRight: false, drawTop: false, drawBottom: false } ) );
+        rowBackgroundPane.addPane( rowOverlayPane, false );
+        
+        return { rowInsetPane : rowInsetPane, rowBackgroundPane : rowBackgroundPane };
+    }
+    
+    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean ) {
+        
+        var drawable = args.drawable;
+        var scrollLayout = args.scrollLayout;
+        var timeAxis = args.timeAxis;
+        var model = args.model;
+        var ui = args.ui;
+        var options = args.options;
+        
+        var rowPanes : StringMap<Pane> = {};
+    
+        var addRow = function( rowGuid : string, rowIndex : number ) {
+            var row = model.row( rowGuid );
+            var rowUi = ui.rowUi( rowGuid );
+            
+            var rowLabel = new Label( options.font, options.rowLabelColor, row.label );
+            var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
+            rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
+            var rowHeaderPane = newInsetPane( rowLabelPane, options.rowLabelInsets, options.bgColor );
+            
+            var rowAttrsChanged = function( ) {
+                rowLabel.text = row.label;
+                drawable.redraw( );
+            }
+            row.attrsChanged.on( rowAttrsChanged );
+        
+            var rowBackgroundPanes = newRowBackgroundPanes( args, guidList, row ); 
+            var rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+            var rowInsetPane = rowBackgroundPanes.rowInsetPane;
+        
+            var rowPane = new Pane( newColumnLayout( ) );
+            rowPane.addPane( rowHeaderPane, 0, { width: options.rowLabelPaneWidth } );
+            rowPane.addPane( rowBackgroundPane, 1, { width: null } );
+        
+            var keyPrefix = isMaximized ? 'maximized-' : '';
+            
+            // expose panes in api via TimelineRowUi
+            rowUi.addPane( keyPrefix+'background', rowBackgroundPane );
+            rowUi.addPane( keyPrefix+'inset', rowInsetPane );
+            rowUi.addPane( keyPrefix+'label', rowLabelPane );
+            rowUi.addPane( keyPrefix+'header', rowHeaderPane );
+            
+            var rowDataAxis = row.dataAxis;
+        
+            var rowContentPane : Pane = null;
+            var rowPaneFactory : TimelineRowPaneFactory = null;
+            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized };
+            var refreshRowContentPane = function( ) {
+                var newRowPaneFactory = ( rowUi.paneFactory || options.rowPaneFactoryChooser( row ) );
+                if ( newRowPaneFactory !== rowPaneFactory ) {
+                    if ( rowContentPane ) {
+                        rowContentPane.dispose.fire( );
+                        rowInsetPane.removePane( rowContentPane );
+                    }
+                    rowPaneFactory = newRowPaneFactory;
+                    rowContentPane = ( rowPaneFactory && rowPaneFactory( drawable, timeAxis, rowDataAxis, model, row, ui, rowContentOptions ) );
+                    if ( rowContentPane ) {
+                        rowInsetPane.addPane( rowContentPane );
+                    }
+                    drawable.redraw( );
+                }
+            };
+        
+            rowUi.paneFactoryChanged.on( refreshRowContentPane );
+            row.attrsChanged.on( refreshRowContentPane );
+            row.eventGuids.valueAdded.on( refreshRowContentPane );
+            row.eventGuids.valueRemoved.on( refreshRowContentPane );
+            row.timeseriesGuids.valueAdded.on( refreshRowContentPane );
+            row.timeseriesGuids.valueRemoved.on( refreshRowContentPane );
+            refreshRowContentPane( );
+        
+            parentPane.updateLayoutArgs( function( layoutArg : any ) : any {
+                var shift = ( isNumber( layoutArg ) && layoutArg >= rowIndex );
+                return ( shift ? layoutArg + 1 : layoutArg );
+            } );
+            parentPane.addPane( rowPane, rowIndex );
+            rowPanes[ rowGuid ] = rowPane;
+            
+                        
+            // Handle hidden property
+            //
+            parentPane.layoutOptions( rowPane ).hide = row.hidden;
+        
+            drawable.redraw( );
+            
+            rowPane.dispose.on( function( ) {
+                row.attrsChanged.off( rowAttrsChanged );
+                rowUi.paneFactoryChanged.off( refreshRowContentPane );
+                row.attrsChanged.off( refreshRowContentPane );
+                row.eventGuids.valueAdded.off( refreshRowContentPane );
+                row.eventGuids.valueRemoved.off( refreshRowContentPane );
+                row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
+                row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
+                
+                rowUi.removePane( keyPrefix+'background' );
+                rowUi.removePane( keyPrefix+'inset' );
+                rowUi.removePane( keyPrefix+'label' );
+                rowUi.removePane( keyPrefix+'header' );
+            } );
+        };
+        guidList.forEach( addRow );
+        guidList.valueAdded.on( addRow );
+    
+        var valueMoved = function( rowGuid : string, rowOldIndex : number, rowNewIndex : number ) {
+            var nMin = Math.min( rowOldIndex, rowNewIndex );
+            var nMax = Math.max( rowOldIndex, rowNewIndex );
+            for ( var n = nMin; n <= nMax; n++ ) {
+                var rowGuid = guidList.valueAt( n );
+                parentPane.setLayoutArg( rowPanes[ rowGuid ], n );
+            }
+        
+            drawable.redraw( );
+        };
+        guidList.valueMoved.on( valueMoved );
+        
+        var removeRow = function( rowGuid : string, rowIndex : number ) {
+            var pane : Pane = rowPanes[ rowGuid ];
+            pane.dispose.fire( );
+            parentPane.removePane( pane );
+            parentPane.updateLayoutArgs( function( layoutArg : any ) : any {
+                var shift = ( isNumber( layoutArg ) && layoutArg > rowIndex );
+                return ( shift ? layoutArg - 1 : layoutArg );
+            } );
+            delete rowPanes[ rowGuid ];
+        
+            drawable.redraw( );
+        };
+        guidList.valueRemoved.on( removeRow );
+        
+        // Handle listing for hidden property
+        //
+        
+        var attrsChangedListeners = {};
+        
+        var attachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+            var row = model.row( rowGuid );
+            var attrsChangedListener = function( ) {
+                if ( hasval( row.hidden && hasval( rowPanes[rowGuid] ) ) ) {
+                    parentPane.layoutOptions( rowPanes[rowGuid] ).hide = row.hidden;
+                    drawable.redraw( );
+                }
+            };
+            attrsChangedListeners[ rowGuid ] = attrsChangedListener;
+            row.attrsChanged.on( attrsChangedListener );
+        };
+        
+        var unattachAttrsChangedListener = function( rowGuid : string, rowIndex : number ) {
+            var row = model.row( rowGuid );
+            row.attrsChanged.off( attrsChangedListeners[ rowGuid ] );
+        }
+        
+        guidList.forEach( attachAttrsChangedListener );
+        guidList.valueAdded.on( attachAttrsChangedListener );
+        guidList.valueRemoved.on( unattachAttrsChangedListener );
+        
+        // Redraw
+        //
+
+        drawable.redraw( );
+        
+        // Dispose
+        
+        parentPane.dispose.on( function( ) {
+            guidList.valueAdded.off( addRow );                
+            guidList.valueMoved.off( valueMoved );
+            guidList.valueRemoved.off( removeRow );
+            
+            guidList.valueAdded.off( attachAttrsChangedListener );
+            guidList.valueRemoved.off( unattachAttrsChangedListener );
+       } );
     }
 
 

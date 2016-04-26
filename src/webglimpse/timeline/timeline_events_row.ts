@@ -59,7 +59,7 @@ module Webglimpse {
     export function newEventsRowPaneFactory( eventsRowOpts? : TimelineEventsRowPaneOptions ) : TimelineRowPaneFactory {
 
         // Pane Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             var rowTopPadding    = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
             var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
             var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
@@ -71,9 +71,10 @@ module Webglimpse {
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
 
-
+            var rowUi = ui.rowUi( row.rowGuid );
             var input = ui.input;
             var selection = ui.selection;
+            
             var lanes = new TimelineLaneArray( model, row, ui, allowMultipleLanes );
 
             var timeAtCoords_PMILLIS = function( viewport : BoundsUnmodifiable, i : number ) : number {
@@ -110,6 +111,8 @@ module Webglimpse {
             };
             var rowContentPane = new Pane( layout, true, isInsideAnEvent );
 
+            rowUi.addPane( 'content', rowContentPane );
+            
             var painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding, laneHeight: laneHeight };
             for ( var n = 0; n < painterFactories.length; n++ ) {
                 var createPainter = painterFactories[ n ];
@@ -282,22 +285,24 @@ module Webglimpse {
             selection.hoveredEvent.changed.on( updateCursor );
 
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
-                var eventDragEventsSet = selection.selectedEvents;
-                eventDragEvents = eventDragEventsSet.toArray( );
-                eventDragMode = chooseEventDragMode( ui, timeAtPointer_PMILLIS( ev ), eventDragEvents );
-
-                eventDragSnapTimes_PMILLIS = new Array( 2 * ( row.eventGuids.length - eventDragEvents.length ) );
-                var numSnapTimes = 0;
-                var allEventGuids = row.eventGuids;
-                for ( var n = 0; n < allEventGuids.length; n++ ) {
-                    var eventGuid = allEventGuids.valueAt( n );
-                    if ( !eventDragEventsSet.hasId( eventGuid ) ) {
-                        var event = model.event( eventGuid );
-                        eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.start_PMILLIS;
-                        eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.end_PMILLIS;
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var eventDragEventsSet = selection.selectedEvents;
+                    eventDragEvents = eventDragEventsSet.toArray( );
+                    eventDragMode = chooseEventDragMode( ui, timeAtPointer_PMILLIS( ev ), eventDragEvents );
+    
+                    eventDragSnapTimes_PMILLIS = new Array( 2 * ( row.eventGuids.length - eventDragEvents.length ) );
+                    var numSnapTimes = 0;
+                    var allEventGuids = row.eventGuids;
+                    for ( var n = 0; n < allEventGuids.length; n++ ) {
+                        var eventGuid = allEventGuids.valueAt( n );
+                        if ( !eventDragEventsSet.hasId( eventGuid ) ) {
+                            var event = model.event( eventGuid );
+                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.start_PMILLIS;
+                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.end_PMILLIS;
+                        }
                     }
+                    eventDragSnapTimes_PMILLIS.sort( );
                 }
-                eventDragSnapTimes_PMILLIS.sort( );
             } );
 
             function findSnapShift_MILLIS( t_PMILLIS : number, maxShift_MILLIS : number ) : number {
@@ -319,7 +324,7 @@ module Webglimpse {
             var eventDragPointer_PMILLIS : number = null;
 
             var updateEventDragPointer = function( ev : PointerEvent ) {
-                if ( eventDragMode ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) && eventDragMode ) {
                     eventDragPointer_PMILLIS = timeAtPointer_PMILLIS( ev );
                 }
             };
@@ -552,28 +557,24 @@ module Webglimpse {
         minimumVisibleWidth? : number;
     }
 
+    
+    function eventBarPainterHelper( barOpts : TimelineEventBarsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
 
-
-    export function newEventBarsPainterFactory( barOpts? : TimelineEventBarsPainterOptions ) : TimelineEventsPainterFactory {
-
-        // Painter Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
-            var rowTopPadding    = options.rowTopPadding;
-            var rowBottomPadding = options.rowBottomPadding;
-            var laneHeight       = options.laneHeight;
-
-            var topMargin           = ( hasval( barOpts ) && hasval( barOpts.topMargin           ) ? barOpts.topMargin           : 1.2 );
-            var bottomMargin        = ( hasval( barOpts ) && hasval( barOpts.bottomMargin        ) ? barOpts.bottomMargin        : 1.2 );
-            var borderThickness     = ( hasval( barOpts ) && hasval( barOpts.borderThickness     ) ? barOpts.borderThickness     : 2 );
-            var cornerType          = ( hasval( barOpts ) && hasval( barOpts.cornerType          ) ? barOpts.cornerType          : JointType.BEVEL );
-            var defaultColor        = ( hasval( barOpts ) && hasval( barOpts.defaultColor        ) ? barOpts.defaultColor        : options.timelineFgColor.withAlphaTimes( 0.4 ) );
-            var defaultBorderColor  = ( hasval( barOpts ) && hasval( barOpts.defaultBorderColor  ) ? barOpts.defaultBorderColor  : null );
-            var selectedBorderColor = ( hasval( barOpts ) && hasval( barOpts.selectedBorderColor ) ? barOpts.selectedBorderColor : options.timelineFgColor );
-            var minimumVisibleWidth = ( hasval( barOpts ) && hasval( barOpts.minimumVisibleWidth ) ? barOpts.minimumVisibleWidth : 0 );
-            
-            var selection = ui.selection;
-
-            var xyFrac_vColor_VERTSHADER = concatLines(
+        var topMargin           = ( hasval( barOpts ) && hasval( barOpts.topMargin           ) ? barOpts.topMargin           : 1.2 );
+        var bottomMargin        = ( hasval( barOpts ) && hasval( barOpts.bottomMargin        ) ? barOpts.bottomMargin        : 1.2 );
+        var borderThickness     = ( hasval( barOpts ) && hasval( barOpts.borderThickness     ) ? barOpts.borderThickness     : 2 );
+        var cornerType          = ( hasval( barOpts ) && hasval( barOpts.cornerType          ) ? barOpts.cornerType          : JointType.BEVEL );
+        var defaultColor        = ( hasval( barOpts ) && hasval( barOpts.defaultColor        ) ? barOpts.defaultColor        : options.timelineFgColor.withAlphaTimes( 0.4 ) );
+        var defaultBorderColor  = ( hasval( barOpts ) && hasval( barOpts.defaultBorderColor  ) ? barOpts.defaultBorderColor  : null );
+        var selectedBorderColor = ( hasval( barOpts ) && hasval( barOpts.selectedBorderColor ) ? barOpts.selectedBorderColor : options.timelineFgColor );
+        var minimumVisibleWidth = ( hasval( barOpts ) && hasval( barOpts.minimumVisibleWidth ) ? barOpts.minimumVisibleWidth : 0 );
+        
+        var selection = ui.selection;
+        
+        var xyFrac_vColor_VERTSHADER = concatLines(
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
@@ -587,101 +588,21 @@ module Webglimpse {
                 '                                                                '
             );
 
-            var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
-            var a_XyFrac = new Attribute( program, 'a_XyFrac' );
-            var a_Color = new Attribute( program, 'a_Color' );
+        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var a_Color = new Attribute( program, 'a_Color' );
 
-            var xys = new Float32Array( 0 );
-            var xysBuffer = newDynamicBuffer( );
+        var xys = new Float32Array( 0 );
+        var xysBuffer = newDynamicBuffer( );
 
-            var rgbas = new Float32Array( 0 );
-            var rgbasBuffer = newDynamicBuffer( );
-
-            // Painter
-            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+        var rgbas = new Float32Array( 0 );
+        var rgbasBuffer = newDynamicBuffer( );
+        
+        return {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
-
-                var wBorder = borderThickness / viewport.w;
-                var hBorder = borderThickness / viewport.h;
-
-                var numVertices;
-                switch ( cornerType ) {
-                    case JointType.BEVEL:
-                        numVertices = ( 6*( 5 /*quads*/ ) + 3*( 4 /*triangles*/ ) )*lanes.numEvents;
-                        break;
-
-                    default:
-                        numVertices = ( 6*( 5 /*quads*/ ) )*lanes.numEvents;
-                        break;
-                }
-
-                xys = ensureCapacityFloat32( xys, 2*numVertices );
-                var indexXys = 0;
-
-                rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
-                var indexRgbas = 0;
-
-                for ( var l = 0; l < lanes.length; l++ ) {
-                    var lane = lanes.lane( l );
-                    var jTop = rowTopPadding + ( l )*laneHeight + topMargin;
-                    var yTop = ( viewport.h - jTop ) / viewport.h;
-                    var jBottom = rowTopPadding + ( l + 1 )*laneHeight - bottomMargin;
-                    var yBottom =  ( viewport.h - jBottom ) / viewport.h;
-
-                    for ( var e = 0; e < lane.length; e++ ) {
-                        var event = lane.event( e );
-
-                        var xLeft = timeAxis.tFrac( event.start_PMILLIS );
-                        var xRight = timeAxis.tFrac( event.end_PMILLIS );
-                        
-                        var xWidthPixels = viewport.w * ( xRight - xLeft );
-                        
-                        if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
-
-                            // Fill
-                            var fillColor = ( event.bgColor || defaultColor );
-                            if ( event === selection.hoveredEvent.value ) {
-                                fillColor = darker( fillColor, 0.8 );
-                            }
-                            indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
-                            indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
-
-                            // Border
-                            var borderColor = ( event.borderColor || ( event.bgColor ? fillColor : null ) || defaultBorderColor || fillColor );
-                            if ( selection.selectedEvents.hasValue( event ) ) {
-                                borderColor = selectedBorderColor;
-                            }
-                            if ( borderColor ) {
-                                switch ( cornerType ) {
-                                    case JointType.BEVEL:
-                                        // Quads
-                                        indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom+hBorder );
-                                        indexXys = putQuadXys( xys, indexXys, xRight-wBorder, xRight, yTop-hBorder, yBottom+hBorder );
-                                        indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop, yTop-hBorder );
-                                        indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yBottom+hBorder, yBottom );
-                                        indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
-                                        // Triangles
-                                        indexXys = putLowerLeftTriangleXys( xys, indexXys, xRight-wBorder, xRight, yTop, yTop-hBorder );
-                                        indexXys = putUpperLeftTriangleXys( xys, indexXys, xRight-wBorder, xRight, yBottom+hBorder, yBottom );
-                                        indexXys = putUpperRightTriangleXys( xys, indexXys, xLeft, xLeft+wBorder, yBottom+hBorder, yBottom );
-                                        indexXys = putLowerRightTriangleXys( xys, indexXys, xLeft, xLeft+wBorder, yTop, yTop-hBorder );
-                                        indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 12 );
-                                        break;
-
-                                    default:
-                                        indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
-                                        indexXys = putQuadXys( xys, indexXys, xRight-wBorder, xRight, yTop, yBottom+hBorder );
-                                        indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight, yBottom+hBorder, yBottom );
-                                        indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom );
-                                        indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-
+                
                 program.use( gl );
                 xysBuffer.setData( xys.subarray( 0, indexXys ) );
                 a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
@@ -693,6 +614,116 @@ module Webglimpse {
                 a_Color.disable( gl );
                 a_XyFrac.disable( gl );
                 program.endUse( gl );
+            },
+            ensureCapacity: function( eventCount : number ) {
+                var numVertices;
+                switch ( cornerType ) {
+                    case JointType.BEVEL:
+                        numVertices = ( 6*( 5 /*quads*/ ) + 3*( 4 /*triangles*/ ) )*eventCount;
+                        break;
+
+                    default:
+                        numVertices = ( 6*( 5 /*quads*/ ) )*eventCount;
+                        break;
+                }
+
+                xys = ensureCapacityFloat32( xys, 2*numVertices );
+                rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
+            },
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+                
+                var wBorder = borderThickness / viewport.w;
+                var hBorder = borderThickness / viewport.h;
+                
+                var _topMargin = hasval( event.topMargin ) ? event.topMargin : topMargin;
+                var _bottomMargin = hasval( event.bottomMargin ) ? event.bottomMargin : bottomMargin;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + _topMargin;
+                var yTop = ( viewport.h - jTop ) / viewport.h;
+                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight - _bottomMargin;
+                var yBottom =  ( viewport.h - jBottom ) / viewport.h;
+                
+                var xLeft = timeAxis.tFrac( event.start_PMILLIS );
+                var xRight = timeAxis.tFrac( event.end_PMILLIS );
+                
+                var xWidthPixels = viewport.w * ( xRight - xLeft );
+                
+                if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
+
+                    // Fill
+                    var fillColor = ( event.bgColor || defaultColor );
+                    if ( event === selection.hoveredEvent.value ) {
+                        fillColor = darker( fillColor, 0.8 );
+                    }
+                    indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
+                    indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
+
+                    // Border
+                    var borderColor = ( event.borderColor || ( event.bgColor ? fillColor : null ) || defaultBorderColor || fillColor );
+                    if ( selection.selectedEvents.hasValue( event ) ) {
+                        borderColor = selectedBorderColor;
+                    }
+                    if ( borderColor ) {
+                        switch ( cornerType ) {
+                            case JointType.BEVEL:
+                                // Quads
+                                indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom+hBorder );
+                                indexXys = putQuadXys( xys, indexXys, xRight-wBorder, xRight, yTop-hBorder, yBottom+hBorder );
+                                indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop, yTop-hBorder );
+                                indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yBottom+hBorder, yBottom );
+                                indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
+                                // Triangles
+                                indexXys = putLowerLeftTriangleXys( xys, indexXys, xRight-wBorder, xRight, yTop, yTop-hBorder );
+                                indexXys = putUpperLeftTriangleXys( xys, indexXys, xRight-wBorder, xRight, yBottom+hBorder, yBottom );
+                                indexXys = putUpperRightTriangleXys( xys, indexXys, xLeft, xLeft+wBorder, yBottom+hBorder, yBottom );
+                                indexXys = putLowerRightTriangleXys( xys, indexXys, xLeft, xLeft+wBorder, yTop, yTop-hBorder );
+                                indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 12 );
+                                break;
+
+                            default:
+                                indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                                indexXys = putQuadXys( xys, indexXys, xRight-wBorder, xRight, yTop, yBottom+hBorder );
+                                indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight, yBottom+hBorder, yBottom );
+                                indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom );
+                                indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
+                                break;
+                        }
+                    }
+                }
+                
+                return { indexXys : indexXys, indexRgbas : indexRgbas };
+            }
+        };
+    }
+
+
+    export function newEventBarsPainterFactory( barOpts? : TimelineEventBarsPainterOptions ) : TimelineEventsPainterFactory {
+
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
+            
+            var helper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
+
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                helper.ensureCapacity( lanes.numEvents );
+
+                var indexXys = 0;
+                var indexRgbas = 0;
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
+                        indexXys = indexes.indexXys;
+                        indexRgbas = indexes.indexRgbas;
+                    }
+                }
+
+                helper.paint( indexXys, indexRgbas, gl, viewport );
             };
         };
     }
@@ -705,52 +736,65 @@ module Webglimpse {
         vAlign? : number;
     }
 
+    
+    function eventIconsPainterHelper( iconOpts : TimelineEventIconsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
 
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
+
+        var topMargin    = ( hasval( iconOpts ) && hasval( iconOpts.topMargin    ) ? iconOpts.topMargin    : 1.2 );
+        var bottomMargin = ( hasval( iconOpts ) && hasval( iconOpts.bottomMargin ) ? iconOpts.bottomMargin : 1.2 );
+        var vAlign       = ( hasval( iconOpts ) && hasval( iconOpts.vAlign       ) ? iconOpts.vAlign       : 0.5 );
+
+        var textureRenderer = new TextureRenderer( );
+        
+        return {
+            textureRenderer : textureRenderer,
+            paintEvent: function( laneIndex : number, eventIndex : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+                var eventStyle = ui.eventStyle( event.styleGuid );
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + topMargin;
+                var yFrac = ( viewport.h - jTop - ( 1.0 - vAlign )*( laneHeight - topMargin - bottomMargin ) ) / viewport.h;
+
+                for ( var n = 0; n < eventStyle.numIcons; n++ ) {
+                    var icon = eventStyle.icon( n );
+                    var iconTime_PMILLIS = event.start_PMILLIS + icon.hPos*( event.end_PMILLIS - event.start_PMILLIS );
+                    var xFrac = timeAxis.tFrac( iconTime_PMILLIS );
+                    var w = icon.displayWidth / viewport.w;
+                    if ( -w <= xFrac && xFrac <= 1+w ) {
+                        var iconTexture = ui.loadImage( icon.url, function( ) { drawable.redraw( ); } );
+                        if ( iconTexture ) {
+                            textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: icon.hAlign, yAnchor: vAlign, width: icon.displayWidth, height: icon.displayHeight } );
+                        }
+                    }
+                }
+            }
+        };
+    }
 
     export function newEventIconsPainterFactory( iconOpts? : TimelineEventIconsPainterOptions ) : TimelineEventsPainterFactory {
 
         // Painter Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
-            var rowTopPadding    = options.rowTopPadding;
-            var rowBottomPadding = options.rowBottomPadding;
-            var laneHeight       = options.laneHeight;
-
-            var topMargin    = ( hasval( iconOpts ) && hasval( iconOpts.topMargin    ) ? iconOpts.topMargin    : 1.2 );
-            var bottomMargin = ( hasval( iconOpts ) && hasval( iconOpts.bottomMargin ) ? iconOpts.bottomMargin : 1.2 );
-            var vAlign       = ( hasval( iconOpts ) && hasval( iconOpts.vAlign       ) ? iconOpts.vAlign       : 0.5 );
-
-            var textureRenderer = new TextureRenderer( );
+            
+            var helper = eventIconsPainterHelper( iconOpts, drawable, timeAxis, lanes, ui, options );
 
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
 
-                textureRenderer.begin( gl, viewport );
+                helper.textureRenderer.begin( gl, viewport );
                 for ( var l = 0; l < lanes.length; l++ ) {
                     var lane = lanes.lane( l );
-                    var jTop = rowTopPadding + ( l )*laneHeight + topMargin;
-                    var yFrac = ( viewport.h - jTop - ( 1.0 - vAlign )*( laneHeight - topMargin - bottomMargin ) ) / viewport.h;
-
                     for ( var e = 0; e < lane.length; e++ ) {
-                        var event = lane.event( e );
-                        var eventStyle = ui.eventStyle( event.styleGuid );
-
-                        for ( var n = 0; n < eventStyle.numIcons; n++ ) {
-                            var icon = eventStyle.icon( n );
-                            var iconTime_PMILLIS = event.start_PMILLIS + icon.hPos*( event.end_PMILLIS - event.start_PMILLIS );
-                            var xFrac = timeAxis.tFrac( iconTime_PMILLIS );
-                            var w = icon.displayWidth / viewport.w;
-                            if ( -w <= xFrac && xFrac <= 1+w ) {
-                                var iconTexture = ui.loadImage( icon.url, function( ) { drawable.redraw( ); } );
-                                if ( iconTexture ) {
-                                    textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: icon.hAlign, yAnchor: vAlign, width: icon.displayWidth, height: icon.displayHeight } );
-                                }
-                            }
-                        }
+                        helper.paintEvent( l, e, gl, viewport );
                     }
                 }
-                textureRenderer.end( gl );
+                helper.textureRenderer.end( gl );
             };
         };
     }
@@ -776,159 +820,217 @@ module Webglimpse {
         textEnabled? : boolean;
         textDefaultColor? : Color;
         textFont? : string;
+        
+        forceVisible? : boolean;
     }
 
 
+    function eventLabelsPainterHelper( labelOpts : TimelineEventLabelOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
+
+        var topMargin       = ( hasval( labelOpts ) && hasval( labelOpts.topMargin       ) ? labelOpts.topMargin       : 1.2   );
+        var bottomMargin    = ( hasval( labelOpts ) && hasval( labelOpts.bottomMargin    ) ? labelOpts.bottomMargin    : 1.2   );
+        var leftMargin      = ( hasval( labelOpts ) && hasval( labelOpts.leftMargin      ) ? labelOpts.leftMargin      : 4     );
+        var rightMargin     = ( hasval( labelOpts ) && hasval( labelOpts.rightMargin     ) ? labelOpts.rightMargin     : 4     );
+        var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
+        var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
+        var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
+
+        // Icon options
+        var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
+        var iconsForceWidth  = ( hasval( labelOpts ) && hasval( labelOpts.iconsForceWidth  ) ? labelOpts.iconsForceWidth  : 'auto' );
+        var iconsForceHeight = ( hasval( labelOpts ) && hasval( labelOpts.iconsForceHeight ) ? labelOpts.iconsForceHeight : 'auto' );
+        var iconsSizeFactor  = ( hasval( labelOpts ) && hasval( labelOpts.iconsSizeFactor  ) ? labelOpts.iconsSizeFactor  : 1      );
+
+        // Text options
+        var forceVisible     = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible     ) ? labelOpts.forceVisible     : false );
+        var textEnabled      = ( hasval( labelOpts ) && hasval( labelOpts.textEnabled      ) ? labelOpts.textEnabled      : true );
+        var textDefaultColor = ( hasval( labelOpts ) && hasval( labelOpts.textDefaultColor ) ? labelOpts.textDefaultColor : options.timelineFgColor );
+        var textFont         = ( hasval( labelOpts ) && hasval( labelOpts.textFont         ) ? labelOpts.textFont         : options.timelineFont );
+
+        // XXX: Old icon textures never get cleaned out
+        var iconTextures : StringMap<Texture2D> = {};
+        var textTextures = newTextTextureCache2( textFont );
+        var textureRenderer = new TextureRenderer( );
+        
+        return {
+            textTextures : textTextures,
+            textureRenderer : textureRenderer,
+            paintEvent: function( laneIndex : number, eventIndex : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+               
+                var labelTopMargin = hasval( event.labelTopMargin ) ? event.labelTopMargin : topMargin;
+                var labelBottomMargin = hasval( event.labelBottomMargin ) ? event.labelBottomMargin : bottomMargin;
+                var labelVAlign = hasval( event.labelVAlign ) ? event.labelVAlign : vAlign;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + labelTopMargin;
+                var yFrac = ( viewport.h - jTop - ( 1.0 - labelVAlign )*( laneHeight - labelTopMargin - labelBottomMargin ) ) / viewport.h;
+                
+                var xLeftMin = 2 / viewport.w;
+                var xRightMax = ( viewport.w - 2 ) / viewport.w;
+                var wLeftIndent = leftMargin / viewport.w;
+                var wRightIndent = rightMargin / viewport.w;
+                
+                var xStart = timeAxis.tFrac( event.start_PMILLIS );
+                var xEnd = timeAxis.tFrac( event.end_PMILLIS );
+                if ( !( xEnd <= 0 || xStart > 1 ) ) {
+    
+                    var xLeft = xStart;
+                    var xRight;
+                    if ( extendBeyondBar ) {
+                        if ( eventIndex+1 < lane.length ) {
+                            var nextEvent = lane.event( eventIndex+1 );
+                            var nextStart_PMILLIS = effectiveEdges_PMILLIS( ui, nextEvent )[ 0 ];
+                            xRight = timeAxis.tFrac( nextStart_PMILLIS );
+                        }
+                        else {
+                            xRight = xRightMax;
+                        }
+                    }
+                    else {
+                        xRight = xEnd;
+                    }
+    
+                    var xLeftVisible = Math.max( xStart + wLeftIndent, xLeftMin );
+                    var xRightVisible = Math.min( xRight - wRightIndent, xRightMax );
+                    var wVisible = ( xRightVisible - xLeftVisible );
+    
+                    // Icon
+                    var wIcon = 0;
+                    if ( iconsEnabled && event.labelIcon ) {
+                        var iconTexture = iconTextures[ event.labelIcon ];
+                        if ( hasval( iconTexture ) ) {
+                            var iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
+                            var iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
+    
+                            var wIconKnown = hasval( iconWidth );
+                            var hIconKnown = hasval( iconHeight );
+                            if ( !wIconKnown && !hIconKnown ) {
+                                iconHeight = Math.round( iconsSizeFactor * ( laneHeight - labelTopMargin - labelBottomMargin ) );
+                                iconWidth = iconTexture.w * iconHeight / iconTexture.h;
+                            }
+                            else if ( !wIconKnown ) {
+                                iconHeight = Math.round( iconsSizeFactor * iconHeight );
+                                iconWidth = iconTexture.w * iconHeight / iconTexture.h;
+                            }
+                            else if ( !hIconKnown ) {
+                                iconWidth = Math.round( iconsSizeFactor * iconWidth );
+                                iconHeight = iconTexture.h * iconWidth / iconTexture.w;
+                            }
+                            else {
+                                iconWidth = Math.round( iconsSizeFactor * iconWidth );
+                                iconHeight = Math.round( iconsSizeFactor * iconHeight );
+                            }
+    
+                            wIcon = ( iconWidth / viewport.w );
+                            if ( forceVisible || wIcon <= wVisible ) {
+                                textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: labelVAlign, width: iconWidth, height: iconHeight } );
+                            }
+                        }
+                        // A null in the map means a fetch has already been initiated
+                        // ... either it is still in progress, or it has already failed
+                        else if ( iconTexture !== null ) {
+                            iconTextures[ event.labelIcon ] = null;
+    
+                            var image = new Image( );
+                            image.onload = ( function( url, img ) {
+                                return function( ) {
+                                    var wImage = img.naturalWidth;
+                                    var hImage = img.naturalHeight;
+                                    iconTextures[ url ] = new Texture2D( wImage, hImage, GL.LINEAR, GL.LINEAR, function( g ) {
+                                        g.drawImage( img, 0, 0 );
+                                    } );
+                                    drawable.redraw( );
+                                };
+                            } )( event.labelIcon, image );
+                            image.src = event.labelIcon;
+                        }
+                    }
+    
+                    // Text
+                    if ( textEnabled && event.label ) {
+                        var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
+                        var textTexture = textTextures.value( textColor.rgbaString, event.label );
+    
+                        var wShift = ( iconsEnabled ? wIcon + ( spacing / viewport.w ) : 0 );
+                        var wText = ( textTexture.w / viewport.w );
+                        if ( forceVisible || wShift + wText <= wVisible ) {
+                            textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( labelVAlign ) } );
+                        }
+                    }
+                }
+            }
+        };
+    }
 
     export function newEventLabelsPainterFactory( labelOpts? : TimelineEventLabelOptions ) : TimelineEventsPainterFactory {
 
         // Painter Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
-            var rowTopPadding    = options.rowTopPadding;
-            var rowBottomPadding = options.rowBottomPadding;
-            var laneHeight       = options.laneHeight;
 
-            var topMargin       = ( hasval( labelOpts ) && hasval( labelOpts.topMargin       ) ? labelOpts.topMargin       : 1.2   );
-            var bottomMargin    = ( hasval( labelOpts ) && hasval( labelOpts.bottomMargin    ) ? labelOpts.bottomMargin    : 1.2   );
-            var leftMargin      = ( hasval( labelOpts ) && hasval( labelOpts.leftMargin      ) ? labelOpts.leftMargin      : 4     );
-            var rightMargin     = ( hasval( labelOpts ) && hasval( labelOpts.rightMargin     ) ? labelOpts.rightMargin     : 4     );
-            var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
-            var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
-            var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
-
-            // Icon options
-            var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
-            var iconsForceWidth  = ( hasval( labelOpts ) && hasval( labelOpts.iconsForceWidth  ) ? labelOpts.iconsForceWidth  : 'auto' );
-            var iconsForceHeight = ( hasval( labelOpts ) && hasval( labelOpts.iconsForceHeight ) ? labelOpts.iconsForceHeight : 'auto' );
-            var iconsSizeFactor  = ( hasval( labelOpts ) && hasval( labelOpts.iconsSizeFactor  ) ? labelOpts.iconsSizeFactor  : 1      );
-
-            // Text options
-            var textEnabled      = ( hasval( labelOpts ) && hasval( labelOpts.textEnabled      ) ? labelOpts.textEnabled      : true );
-            var textDefaultColor = ( hasval( labelOpts ) && hasval( labelOpts.textDefaultColor ) ? labelOpts.textDefaultColor : options.timelineFgColor );
-            var textFont         = ( hasval( labelOpts ) && hasval( labelOpts.textFont         ) ? labelOpts.textFont         : options.timelineFont );
-
-
-            // XXX: Old icon textures never get cleaned out
-            var iconTextures : StringMap<Texture2D> = {};
-            var textTextures = newTextTextureCache2( textFont );
-            var textureRenderer = new TextureRenderer( );
-
+            var helper = eventLabelsPainterHelper( labelOpts, drawable, timeAxis, lanes, ui, options );
+            
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
 
-                var xLeftMin = 2 / viewport.w;
-                var xRightMax = ( viewport.w - 2 ) / viewport.w;
-                var wLeftIndent = leftMargin / viewport.w;
-                var wRightIndent = rightMargin / viewport.w;
-
-                textTextures.resetTouches( );
-                textureRenderer.begin( gl, viewport );
+                helper.textTextures.resetTouches( );
+                helper.textureRenderer.begin( gl, viewport );
                 for ( var l = 0; l < lanes.length; l++ ) {
-                    var lane = lanes.lane( l );
-                    var jTop = rowTopPadding + ( l )*laneHeight + topMargin;
-                    var yFrac = ( viewport.h - jTop - ( 1.0 - vAlign )*( laneHeight - topMargin - bottomMargin ) ) / viewport.h;
-
+                    var lane : TimelineLane = lanes.lane( l );
                     for ( var e = 0; e < lane.length; e++ ) {
-                        var event = lane.event( e );
-
-                        var xStart = timeAxis.tFrac( event.start_PMILLIS );
-                        var xEnd = timeAxis.tFrac( event.end_PMILLIS );
-                        if ( !( xEnd <= 0 || xStart > 1 ) ) {
-
-                            var xLeft = xStart;
-                            var xRight;
-                            if ( extendBeyondBar ) {
-                                if ( e+1 < lane.length ) {
-                                    var nextEvent = lane.event( e+1 );
-                                    var nextStart_PMILLIS = effectiveEdges_PMILLIS( ui, nextEvent )[ 0 ];
-                                    xRight = timeAxis.tFrac( nextStart_PMILLIS );
-                                }
-                                else {
-                                    xRight = xRightMax;
-                                }
-                            }
-                            else {
-                                xRight = xEnd;
-                            }
-
-                            var xLeftVisible = Math.max( xStart + wLeftIndent, xLeftMin );
-                            var xRightVisible = Math.min( xRight - wRightIndent, xRightMax );
-                            var wVisible = ( xRightVisible - xLeftVisible );
-
-                            // Icon
-                            var wIcon = 0;
-                            if ( iconsEnabled && event.labelIcon ) {
-                                var iconTexture = iconTextures[ event.labelIcon ];
-                                if ( hasval( iconTexture ) ) {
-                                    var iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
-                                    var iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
-
-                                    var wIconKnown = hasval( iconWidth );
-                                    var hIconKnown = hasval( iconHeight );
-                                    if ( !wIconKnown && !hIconKnown ) {
-                                        iconHeight = Math.round( iconsSizeFactor * ( laneHeight - topMargin - bottomMargin ) );
-                                        iconWidth = iconTexture.w * iconHeight / iconTexture.h;
-                                    }
-                                    else if ( !wIconKnown ) {
-                                        iconHeight = Math.round( iconsSizeFactor * iconHeight );
-                                        iconWidth = iconTexture.w * iconHeight / iconTexture.h;
-                                    }
-                                    else if ( !hIconKnown ) {
-                                        iconWidth = Math.round( iconsSizeFactor * iconWidth );
-                                        iconHeight = iconTexture.h * iconWidth / iconTexture.w;
-                                    }
-                                    else {
-                                        iconWidth = Math.round( iconsSizeFactor * iconWidth );
-                                        iconHeight = Math.round( iconsSizeFactor * iconHeight );
-                                    }
-
-                                    wIcon = ( iconWidth / viewport.w );
-                                    if ( wIcon <= wVisible ) {
-                                        textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: vAlign, width: iconWidth, height: iconHeight } );
-                                    }
-                                }
-                                // A null in the map means a fetch has already been initiated
-                                // ... either it is still in progress, or it has already failed
-                                else if ( iconTexture !== null ) {
-                                    iconTextures[ event.labelIcon ] = null;
-
-                                    var image = new Image( );
-                                    image.onload = ( function( url, img ) {
-                                        return function( ) {
-                                            var wImage = img.naturalWidth;
-                                            var hImage = img.naturalHeight;
-                                            iconTextures[ url ] = new Texture2D( wImage, hImage, GL.LINEAR, GL.LINEAR, function( g ) {
-                                                g.drawImage( img, 0, 0 );
-                                            } );
-                                            drawable.redraw( );
-                                        };
-                                    } )( event.labelIcon, image );
-                                    image.src = event.labelIcon;
-                                }
-                            }
-
-                            // Text
-                            if ( textEnabled && event.label ) {
-                                var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
-                                var textTexture = textTextures.value( textColor.rgbaString, event.label );
-
-                                var wShift = ( iconsEnabled ? wIcon + ( spacing / viewport.w ) : 0 );
-                                var wText = ( textTexture.w / viewport.w );
-                                if ( wShift + wText <= wVisible ) {
-                                    textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( vAlign ) } );
-                                }
-                            }
-                        }
+                        helper.paintEvent( l, e, gl, viewport );
                     }
                 }
-                textureRenderer.end( gl );
-                textTextures.retainTouched( );
+                helper.textureRenderer.end( gl );
+                helper.textTextures.retainTouched( );
             };
         };
     }
+    
+    export function newCombinedEventPainterFactory( barOpts? : TimelineEventBarsPainterOptions, labelOpts? : TimelineEventLabelOptions, iconOpts? : TimelineEventIconsPainterOptions ) : TimelineEventsPainterFactory {
+        
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
 
+            var labelHelper = eventLabelsPainterHelper( labelOpts, drawable, timeAxis, lanes, ui, options );
+            var iconHelper = eventIconsPainterHelper( iconOpts, drawable, timeAxis, lanes, ui, options );
+            var barHelper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
 
-
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                gl.enable( GL.BLEND );
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane : TimelineLane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        
+                        // draw bar
+                        barHelper.ensureCapacity( 1 );
+                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport );
+                        
+                        // draw label
+                        labelHelper.textTextures.resetTouches( );
+                        labelHelper.textureRenderer.begin( gl, viewport );
+                        labelHelper.paintEvent( l, e, gl, viewport );
+                        labelHelper.textureRenderer.end( gl );
+                        labelHelper.textTextures.retainTouched( );
+                        
+                        // draw icon
+                        iconHelper.textureRenderer.begin( gl, viewport );
+                        iconHelper.paintEvent( l, e, gl, viewport );
+                        iconHelper.textureRenderer.end( gl );
+                    }
+                }
+                
+            }
+        }
+    }
 }

@@ -186,13 +186,13 @@ module Webglimpse {
         var vGrab : number = null;
 
         pane.mouseDown.on( function( ev : PointerEvent ) {
-            if ( !hasval( vGrab ) ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && !hasval( vGrab ) ) {
                 vGrab = axis.vAtFrac( isVertical ? yFrac( ev ) : xFrac( ev ) );
             }
         } );
 
         pane.mouseMove.on( function( ev : PointerEvent ) {
-            if ( hasval( vGrab ) ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && hasval( vGrab ) ) {
                 axis.pan( vGrab - axis.vAtFrac( isVertical ? yFrac( ev ) : xFrac( ev ) ) );
             }
         } );
@@ -213,14 +213,14 @@ module Webglimpse {
         var yGrab : number = null;
 
         pane.mouseDown.on( function( ev : PointerEvent ) {
-            if ( !hasval( xGrab ) ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && !hasval( xGrab ) ) {
                 xGrab = axis.xAtFrac( xFrac( ev ) );
                 yGrab = axis.yAtFrac( yFrac( ev ) );
             }
         } );
 
         pane.mouseMove.on( function( ev : PointerEvent ) {
-            if ( hasval( xGrab ) ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && hasval( xGrab ) ) {
                 axis.pan( xGrab - axis.xAtFrac( xFrac( ev ) ), yGrab - axis.yAtFrac( yFrac( ev ) ) );
             }
         } );

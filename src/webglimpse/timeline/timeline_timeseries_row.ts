@@ -51,20 +51,43 @@ module Webglimpse {
     }
     
     export function newTimeseriesRowPaneFactory( rowOptions? : TimelineTimeseriesRowPaneOptions ) : TimelineRowPaneFactory {
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, group : TimelineGroupModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             
             var rowTopPadding       = ( hasval( rowOptions ) && hasval( rowOptions.rowTopPadding    ) ? rowOptions.rowTopPadding    : 6 );
             var rowBottomPadding    = ( hasval( rowOptions ) && hasval( rowOptions.rowBottomPadding ) ? rowOptions.rowBottomPadding : 6 );
-            var rowHeight           = ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ? rowOptions.rowHeight : 135 );
             var axisWidth           = ( hasval( rowOptions ) && hasval( rowOptions.axisWidth ) ? rowOptions.axisWidth : 60 );
             var painterFactories    = ( hasval( rowOptions ) && hasval( rowOptions.painterFactories ) ? rowOptions.painterFactories : [] );
             var axisOptions         = ( hasval( rowOptions ) && hasval( rowOptions.axisOptions ) ? rowOptions.axisOptions : {} );
+            
+            var keyPrefix = options.isMaximized ? 'maximized-' : '';
+            
+            var getRowHeight = function( ) {
+                // maximized rows do not specifiy a height (they should fill available space)
+                if ( options.isMaximized ) {
+                    return null;
+                }
+                // if the row has a custom row specified, use it
+                else if ( hasval( row.rowHeight ) ) {
+                    return row.rowHeight;
+                }
+                // otherwise use the default for this RowPaneFactory
+                else if ( hasval( rowOptions ) && hasval( rowOptions.rowHeight ) ) {
+                    return rowOptions.rowHeight;
+                }
+                // as a last resort use a hard coded default
+                else {
+                    return 135;
+                }
+            }
+            
+            var rowHeight : number = getRowHeight( );
             
             var timelineFont       = options.timelineFont;
             var timelineFgColor    = options.timelineFgColor;
             var draggableEdgeWidth = options.draggableEdgeWidth;
             var snapToDistance     = options.snapToDistance;
 
+            var rowUi = ui.rowUi( row.rowGuid );
             var input = ui.input;
             var selection = ui.selection;
             
@@ -79,6 +102,11 @@ module Webglimpse {
             dataAxis.limitsChanged.on( drawable.redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
+            // add listener to update the height of the row if the rowHeight attribute changes
+            var updateRowHeight = function( ) {
+                yAxisPane.layout = { updatePrefSize: fixedSize( axisWidth, getRowHeight( ) ) };
+            };
+            row.attrsChanged.on( updateRowHeight );
             
             var isDragMode : Mask2D = function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
                 var fragment = getNearestFragment( viewport, i, j ).fragment;
@@ -86,6 +114,8 @@ module Webglimpse {
             };
             
             var rowContentPane = new Pane( newColumnLayout( ), true, isDragMode );
+            var underlayPane = new Pane( newOverlayLayout( ), false );
+            var overlayPane = new Pane( null, false );
             
             var painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, timelineThickness: 1, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding };
             for ( var n = 0; n < painterFactories.length; n++ ) {
@@ -95,7 +125,13 @@ module Webglimpse {
             
             yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
             rowContentPane.addPane( yAxisPane, 0 );
+            underlayPane.addPane( rowContentPane, true );
+            underlayPane.addPane( overlayPane, false );
             
+            rowUi.addPane( keyPrefix+'content', rowContentPane );
+            rowUi.addPane( keyPrefix+'overlay', overlayPane );
+            rowUi.addPane( keyPrefix+'underlay', underlayPane );
+            rowUi.addPane( keyPrefix+'y-axis', yAxisPane );
             
             var redraw = function( ) {
                 drawable.redraw( );
@@ -197,6 +233,70 @@ module Webglimpse {
                 input.contextMenu.fire( ev );
             } );
             
+                        
+            // Begin annotation selection
+            //
+            
+            var getNearestAnnotation = function( viewport : BoundsUnmodifiable, i : number, j : number ) {
+                // maximum number of pixels away from a point the mouse can be to select it
+                var pickBuffer_PIXEL : number = 10;
+                // value per pixel in x and y directions
+                var vppx : number = ui.millisPerPx.value;
+                var vppy : number = dataAxis.vSize / rowContentPane.viewport.h;
+                var pickBuffer_PMILLIS : number = pickBuffer_PIXEL * vppx;
+
+                var ev_time : number = timeAtCoords_PMILLIS( viewport, i );
+                var ev_value : number = dataAxis.vAtFrac( viewport.yFrac( j ) );
+                
+                var bestAnnotation : TimelineAnnotationModel = null;
+                var best_PIXEL : number = null;
+                
+                if ( ev_time ) {
+                    for ( var i = 0 ; i < row.annotationGuids.length ; i++ ) {
+                        var annotationGuid : string = row.annotationGuids.valueAt( i );
+                        var annotation : TimelineAnnotationModel = model.annotation( annotationGuid );
+                        var styleGuid : string = annotation.styleGuid;
+                        var style : TimelineAnnotationStyleUi = ui.annotationStyle( styleGuid );
+                        
+                        var dy_PIXEL = Math.abs( annotation.y - ev_value ) / vppy;
+                        var dx_PIXEL = Math.abs( annotation.time_PMILLIS - ev_time ) / vppx;
+                        
+                        if ( style.uiHint == 'point' ) {
+                            var d_PIXEL = Math.sqrt( dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL );
+                        }
+                        else if ( style.uiHint == 'horizontal-line' ) {
+                            var d_PIXEL = dy_PIXEL;
+                        }
+                        else if ( style.uiHint == 'vertical-line' ) {
+                            var d_PIXEL = dx_PIXEL;
+                        }
+                        
+                        if ( d_PIXEL < pickBuffer_PIXEL ) {
+                            if ( !hasval( best_PIXEL ) || d_PIXEL < best_PIXEL ) {
+                                bestAnnotation = annotation;
+                                best_PIXEL = d_PIXEL;
+                            }
+                        }
+                    }
+                }
+                
+                return bestAnnotation;
+            }
+            
+            var getNearestAnnotationEvent = function( ev : PointerEvent ) {
+                return getNearestAnnotation( ev.paneViewport, ev.i, ev.j );
+            }
+            
+            overlayPane.mouseMove.on( function( ev : PointerEvent ) {
+                var result = getNearestAnnotationEvent( ev );
+                selection.hoveredAnnotation.value = result;
+            } );
+            selection.hoveredAnnotation.changed.on( redraw );
+            
+            overlayPane.mouseExit.on( function( ) {
+                selection.hoveredAnnotation.value = null;
+            } );
+            
             // Begin timeseries-drag
             //
             
@@ -296,7 +396,9 @@ module Webglimpse {
             } );
             
             rowContentPane.mouseDown.on( function( ev : PointerEvent ) {
-                timeseriesDragMode = chooseTimeseriesDragMode( ui, selection.hoveredTimeseries.fragment );
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    timeseriesDragMode = chooseTimeseriesDragMode( ui, selection.hoveredTimeseries.fragment );
+                }
             } );
             
             rowContentPane.mouseMove.on( function( ev : PointerEvent ) {
@@ -328,6 +430,12 @@ module Webglimpse {
             } );
             
             rowContentPane.dispose.on( function( ) {
+                
+                rowUi.removePane( keyPrefix+'content' );
+                rowUi.removePane( keyPrefix+'overlay' );
+                rowUi.removePane( keyPrefix+'underlay' );
+                rowUi.removePane( keyPrefix+'y-axis' );
+                
                 dataAxis.limitsChanged.off( drawable.redraw );
                 
                 row.timeseriesGuids.valueAdded.off( redraw );
@@ -339,6 +447,8 @@ module Webglimpse {
                 
                 selection.hoveredTimeseries.changed.off( redraw );
                 
+                row.attrsChanged.off( updateRowHeight );
+                
                 row.timeseriesGuids.forEach( function( timeseriesGuid : string ) {
                     var timeseries = model.timeseries( timeseriesGuid );
                     timeseries.attrsChanged.off( redraw );
@@ -347,7 +457,7 @@ module Webglimpse {
                 } );
             } );
             
-            return rowContentPane;
+            return underlayPane;
         }
     }
                     

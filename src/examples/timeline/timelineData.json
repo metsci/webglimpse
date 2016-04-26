@@ -23,7 +23,14 @@
         "userEditable": true,
         "styleGuid": "metsci.timelineExample.eventStyle01",
         "fgColor": "white",
-        "bgColor": "#196EED"
+        "bgColor": "#196EED",
+        "order": 10,
+        "topMargin": 12,
+        "bottomMargin": 0,
+        "labelTopMargin": 12,
+        "labelBottomMargin": 0,
+        "labelVAlign": 0.5,
+        "labelIcon": "images/fugue/weather.png"
     }, {
         "eventGuid": "metsci.timelineExample.event02",
         "start_ISO8601": "2014-01-01T02:30:00Z",
@@ -32,7 +39,25 @@
         "userEditable": true,
         "styleGuid": "metsci.timelineExample.eventStyle02",
         "fgColor": "white",
-        "bgColor": "#FFB403"
+        "bgColor": "#FFB403",
+        "order": 2,
+        "topMargin": 12,
+        "bottomMargin": 0
+    }, {
+        "eventGuid": "metsci.timelineExample.event12",
+        "start_ISO8601": "2014-01-01T08:30:00Z",
+        "end_ISO8601": "2014-01-01T10:30:00Z",
+        "label": "Event #12",
+        "userEditable": true,
+        "fgColor": "white",
+        "bgColor": "#FFB403",
+        "order": 3,
+        "topMargin": 0,
+        "bottomMargin": 0,
+        "labelTopMargin": 10,
+        "labelBottomMargin": 0,
+        "labelVAlign": 0.5,
+        "labelIcon": "images/fugue/weather.png"
     }, {
         "eventGuid": "metsci.timelineExample.event03",
         "start_ISO8601": "2014-01-01T03:00:00Z",
@@ -98,10 +123,12 @@
     "rows": [ {
         "rowGuid": "metsci.timelineExample.row01a",
         "label": "Row #1A",
+        "bgColor" : "#C0C0C0",
         "eventGuids": [
             "metsci.timelineExample.event01",
             "metsci.timelineExample.event02",
-            "metsci.timelineExample.event03"
+            "metsci.timelineExample.event03",
+            "metsci.timelineExample.event12"
         ]
     }, {
         "rowGuid": "metsci.timelineExample.row01b",
@@ -183,6 +210,7 @@
         ]
     }, {
         "groupGuid": "metsci.timelineExample.group03",
+        "rollupGuid": "metsci.timelineExample.row01a",
         "label": "Group #3",
         "rowGuids": [
             "metsci.timelineExample.row03a",

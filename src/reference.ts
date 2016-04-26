@@ -65,6 +65,7 @@
 
 
 //grunt-start
+/// <reference path="webglimpse/layout/card_layout.ts" />
 //grunt-end
 
 

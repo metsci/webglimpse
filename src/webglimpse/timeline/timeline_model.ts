@@ -73,14 +73,31 @@ module Webglimpse {
         eventGuid : string;
         start_ISO8601 : string;
         end_ISO8601 : string;
+        // text to be displayed with the event
         label : string;
         labelIcon? : string;
+        // whether or not the event can be dragged / resized by user clicks
         userEditable? : boolean;
+        // see timeline_event_style.ts (determines what icons the event displays)
         styleGuid? : string;
-
+        // determines which events are drawn over others (higher numbers on top)
+        order? : number;
+        // distance between event box and top of timeline row
+        topMargin? : number;
+        // distance between event box and bottom of timeline row
+        bottomMargin? : number;
+        // text label color
         fgColor? : string;
+        // event box color
         bgColor? : string;
+        // event box border color
         borderColor? : string;
+        // portion at the top of the timeline row not considered by labelVAlign when placing text
+        labelTopMargin? : number;
+        // portion at the bottom of the timeline row not considered by labelVAlign when placing text
+        labelBottomMargin? : number;
+        // center of the label text (0 = bottom of row, 1 = top of row)
+        labelVAlign? : number;
     }
 
 
@@ -88,17 +105,20 @@ module Webglimpse {
         rowGuid : string;
         label : string;
         hidden? : boolean;
+        rowHeight? : number;
         yMin? : number;
         yMax? : number;
         uiHint? : string;
         eventGuids? : string[];
         timeseriesGuids? : string[];
         annotationGuids? : string[];
+        bgColor? : string;
     }
 
 
     export interface TimelineGroup {
         groupGuid : string;
+        rollupGuid? : string;
         label : string;
         hidden? : boolean;
         collapsed? : boolean;
@@ -108,6 +128,9 @@ module Webglimpse {
 
     export interface TimelineRoot {
         groupGuids : string[];
+        topPinnedRowGuids : string[];
+        bottomPinnedRowGuids : string[];
+        maximizedRowGuids : string[];
     }
 
 
@@ -490,9 +513,15 @@ module Webglimpse {
         private _labelIcon : string;
         private _userEditable : boolean;
         private _styleGuid : string;
+        private _order : number;
+        private _topMargin : number;
+        private _bottomMargin : number;
         private _fgColor : Color;
         private _bgColor : Color;
         private _borderColor : Color;
+        private _labelTopMargin : number;
+        private _labelBottomMargin : number;
+        private _labelVAlign : number;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -516,9 +545,15 @@ module Webglimpse {
             this._labelIcon = event.labelIcon;
             this._userEditable = ( hasval( event.userEditable ) ? event.userEditable : false );
             this._styleGuid = event.styleGuid;
+            this._order = event.order;
+            this._topMargin = event.topMargin;
+            this._bottomMargin = event.bottomMargin;
             this._fgColor = ( hasval( event.fgColor ) ? parseCssColor( event.fgColor ) : null );
             this._bgColor = ( hasval( event.bgColor ) ? parseCssColor( event.bgColor ) : null );
             this._borderColor = ( hasval( event.borderColor ) ? parseCssColor( event.borderColor ) : null );
+            this._labelTopMargin = event.labelTopMargin;
+            this._labelBottomMargin = event.labelBottomMargin;
+            this._labelVAlign = event.labelVAlign;
             this._attrsChanged.fire( );
         }
 
@@ -595,6 +630,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get order( ) : number {
+            return this._order;
+        }
+        
+        set order( order : number ) {
+            if ( order !== this._order ) {
+                this._order = order;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get topMargin( ) : number {
+            return this._topMargin;
+        }
+        
+        set topMargin( topMargin : number ) {
+            if ( topMargin !== this._topMargin ) {
+                this._topMargin = topMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get bottomMargin( ) : number {
+            return this._bottomMargin;
+        }
+        
+        set bottomMargin( bottomMargin : number ) {
+            if ( bottomMargin !== this._bottomMargin ) {
+                this._bottomMargin = bottomMargin;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get fgColor( ) : Color {
             return this._fgColor;
@@ -628,6 +696,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get labelTopMargin( ) : number {
+            return this._labelTopMargin;
+        }
+        
+        set labelTopMargin( labelTopMargin : number ) {
+            if ( labelTopMargin !== this._labelTopMargin ) {
+                this._labelTopMargin = labelTopMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelBottomMargin( ) : number {
+            return this._labelBottomMargin;
+        }
+        
+        set labelBottomMargin( labelBottomMargin : number ) {
+            if ( labelBottomMargin !== this._labelBottomMargin ) {
+                this._labelBottomMargin = labelBottomMargin;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelVAlign( ) : number {
+            return this._labelVAlign;
+        }
+        
+        set labelVAlign( labelVAlign : number ) {
+            if ( labelVAlign !== this._labelVAlign ) {
+                this._labelVAlign = labelVAlign;
+                this._attrsChanged.fire( );
+            }
+        }
 
         snapshot( ) : TimelineEvent {
             return {
@@ -638,9 +739,15 @@ module Webglimpse {
                 labelIcon: this._labelIcon,
                 userEditable: this._userEditable,
                 styleGuid: this._styleGuid,
+                order: this._order,
+                topMargin: this._topMargin,
+                bottomMargin: this._bottomMargin,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 fgColor: ( hasval( this._fgColor ) ? this._fgColor.cssString : null ),
-                borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null )
+                borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null ),
+                labelTopMargin: this._labelTopMargin,
+                labelBottomMargin: this._labelBottomMargin,
+                labelVAlign: this._labelVAlign
             };
         }
     }
@@ -649,12 +756,14 @@ module Webglimpse {
     export class TimelineRowModel {
         private _rowGuid : string;
         private _attrsChanged : Notification;
+        private _rowHeight : number;
         private _hidden : boolean;
         private _label : string;
         private _uiHint : string;
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
+        private _bgColor : Color;
         private _dataAxis : Axis1D;
 
         constructor( row : TimelineRow ) {
@@ -684,6 +793,17 @@ module Webglimpse {
             this._label = row.label;
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
+            this._rowHeight = row.rowHeight;
+            this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
+            this._attrsChanged.fire( );
+        }
+        
+        get rowHeight( ) : number {
+            return this._rowHeight;
+        }
+        
+        set rowHeight( rowHeight : number ) {
+            this._rowHeight = rowHeight;
             this._attrsChanged.fire( );
         }
         
@@ -726,6 +846,17 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get bgColor( ) : Color {
+            return this._bgColor;
+        }
+
+        set bgColor( bgColor : Color ) {
+            if ( bgColor !== this._bgColor ) {
+                this._bgColor = bgColor;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get eventGuids( ) : OrderedStringSet {
             return this._eventGuids;
@@ -743,11 +874,13 @@ module Webglimpse {
             return {
                 rowGuid: this._rowGuid,
                 label: this._label,
+                rowHeight: this._rowHeight,
                 hidden: this._hidden,
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
+                bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
             };
         }
     }
@@ -755,6 +888,7 @@ module Webglimpse {
 
     export class TimelineGroupModel {
         private _groupGuid : string;
+        private _rollupGuid : string;
         private _attrsChanged : Notification;
         private _hidden : boolean;
         private _label : string;
@@ -772,12 +906,22 @@ module Webglimpse {
             return this._groupGuid;
         }
 
+        get rollupGuid( ) : string {
+            return this._rollupGuid;
+        }
+        
+        set rollupGuid( rollupGuid : string ) {
+            this._rollupGuid = rollupGuid;
+            this._attrsChanged.fire( );
+        }
+        
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
 
         setAttrs( group : TimelineGroup ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._rollupGuid = group.rollupGuid;
             this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
@@ -822,6 +966,7 @@ module Webglimpse {
         snapshot( ) : TimelineGroup {
             return {
                 groupGuid: this._groupGuid,
+                rollupGuid: this._rollupGuid,
                 label: this._label,
                 hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),
@@ -834,11 +979,17 @@ module Webglimpse {
     export class TimelineRootModel {
         private _attrsChanged : Notification;
         private _groupGuids : OrderedStringSet;
+        private _topPinnedRowGuids : OrderedStringSet;
+        private _bottomPinnedRowGuids : OrderedStringSet;
+        private _maximizedRowGuids : OrderedStringSet;
 
         constructor( root : TimelineRoot ) {
             this._attrsChanged = new Notification( );
             this.setAttrs( root );
             this._groupGuids = new OrderedStringSet( root.groupGuids );
+            this._topPinnedRowGuids = new OrderedStringSet( root.topPinnedRowGuids );
+            this._bottomPinnedRowGuids = new OrderedStringSet( root.bottomPinnedRowGuids );
+            this._maximizedRowGuids = new OrderedStringSet( root.maximizedRowGuids );
         }
 
         get attrsChanged( ) : Notification {
@@ -854,10 +1005,25 @@ module Webglimpse {
         get groupGuids( ) : OrderedStringSet {
             return this._groupGuids;
         }
+        
+        get topPinnedRowGuids( ) : OrderedStringSet {
+            return this._topPinnedRowGuids;
+        }
+        
+        get bottomPinnedRowGuids( ) : OrderedStringSet {
+            return this._bottomPinnedRowGuids;
+        }
+        
+        get maximizedRowGuids( ) : OrderedStringSet {
+            return this._maximizedRowGuids;
+        }
 
         snapshot( ) : TimelineRoot {
             return {
-                groupGuids: this._groupGuids.toArray( )
+                groupGuids: this._groupGuids.toArray( ),
+                topPinnedRowGuids: this._topPinnedRowGuids.toArray( ),
+                bottomPinnedRowGuids: this._bottomPinnedRowGuids.toArray( ),
+                maximizedRowGuids: this._maximizedRowGuids.toArray( )
             };
         }
     }
@@ -1193,7 +1359,10 @@ module Webglimpse {
 
 
     export function newEmptyTimelineRoot( ) : TimelineRoot {
-        return { groupGuids: [] };
+        return { groupGuids: [],
+                 bottomPinnedRowGuids: [],
+                 topPinnedRowGuids: [],
+                 maximizedRowGuids: [] };
     }
 
 

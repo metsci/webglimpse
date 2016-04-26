@@ -1,3 +1,30 @@
+Webglimpse 1.7.0-pre4 (released 2016-3-12)
+
+ * Lock row. Rows can be locked to the top or the bottom of the timeline so 
+that they are always visible.
+ * Maximize row. A set of rows can be temporarily set to maximized. In that 
+mode they take up all available timeline space.
+ * Ability to customize individual row heights.
+ * Fix bug with 0 length events when event overlaps are allowed.
+
+Webglimpse 1.7.0-pre3 (released 2016-1-13)
+
+ * Exposed various timeline Panes through TimelineRowUi.getPane( )
+ * Generalized Pane mouse listeners to report all mouseDown / mouseDrag events, not just left mouse button
+
+Webglimpse 1.7.0-pre2 (released 2015-12-18)
+
+ * Background color of timeline rows can be independently set in json row description using bgColor attribute.
+ * Position of event text and icon can be set independently for each event using labelTopMargin, labelBottomMargin, and labelVAlign attributes.
+
+Webglimpse 1.7.0-pre1 (released 2015-9-10)
+
+  * Event z-order specified using TimelineEvent.order when TimelineEventsRowPaneOptions.allowMultipleLanes = false
+  * Height of individual events can be controlled with TimelineEventModel.bottomMargin and .topMargin
+  * Added notification of mouse hovers over annotations TimelineSelectionModel.hoveredAnnotation
+  * Groups can have rollup rows instead of simple group divider by setting TimelineGroupModel.rollupGuid
+  * Group labels show expand/contract arrow
+  * Timeline can be scrolled horizontally as well as vertically with mouse drag
 
 Webglimpse 1.6.0
 

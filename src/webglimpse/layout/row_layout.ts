@@ -34,8 +34,7 @@ module Webglimpse {
         var usePrefHeight = ( !hasval( child.layoutOptions ) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' );
         return ( usePrefHeight ? child.prefSize.h : child.layoutOptions.height );
     }
-
-
+    
     export function newRowLayout( topToBottom : boolean = true ) : Layout {
 
         return {

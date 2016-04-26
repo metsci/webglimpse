@@ -113,7 +113,7 @@ module Webglimpse {
         private _childMouseCursorListener : Listener;
 
         private children : OrderedSet<PaneChild>;
-        private layout : Layout;
+        private _layout : Layout;
         private _viewport : Bounds;
         private _scissor : Bounds;
         private _viewportChanged : Notification;
@@ -130,7 +130,7 @@ module Webglimpse {
             this._childMouseCursorListener = ( ( ) => this._mouseCursorChanged.fire( ) );
 
             this.children = new OrderedSet<PaneChild>( [], (paneChild)=>getObjectId(paneChild.pane), false );
-            this.layout = layout;
+            this._layout = layout;
             this._viewport = newBoundsFromRect( 0, 0, 0, 0 );
             this._scissor = newBoundsFromRect( 0, 0, 0, 0 );
             this._viewportChanged = new Notification( );
@@ -151,6 +151,14 @@ module Webglimpse {
                     this.children.valueAt( i ).pane.dispose.fire( );
                 }
             } );
+        }
+        
+        get layout( ) : Layout {
+            return this.layout;
+        }
+        
+        set layout( layout : Layout ) {
+            this._layout = layout;
         }
 
         get mouseCursor( ) : string {
@@ -216,8 +224,8 @@ module Webglimpse {
                 child.pane.updatePrefSizes( child.prefSize );
             }
             // This pane
-            if ( hasval( this.layout ) && hasval( this.layout.updatePrefSize ) ) {
-                this.layout.updatePrefSize( result, this.children.toArray( ) );
+            if ( hasval( this._layout ) && hasval( this._layout.updatePrefSize ) ) {
+                this._layout.updatePrefSize( result, this.children.toArray( ) );
             }
             else {
                 result.w = null;
@@ -231,8 +239,8 @@ module Webglimpse {
             this._viewport.setBounds( viewport );
             this._scissor.setBounds( scissor );
             // Child panes
-            if ( hasval( this.layout ) && hasval( this.layout.updateChildViewports ) ) {
-                this.layout.updateChildViewports( this.children.toArray( ), viewport );
+            if ( hasval( this._layout ) && hasval( this._layout.updateChildViewports ) ) {
+                this._layout.updateChildViewports( this.children.toArray( ), viewport );
                 for ( var c = 0; c < this.children.length; c++ ) {
                     var child = this.children.valueAt( c );
                     child.scissor.setBounds( child.viewport.unmod );
@@ -402,6 +410,43 @@ module Webglimpse {
         return 0;
     }
 
+    // Button presses for mouse events are reported differently in different browsers:
+    // The results below are for the following browser versions:
+    // Chrome Version 40.0.2214.94 (64-bit)
+    // Firefox 35.0.1
+    // IE 11.0.9600.17501
+    //
+    // ‘mousemove’ event with left mouse button down:
+    //
+    //                        Chrome                Firefox                  IE
+    // MouseEvent.button      0                     0                        0
+    // MouseEvent.buttons     1                     1                        1
+    // MouseEvent.which       1                     1                        1
+    //
+    // ‘mousemove’ event with no mouse button down:
+    //
+    //                        Chrome                Firefox                  IE
+    // MouseEvent.button      0                     0                        0
+    // MouseEvent.buttons     undefined             0                        0
+    // MouseEvent.which       0                     1                        1
+    //
+    //
+    // For more info see: http://stackoverflow.com/questions/3944122/detect-left-mouse-button-press
+    //
+    export function isLeftMouseDown( ev : MouseEvent ) {
+        // it appears that ev.buttons works across the board now, so ev.buttons === 1 is probably all that is necessary
+        if ( ev.buttons !== undefined ) {
+            return ev.buttons === 1;
+        }
+        else {
+            return ev.which === 1;
+        }
+    }
+    
+    // detects whether any mouse button is down
+    export function isMouseDown( ev : MouseEvent ) {
+        return ev.buttons !== 0;
+    }
 
     function attachEventListeners( element : HTMLElement, contentPane : Pane ) {
 
@@ -445,38 +490,6 @@ module Webglimpse {
         var dragging : boolean = false;
         var pendingExit : boolean = false;
 
-
-        // Button presses for mouse events are reported differently in different browsers:
-        // The results below are for the following browser versions:
-        // Chrome Version 40.0.2214.94 (64-bit)
-        // Firefox 35.0.1
-        // IE 11.0.9600.17501
-        //
-        // ‘mousemove’ event with left mouse button down:
-        //
-        //                        Chrome                Firefox                  IE
-        // MouseEvent.button      0                     0                        0
-        // MouseEvent.buttons     undefined             1                        1
-        // MouseEvent.which       1                     1                        1
-        //
-        //
-        //                        Chrome                Firefox                  IE
-        // MouseEvent.button      0                     0                        0
-        // MouseEvent.buttons     undefined             0                        0
-        // MouseEvent.which       0                     1                        1
-        //
-        //
-        // For more info see: http://stackoverflow.com/questions/3944122/detect-left-mouse-button-press
-        //
-        function isLeftMouseDown( ev : MouseEvent ) {
-            if ( ev.buttons !== undefined ) {
-                return ev.buttons === 1;
-            }
-            else {
-                return ev.which === 1;
-            }
-        }
-
         function refreshMouseCursor( ) {
             var newMouseCursor = null;
             for ( var n = 0; n < currentPanes.length; n++ ) {
@@ -496,32 +509,30 @@ module Webglimpse {
 
 
         element.addEventListener( 'mousedown', function( ev : MouseEvent ) {
-            if ( isLeftMouseDown( ev ) ) {
-                var press_PMILLIS = ( new Date( ) ).getTime( );
-                var i = iMouse( element, ev );
-                var j = jMouse( element, ev );
+            var press_PMILLIS = ( new Date( ) ).getTime( );
+            var i = iMouse( element, ev );
+            var j = jMouse( element, ev );
 
-                if ( press_PMILLIS - prevPress_PMILLIS < multiPressTimeout_MILLIS ) {
-                    clickCount++;
-                }
-                else {
-                    clickCount = 1;
-                }
-                prevPress_PMILLIS = press_PMILLIS;
-
-                var newPanes = contentPane.panesAt( i, j );
-                detectEntersAndExits( currentPanes, newPanes, i, j, ev );
-                currentPanes = newPanes;
-                for ( var n = 0; n < currentPanes.length; n++ ) {
-                    currentPanes[ n ].fireMouseDown( i, j, clickCount, ev );
-                }
-                refreshMouseCursor( );
-
-                dragging = true;
-
-                // Disable browser-default double-click action, which selects text and messes up subsequent drags
-                ev.preventDefault( );
+            if ( press_PMILLIS - prevPress_PMILLIS < multiPressTimeout_MILLIS ) {
+                clickCount++;
             }
+            else {
+                clickCount = 1;
+            }
+            prevPress_PMILLIS = press_PMILLIS;
+
+            var newPanes = contentPane.panesAt( i, j );
+            detectEntersAndExits( currentPanes, newPanes, i, j, ev );
+            currentPanes = newPanes;
+            for ( var n = 0; n < currentPanes.length; n++ ) {
+                currentPanes[ n ].fireMouseDown( i, j, clickCount, ev );
+            }
+            refreshMouseCursor( );
+
+            dragging = true;
+
+            // Disable browser-default double-click action, which selects text and messes up subsequent drags
+            ev.preventDefault( );
         } );
 
         // Only want NON-DRAG moves from the canvas (e.g. we don't want moves that occur in an overlay div) -- so subscribe to CANVAS's mousemove
@@ -630,7 +641,7 @@ module Webglimpse {
         var recentDrag : MouseEvent = null;
         var handleMissedMouseUp = function( ev : MouseEvent ) {
             if ( dragging ) {
-                if ( !isLeftMouseDown( ev ) && recentDrag ) {
+                if ( !isMouseDown( ev ) && recentDrag ) {
                     var mouseUp = <MouseEvent> document.createEvent( 'MouseEvents' );
                     mouseUp.initMouseEvent( 'mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null );
                     endDrag( mouseUp );
