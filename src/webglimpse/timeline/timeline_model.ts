@@ -1114,7 +1114,10 @@ module Webglimpse {
 
             var freshRoot = newTimeline.root;
             this._root.groupGuids.retainValues( freshRoot.groupGuids );
-
+            this._root.topPinnedRowGuids.retainValues( freshRoot.topPinnedRowGuids );
+            this._root.bottomPinnedRowGuids.retainValues( freshRoot.bottomPinnedRowGuids );
+            this._root.maximizedRowGuids.retainValues( freshRoot.maximizedRowGuids );
+            
             var freshGroups = newTimeline.groups;
             var retainedGroupGuids : string[] = [];
             for ( var n = 0; n < freshGroups.length; n++ ) {
@@ -1261,6 +1264,9 @@ module Webglimpse {
             }
 
             this._root.groupGuids.addAll( freshRoot.groupGuids, 0, true );
+            this._root.topPinnedRowGuids.addAll( freshRoot.topPinnedRowGuids, 0, true );
+            this._root.bottomPinnedRowGuids.addAll( freshRoot.bottomPinnedRowGuids, 0, true );
+            this._root.maximizedRowGuids.addAll( freshRoot.maximizedRowGuids, 0, true );
         }
 
 
@@ -1398,6 +1404,9 @@ module Webglimpse {
         updateRootModel: function( rootModel : TimelineRootModel, newRoot : TimelineRoot ) {
             rootModel.setAttrs( newRoot );
             rootModel.groupGuids.addAll( newRoot.groupGuids, 0, true );
+            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids, 0, true );
+            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids, 0, true );
+            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids, 0, true );
         }
     };
 
@@ -1436,6 +1445,9 @@ module Webglimpse {
         updateRootModel: function( rootModel : TimelineRootModel, newRoot : TimelineRoot ) {
             rootModel.setAttrs( newRoot );
             rootModel.groupGuids.addAll( newRoot.groupGuids );
+            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids );
+            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids );
+            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids );
         }
     };
 
