@@ -987,9 +987,9 @@ module Webglimpse {
             this._attrsChanged = new Notification( );
             this.setAttrs( root );
             this._groupGuids = new OrderedStringSet( root.groupGuids );
-            this._topPinnedRowGuids = new OrderedStringSet( root.topPinnedRowGuids );
-            this._bottomPinnedRowGuids = new OrderedStringSet( root.bottomPinnedRowGuids );
-            this._maximizedRowGuids = new OrderedStringSet( root.maximizedRowGuids );
+            this._topPinnedRowGuids = new OrderedStringSet( root.topPinnedRowGuids || [] );
+            this._bottomPinnedRowGuids = new OrderedStringSet( root.bottomPinnedRowGuids || [] );
+            this._maximizedRowGuids = new OrderedStringSet( root.maximizedRowGuids || [] );
         }
 
         get attrsChanged( ) : Notification {
@@ -1404,9 +1404,9 @@ module Webglimpse {
         updateRootModel: function( rootModel : TimelineRootModel, newRoot : TimelineRoot ) {
             rootModel.setAttrs( newRoot );
             rootModel.groupGuids.addAll( newRoot.groupGuids, 0, true );
-            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids, 0, true );
-            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids, 0, true );
-            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids, 0, true );
+            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids || [], 0, true );
+            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids || [], 0, true );
+            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids || [], 0, true );
         }
     };
 
@@ -1445,9 +1445,9 @@ module Webglimpse {
         updateRootModel: function( rootModel : TimelineRootModel, newRoot : TimelineRoot ) {
             rootModel.setAttrs( newRoot );
             rootModel.groupGuids.addAll( newRoot.groupGuids );
-            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids );
-            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids );
-            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids );
+            rootModel.topPinnedRowGuids.addAll( newRoot.topPinnedRowGuids || [] );
+            rootModel.bottomPinnedRowGuids.addAll( newRoot.bottomPinnedRowGuids || [] );
+            rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids || [] );
         }
     };
 
