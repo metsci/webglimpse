@@ -290,15 +290,15 @@ module Webglimpse {
                     eventDragEvents = eventDragEventsSet.toArray( );
                     eventDragMode = chooseEventDragMode( ui, timeAtPointer_PMILLIS( ev ), eventDragEvents );
     
-                    eventDragSnapTimes_PMILLIS = new Array( 2 * ( row.eventGuids.length - eventDragEvents.length ) );
+                    eventDragSnapTimes_PMILLIS = new Array( );
                     var numSnapTimes = 0;
                     var allEventGuids = row.eventGuids;
                     for ( var n = 0; n < allEventGuids.length; n++ ) {
                         var eventGuid = allEventGuids.valueAt( n );
                         if ( !eventDragEventsSet.hasId( eventGuid ) ) {
                             var event = model.event( eventGuid );
-                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.start_PMILLIS;
-                            eventDragSnapTimes_PMILLIS[ numSnapTimes++ ] = event.end_PMILLIS;
+                            eventDragSnapTimes_PMILLIS.push( event.start_PMILLIS );
+                            eventDragSnapTimes_PMILLIS.push( event.end_PMILLIS );
                         }
                     }
                     eventDragSnapTimes_PMILLIS.sort( );
@@ -865,8 +865,13 @@ module Webglimpse {
                
                 var labelTopMargin = hasval( event.labelTopMargin ) ? event.labelTopMargin : topMargin;
                 var labelBottomMargin = hasval( event.labelBottomMargin ) ? event.labelBottomMargin : bottomMargin;
-                var labelVAlign = hasval( event.labelVAlign ) ? event.labelVAlign : vAlign;
                 
+                var labelVAlign = hasval( event.labelVAlign ) ? event.labelVAlign : vAlign;
+                var labelVPos = hasval( event.labelVPos ) ? event.labelVPos : labelVAlign;
+
+                var labelHAlign = hasval( event.labelHAlign ) ? event.labelHAlign : 0;
+                var labelHPos = hasval( event.labelHPos ) ? event.labelHPos : labelHAlign;
+
                 var jTop = rowTopPadding + ( laneIndex )*laneHeight + labelTopMargin;
                 var yFrac = ( viewport.h - jTop - ( 1.0 - labelVAlign )*( laneHeight - labelTopMargin - labelBottomMargin ) ) / viewport.h;
                 
@@ -897,10 +902,23 @@ module Webglimpse {
     
                     var xLeftVisible = Math.max( xStart + wLeftIndent, xLeftMin );
                     var xRightVisible = Math.min( xRight - wRightIndent, xRightMax );
+                    var wTotal = ( xEnd - wRightIndent ) - ( xStart + wLeftIndent ) 
                     var wVisible = ( xRightVisible - xLeftVisible );
     
+                    var wSpacing = ( spacing / viewport.w );
+                    
+                    // pre-calculate text width (needed to position icon when labelHAlign != 0)
+                    var wText = 0;
+                    var textTexture;
+                    if ( textEnabled && event.label ) {
+                        var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
+                        textTexture = textTextures.value( textColor.rgbaString, event.label );
+                        wText = ( textTexture.w / viewport.w );
+                    }
+                    
                     // Icon
                     var wIcon = 0;
+                    var wIconPlusSpacing = 0;
                     if ( iconsEnabled && event.labelIcon ) {
                         var iconTexture = iconTextures[ event.labelIcon ];
                         if ( hasval( iconTexture ) ) {
@@ -927,8 +945,36 @@ module Webglimpse {
                             }
     
                             wIcon = ( iconWidth / viewport.w );
+                            
+                            wIconPlusSpacing = wIcon + wSpacing;
+                            
+                            //TODO: if labelHAlign and labelHPos are set to place text outside of the event start/end bounds,
+                            //      this logic doesn't turn off text/icons exactly when you would really want
+                            
+                            // if we can't display text, the icon positioning is effected (when labelHAlign != 0)
+                            if ( forceVisible || wIconPlusSpacing + wText > wVisible ) {
+                                wText = 0;
+                                textTexture = undefined;
+                            }
+                            
                             if ( forceVisible || wIcon <= wVisible ) {
-                                textureRenderer.draw( gl, iconTexture, xLeftVisible, yFrac, { xAnchor: 0, yAnchor: labelVAlign, width: iconWidth, height: iconHeight } );
+                                
+                                // coordinates of the start edge of the icon + label
+                                var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                            
+                                // coordinates of the end edge of the icon + label
+                                var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                            
+                                if ( xStartLabel < xLeftMin ) {
+                                    textureRenderer.draw( gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                                }
+                                else if ( xEndLabel > xRightMax ) {
+                                    textureRenderer.draw( gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                                }
+                                else {
+                                    var xFrac = xStart + wLeftIndent - ( wSpacing + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                                    textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                                }
                             }
                         }
                         // A null in the map means a fetch has already been initiated
@@ -952,14 +998,22 @@ module Webglimpse {
                     }
     
                     // Text
-                    if ( textEnabled && event.label ) {
-                        var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
-                        var textTexture = textTextures.value( textColor.rgbaString, event.label );
-    
-                        var wShift = ( iconsEnabled ? wIcon + ( spacing / viewport.w ) : 0 );
-                        var wText = ( textTexture.w / viewport.w );
-                        if ( forceVisible || wShift + wText <= wVisible ) {
-                            textureRenderer.draw( gl, textTexture, xLeftVisible + wShift, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( labelVAlign ) } );
+                    if ( hasval( textTexture ) ) {
+                        // coordinates of the start edge of the icon + label
+                        var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                    
+                        // coordinates of the end edge of the icon + label
+                        var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    
+                        if ( xStartLabel < xLeftMin ) {
+                            textureRenderer.draw( gl, textTexture, xLeftMin + wSpacing + wIcon, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor( labelVPos ) } );
+                        }
+                        else if ( xEndLabel > xRightMax ) {
+                            textureRenderer.draw( gl, textTexture, xRightMax, yFrac, { xAnchor: 1, yAnchor: textTexture.yAnchor( labelVPos ) } );
+                        }
+                        else {
+                            var xFrac = xStart + wLeftIndent + ( wIconPlusSpacing ) * ( 1 - labelHPos ) + ( wTotal ) * labelHAlign;
+                            textureRenderer.draw( gl, textTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: textTexture.yAnchor( labelVPos ) } );
                         }
                     }
                 }

@@ -96,8 +96,16 @@ module Webglimpse {
         labelTopMargin? : number;
         // portion at the bottom of the timeline row not considered by labelVAlign when placing text
         labelBottomMargin? : number;
-        // center of the label text (0 = bottom of row, 1 = top of row)
+        // vertical alignment of label text (0 = bottom of row, 0.5 = middle of row, 1 = top of row)
         labelVAlign? : number;
+        // relative position within the text label of the point considered the start of the label text (0 = bottom, 1 = top) this is the point positioned by labelVAlign
+        // if labelVPos is not set, it defaults to labelVAlign's value, which is usually what is intended anyway
+        labelVPos? : number; 
+        // vertical alignment of label text (0=left side, 0.5 = middle of event, 1=right side)
+        labelHAlign? : number;
+        // relative position within the text label of the point considered the start of the label text (0 = left side, 1 = right side) this is the point positioned by labelHAlign
+        // if labelHPos is not set, it defaults to labelHAlign's value, which is usually what is intended anyway
+        labelHPos? : number;
     }
 
 
@@ -522,6 +530,9 @@ module Webglimpse {
         private _labelTopMargin : number;
         private _labelBottomMargin : number;
         private _labelVAlign : number;
+        private _labelVPos : number;
+        private _labelHAlign : number;
+        private _labelHPos : number;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -554,6 +565,9 @@ module Webglimpse {
             this._labelTopMargin = event.labelTopMargin;
             this._labelBottomMargin = event.labelBottomMargin;
             this._labelVAlign = event.labelVAlign;
+            this._labelVPos = event.labelVPos;
+            this._labelHAlign = event.labelHAlign;
+            this._labelHPos = event.labelHPos;
             this._attrsChanged.fire( );
         }
 
@@ -729,6 +743,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+            
+        get labelVPos( ) : number {
+            return this._labelVPos;
+        }
+        
+        set labelVPos( labelVPos : number ) {
+            if ( labelVPos !== this._labelVPos ) {
+                this._labelVPos = labelVPos;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelHAlign( ) : number {
+            return this._labelHAlign;
+        }
+        
+        set labelHAlign( labelHAlign : number ) {
+            if ( labelHAlign !== this._labelHAlign ) {
+                this._labelHAlign = labelHAlign;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelHPos( ) : number {
+            return this._labelHPos;
+        }
+        
+        set labelHPos( labelHPos : number ) {
+            if ( labelHPos !== this._labelHPos ) {
+                this._labelHPos = labelHPos;
+                this._attrsChanged.fire( );
+            }
+        }
 
         snapshot( ) : TimelineEvent {
             return {
@@ -747,7 +794,10 @@ module Webglimpse {
                 borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null ),
                 labelTopMargin: this._labelTopMargin,
                 labelBottomMargin: this._labelBottomMargin,
-                labelVAlign: this._labelVAlign
+                labelVAlign: this._labelVAlign,
+                labelVPos: this._labelVPos,
+                labelHAlign: this._labelHAlign,
+                labelHPos: this._labelHPos
             };
         }
     }
