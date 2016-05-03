@@ -30,6 +30,7 @@
         "labelTopMargin": 12,
         "labelBottomMargin": 0,
         "labelVAlign": 0.5,
+        "labelHAlign": 0.5,
         "labelIcon": "images/fugue/weather.png"
     }, {
         "eventGuid": "metsci.timelineExample.event02",

@@ -53,6 +53,8 @@ module Webglimpse {
         // 'none' or any falsy value : no time selection
         // 'single'                  : single selected time
         // 'range'                   : range of selected times
+        // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
+        // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
         selectedIntervalMode? : string;
         scrollbarOptions? : ScrollbarOptions;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
@@ -254,13 +256,13 @@ module Webglimpse {
         timelinePane.addPainter( newBackgroundPainter( bgColor ) );
         timelinePane.addPane( underlayPane, true );
         
-        if ( selectedIntervalMode === 'single' ) {
+        if ( selectedIntervalMode === 'single' || selectedIntervalMode === 'single-unmodifiable' ) {
             var overlayPane = new Pane( null, false, alwaysTrue );
             ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineSingleSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
-        else if ( selectedIntervalMode === 'range' ) {
+        else if ( selectedIntervalMode === 'range' || selectedIntervalMode === 'range-unmodifiable' ) {
             var overlayPane = new Pane( null, false, alwaysTrue );
             ui.addPane( 'overlay-pane', overlayPane );
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
@@ -341,7 +343,7 @@ module Webglimpse {
         };
         axisPane.contextMenu.on( onContextMenu );
 
-        if ( selectedIntervalMode && selectedIntervalMode !== 'none' ) {
+        if ( selectedIntervalMode === 'single' || selectedIntervalMode === 'range' ) {
             var selection = ui.selection;
             var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
             attachTimeSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode );
