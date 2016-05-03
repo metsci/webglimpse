@@ -952,7 +952,7 @@ module Webglimpse {
                             //      this logic doesn't turn off text/icons exactly when you would really want
                             
                             // if we can't display text, the icon positioning is effected (when labelHAlign != 0)
-                            if ( forceVisible || wIconPlusSpacing + wText > wVisible ) {
+                            if ( !forceVisible || wIconPlusSpacing + wText > wVisible ) {
                                 wText = 0;
                                 textTexture = undefined;
                             }
