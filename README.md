@@ -19,9 +19,9 @@ Webglimpse can be used as if it were a pure Javascript library – you don’t h
 
 ## Demo
 
-[http://glimpse.metsci.com/webglimpse/1.7.0/examples/timeline/](http://glimpse.metsci.com/webglimpse/1.7.0/examples/timeline/)
+[http://glimpse.metsci.com/webglimpse/1.7.1/examples/timeline/](http://glimpse.metsci.com/webglimpse/1.7.1/examples/timeline/)
 
 
 ## Download
 
-[http://glimpse.metsci.com/webglimpse/downloads/webglimpse-1.7.0.tar.gz](http://glimpse.metsci.com/webglimpse/downloads/webglimpse-1.7.0.tar.gz)
+[http://glimpse.metsci.com/webglimpse/downloads/webglimpse-1.7.1.tar.gz](http://glimpse.metsci.com/webglimpse/downloads/webglimpse-1.7.1.tar.gz)
