@@ -273,11 +273,19 @@ module Webglimpse {
 
             var updateCursor = function( ) {
                 if ( !eventDragMode ) {
-                    var hoveredTime_PMILLIS = selection.hoveredTime_PMILLIS.value;
-                    var hoveredEvent = selection.hoveredEvent.value;
-                    var hoveredEvents = ( hasval( hoveredEvent ) ? [ hoveredEvent ] : [] );
+
                     var mouseCursors = { 'center': 'default', 'start': 'w-resize', 'end': 'e-resize', 'undraggable': 'default' };
-                    rowContentPane.mouseCursor = mouseCursors[ chooseEventDragMode( ui, hoveredTime_PMILLIS, hoveredEvents ) ];
+                    var hoveredTime_PMILLIS = selection.hoveredTime_PMILLIS.value;
+                    
+                    // if a multi-selection has been made, update the cursor based on all the events in the multi-selection
+                    if ( selection.selectedEvents.length > 1 ) {
+                        rowContentPane.mouseCursor = mouseCursors[ chooseEventDragMode( ui, hoveredTime_PMILLIS, selection.selectedEvents.toArray( ) ) ];
+                    }
+                    else {
+                        var hoveredEvent = selection.hoveredEvent.value;
+                        var hoveredEvents = ( hasval( hoveredEvent ) ? [ hoveredEvent ] : [] );
+                        rowContentPane.mouseCursor = mouseCursors[ chooseEventDragMode( ui, hoveredTime_PMILLIS, hoveredEvents ) ];
+                    }
                 }
             };
             ui.millisPerPx.changed.on( updateCursor );
