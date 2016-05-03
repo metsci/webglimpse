@@ -1,3 +1,10 @@
+Webglimpse 1.7.1 (released 2016-5-3)
+
+ * Enable multiple selection of events.
+ * Additional options to position text and icon of events (labelHAlign and labelHPos).
+ * Add additional selectedIntervalModes (single-unmodifiable and range-unmodifiable) to allow disabling user adjustment of the selection interval.
+ * Fix bug merging timelines with pinned or maximized rows.
+
 Webglimpse 1.7.0 (released 2016-4-26)
 
  * Public release.

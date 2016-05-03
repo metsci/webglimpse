@@ -8,7 +8,7 @@ module.exports = function ( grunt ) {
     var sourceHeader = '/*\n' + licenseText.replace( /^/mg, ' * ' ).replace( / *$/mg, '' ) + '\n */';
     var mungedSourceHeader = '\n' + licenseText.replace( /^/mg, '* ' ).replace( / *$/mg, '' ) + '\n';
 
-    var releaseVersion = '1.7.0';
+    var releaseVersion = '1.7.1';
     var releaseDate = grunt.template.today( 'UTC:yyyy-mm-dd HH:MM:ss Z' );
     var releaseText = [
         'Web Glimpse v' + releaseVersion,
