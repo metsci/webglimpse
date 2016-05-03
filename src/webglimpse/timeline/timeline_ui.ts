@@ -459,42 +459,32 @@ module Webglimpse {
             selection.hoveredEvent.value = event;
         } );
 
-        // XXX: Multi-select is tricky, and the simplistic implementation below is annoying to use, so leave it disabled for now
-        var allowMultiEventSelection = false;
-        if ( allowMultiEventSelection ) {
-            // XXX: A drag should preempt selection-toggle, which means waiting for some delay to see whether a drag starts
-            input.mouseDown.on( function( ev : PointerEvent ) {
-                if ( isLeftMouseDown( ev.mouseEvent ) ) {
-                    var event = selection.hoveredEvent.value;
-                    if ( hasval( event ) ) {
-                        var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
-                        if ( multiSelectMode ) {
-                            if ( selection.selectedEvents.hasValue( event ) ) {
-                                selection.selectedEvents.removeValue( event );
-                            }
-                            else {
-                                selection.selectedEvents.add( event );
-                            }
+        input.mouseDown.on( function( ev : PointerEvent ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                var event = selection.hoveredEvent.value;
+                if ( hasval( event ) ) {
+                    var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
+                    var unselectedEventClicked = !selection.selectedEvents.hasValue( event );
+                    if ( multiSelectMode ) {
+                        if ( selection.selectedEvents.hasValue( event ) ) {
+                            selection.selectedEvents.removeValue( event );
                         }
                         else {
-                            selection.selectedEvents.retainValues( [ event ] );
                             selection.selectedEvents.add( event );
                         }
                     }
-                }
-            } );
-        }
-        else {
-            input.mouseDown.on( function( ev : PointerEvent ) {
-                if ( isLeftMouseDown( ev.mouseEvent ) ) {
-                    var event = selection.hoveredEvent.value;
-                    if ( hasval( event ) ) {
+                    else if ( unselectedEventClicked ) {
                         selection.selectedEvents.retainValues( [ event ] );
                         selection.selectedEvents.add( event );
                     }
+                    else {
+                        // if a selected event is clicked, do nothing (the user is probably initiating a drag)
+                        // if they wish to deselect the event, they need to ctrl+click the event or click on
+                        // a deselected event
+                    }
                 }
-            } );
-        }
+            }
+        } );
     }
 
 
