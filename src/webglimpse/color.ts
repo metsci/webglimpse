@@ -79,6 +79,7 @@ module Webglimpse {
 
     export function sameColor( c1 : Color, c2 : Color ) : boolean {
         if ( c1 === c2 ) return true;
+        if ( !hasval( c1 ) || !hasval( c2 ) ) return false;
         return ( c1.r === c2.r && c1.g === c2.g && c1.b === c2.b && c1.a === c2.a );
     }
 

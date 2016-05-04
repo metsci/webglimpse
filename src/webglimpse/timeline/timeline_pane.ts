@@ -865,7 +865,7 @@ module Webglimpse {
         var addGroup = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
 
-            var groupLabel = new Label( font, groupLabelColor, group.label );
+            var groupLabel = new Label( group.label, font, groupLabelColor );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
 
@@ -1125,13 +1125,24 @@ module Webglimpse {
             var row = model.row( rowGuid );
             var rowUi = ui.rowUi( rowGuid );
             
-            var rowLabel = new Label( options.font, options.rowLabelColor, row.label );
+            var rowLabelColorBg : Color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.bgColor;
+            var rowLabelColorFg : Color = hasval( row.fgLabelColor ) ? row.fgLabelColor : options.rowLabelColor;
+            var rowLabelFont : string = hasval( row.labelFont ) ? row.labelFont : options.font;
+            
+            var rowLabel = new Label( row.label, rowLabelFont, rowLabelColorFg );
             var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
             rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
-            var rowHeaderPane = newInsetPane( rowLabelPane, options.rowLabelInsets, options.bgColor );
             
+            var rowLabelBackground = new Background( rowLabelColorBg );
+            var rowHeaderPane = new Pane( newInsetLayout( options.rowLabelInsets ), true );
+            rowHeaderPane.addPainter( rowLabelBackground.newPainter( ) );
+            rowHeaderPane.addPane( rowLabelPane );
+                        
             var rowAttrsChanged = function( ) {
                 rowLabel.text = row.label;
+                rowLabel.fgColor = hasval( row.fgLabelColor ) ? row.fgLabelColor : options.rowLabelColor;
+                rowLabel.font = hasval( row.labelFont ) ? row.labelFont : options.font;
+                rowLabelBackground.color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.bgColor;
                 drawable.redraw( );
             }
             row.attrsChanged.on( rowAttrsChanged );

@@ -121,6 +121,9 @@ module Webglimpse {
         timeseriesGuids? : string[];
         annotationGuids? : string[];
         bgColor? : string;
+        fgLabelColor? : string;
+        bgLabelColor? : string;
+        labelFont? : string;
     }
 
 
@@ -814,6 +817,9 @@ module Webglimpse {
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
         private _bgColor : Color;
+        private _fgLabelColor : Color;
+        private _bgLabelColor : Color;
+        private _labelFont : string;
         private _dataAxis : Axis1D;
 
         constructor( row : TimelineRow ) {
@@ -845,6 +851,9 @@ module Webglimpse {
             this._hidden = row.hidden;
             this._rowHeight = row.rowHeight;
             this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
+            this._fgLabelColor = ( hasval( row.fgLabelColor ) ? parseCssColor( row.fgLabelColor ) : null );
+            this._bgLabelColor = ( hasval( row.bgLabelColor ) ? parseCssColor( row.bgLabelColor ) : null );
+            this._labelFont = row.labelFont;
             this._attrsChanged.fire( );
         }
         
@@ -907,6 +916,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+                
+        get bgLabelColor( ) : Color {
+            return this._bgLabelColor;
+        }
+
+        set bgLabelColor( bgLabelColor : Color ) {
+            if ( bgLabelColor !== this._bgLabelColor ) {
+                this._bgLabelColor = bgLabelColor;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get fgLabelColor( ) : Color {
+            return this._fgLabelColor;
+        }
+
+        set fgLabelColor( fgLabelColor : Color ) {
+            if ( fgLabelColor !== this._fgLabelColor ) {
+                this._fgLabelColor = fgLabelColor;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelFont( ) : string {
+           return this._labelFont;
+        }
+
+        set labelFont( labelFont : string ) {
+            if ( labelFont !== this._labelFont ) {
+                this._labelFont = labelFont;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get eventGuids( ) : OrderedStringSet {
             return this._eventGuids;
@@ -931,6 +973,9 @@ module Webglimpse {
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
+                bgLabelColor: ( hasval( this._bgLabelColor ) ? this._bgLabelColor.cssString : null ),
+                fgLabelColor: ( hasval( this._fgLabelColor ) ? this._fgLabelColor.cssString : null ),
+                labelFont: this._labelFont
             };
         }
     }

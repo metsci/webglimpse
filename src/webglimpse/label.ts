@@ -32,15 +32,17 @@ module Webglimpse {
 
     export class Label {
         private _font : string;
-        private _color : Color;
+        private _fgColor : Color;
+        private _bgColor : Color;
         private _text : string;
         private _textureFactory : TextTextureFactory;
         private _texture : TextTexture2D;
 
-        constructor( font? : string, color? : Color, text? : string ) {
+        constructor( text? : string, font? : string, fgColor? : Color, bgColor? : Color ) {
             this._font = font;
-            this._color = color;
             this._text = text;
+            this._fgColor = fgColor;
+            this._bgColor = bgColor;
         }
 
         get font( ) : string {
@@ -58,17 +60,43 @@ module Webglimpse {
             }
         }
 
+        // retained for backwards compatibility, should use fgColor
         get color( ) : Color {
-            return this._color;
+            return this._fgColor;
         }
 
-        set color( color : Color ) {
-            if ( !sameColor( this._color, color ) ) {
-                this._color = color;
+        // retained for backwards compatibility, should use fgColor
+        set color( fgColor : Color ) {
+            if ( !sameColor( this._fgColor, fgColor ) ) {
+                this._fgColor = fgColor;
                 if ( this._texture ) {
                     this._texture.dispose( );
                     this._texture = null;
                 }
+            }
+        }
+        
+        get fgColor( ) : Color {
+            return this._fgColor;
+        }
+
+        set fgColor( fgColor : Color ) {
+            if ( !sameColor( this._fgColor, fgColor ) ) {
+                this._fgColor = fgColor;
+                if ( this._texture ) {
+                    this._texture.dispose( );
+                    this._texture = null;
+                }
+            }
+        }
+        
+        get bgColor( ) : Color {
+            return this._bgColor;
+        }
+
+        set bgColor( bgColor : Color ) {
+            if ( !sameColor( this._bgColor, bgColor ) ) {
+                this._bgColor = bgColor;
             }
         }
 
@@ -91,7 +119,7 @@ module Webglimpse {
                 this._textureFactory = ( this._font ? createTextTextureFactory( this._font ) : null );
             }
             if ( !this._texture ) {
-                this._texture = ( this._color && this._text ? this._textureFactory( this._color, this._text ) : null );
+                this._texture = ( this._fgColor && this._text ? this._textureFactory( this._fgColor, this._text ) : null );
             }
             return this._texture;
         }
@@ -110,6 +138,12 @@ module Webglimpse {
     export function newLabelPainter( label : Label, xFrac : number, yFrac : number, xAnchor? : number, yAnchor? : number, rotation_CCWRAD? : number ) {
         var textureRenderer = new TextureRenderer( );
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+            
+            if ( hasval( label.bgColor ) ) {
+                gl.clearColor( label.bgColor.r, label.bgColor.g, label.bgColor.b, label.bgColor.a );
+                gl.clear( GL.COLOR_BUFFER_BIT );
+            }
+            
             var texture = label.texture;
             if ( texture ) {
                 textureRenderer.begin( gl, viewport );
