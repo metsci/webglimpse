@@ -224,7 +224,7 @@ module Webglimpse {
         underlayPane.addPane( insetTopPinnedPane, 1 );
 
         // main pane containing timeline groups and rows
-        underlayPane.addPane( timelineCardPane, 2, { height: null, width: null } );
+        underlayPane.addPane( timelineCardPane, 2, { height: 'pref-max', width: null } );
         
         // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
         var bottomPinnedPane = new Pane( newRowLayout( ) );
