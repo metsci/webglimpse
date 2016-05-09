@@ -56,9 +56,12 @@ module Webglimpse {
         // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
         // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
         selectedIntervalMode? : string;
-        scrollbarOptions? : ScrollbarOptions;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
 
+        // Scroll
+        showScrollbar? : boolean;
+        scrollbarOptions? : ScrollbarOptions;
+        
         // Colors
         fgColor? : Color;
         rowLabelColor? : Color;
@@ -94,9 +97,12 @@ module Webglimpse {
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
         var selectedIntervalMode   = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
-        var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
-
+    
+        // Scroll
+        var showScrollbar          = ( hasval( options ) && hasval( options.showScrollbar ) ? options.showScrollbar : true );
+        var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
+        
         // Colors
         var fgColor                     = ( hasval( options ) && hasval( options.fgColor                     ) ? options.fgColor                     : white                      );
         var rowLabelColor               = ( hasval( options ) && hasval( options.rowLabelColor               ) ? options.rowLabelColor               : fgColor                    );
@@ -147,27 +153,40 @@ module Webglimpse {
         
         // Scroll Pane
         
-        var scrollLayout = newVerticalScrollLayout( );
-        var scrollable = new Pane( scrollLayout, false );
-        ui.addPane( 'scroll-content-pane', scrollable );
-
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
         var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
-        var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+        var contentPaneArgs;
         
-        var contentPane = newTimelineContentPane( contentPaneArgs );
-        ui.addPane( 'content-pane', contentPane );
+        if ( showScrollbar ) {
+        
+            var scrollLayout = newVerticalScrollLayout( );
+            var scrollable = new Pane( scrollLayout, false );
+            ui.addPane( 'scroll-content-pane', scrollable );
 
-        scrollable.addPane( contentPane, 0 );
+            contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
 
-        var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
-        ui.addPane( 'scrollbar', scrollbar );
-        
-        var scrollPane = new Pane( newColumnLayout( false ), false );
-        ui.addPane( 'scroll-outer-pane', scrollPane );
-        
-        scrollPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
-        scrollPane.addPane( scrollable, 1 );
+            var scrollContentPane = newTimelineContentPane( contentPaneArgs );
+            ui.addPane( 'content-pane', scrollContentPane );
+    
+            scrollable.addPane( scrollContentPane, 0 );
+    
+            var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
+            ui.addPane( 'scrollbar', scrollbar );
+            
+            var contentPane = new Pane( newColumnLayout( false ), false );
+            ui.addPane( 'scroll-outer-pane', contentPane );
+            
+            contentPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
+            contentPane.addPane( scrollable, 1 );
+            
+        }
+        else {
+            
+            contentPaneArgs = { drawable: drawable, scrollLayout: null, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+            var contentPane = newTimelineContentPane( contentPaneArgs );
+            ui.addPane( 'content-pane', contentPane );
+            
+        }
         
         // Card Pane Switching Logic
         
@@ -182,14 +201,14 @@ module Webglimpse {
          
         var contentActive = model.root.maximizedRowGuids.isEmpty;
         timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
-        timelineCardPane.addPane( scrollPane, contentActive );
+        timelineCardPane.addPane( contentPane, contentActive );
         
         setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true );
         
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
             timelineCardPane.setLayoutArg( insetMaximizedContentPane, !contentActive );
-            timelineCardPane.setLayoutArg( scrollPane, contentActive );
+            timelineCardPane.setLayoutArg( contentPane, contentActive );
             drawable.redraw( );
         }
         
