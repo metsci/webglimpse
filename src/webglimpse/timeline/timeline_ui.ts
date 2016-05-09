@@ -155,6 +155,10 @@ module Webglimpse {
             return this._imageCache[ url ];
         }
         
+        get panes( ) : OrderedSet<Pane> {
+            return this._panes;
+        }
+        
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
             this._panes.add( pane );
