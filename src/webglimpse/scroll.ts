@@ -181,7 +181,7 @@ module Webglimpse {
         };
     }
 
-    // mouse listener for scolling while panning on the timeline itself
+    // mouse listener for scrolling while panning on the timeline itself
     export function attachTimelineVerticalScrollMouseListeners( pane : Pane, scrollLayout : VerticalScrollLayout, drawable : Drawable ) {
         
         // Used when dragging inside pane
