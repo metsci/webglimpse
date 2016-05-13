@@ -828,8 +828,6 @@ module Webglimpse {
         textEnabled? : boolean;
         textDefaultColor? : Color;
         textFont? : string;
-        
-        forceVisible? : boolean;
     }
 
 
@@ -853,7 +851,6 @@ module Webglimpse {
         var iconsSizeFactor  = ( hasval( labelOpts ) && hasval( labelOpts.iconsSizeFactor  ) ? labelOpts.iconsSizeFactor  : 1      );
 
         // Text options
-        var forceVisible     = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible     ) ? labelOpts.forceVisible     : false );
         var textEnabled      = ( hasval( labelOpts ) && hasval( labelOpts.textEnabled      ) ? labelOpts.textEnabled      : true );
         var textDefaultColor = ( hasval( labelOpts ) && hasval( labelOpts.textDefaultColor ) ? labelOpts.textDefaultColor : options.timelineFgColor );
         var textFont         = ( hasval( labelOpts ) && hasval( labelOpts.textFont         ) ? labelOpts.textFont         : options.timelineFont );
@@ -890,9 +887,13 @@ module Webglimpse {
                 
                 var xStart = timeAxis.tFrac( event.start_PMILLIS );
                 var xEnd = timeAxis.tFrac( event.end_PMILLIS );
+                
+                var wTotal = ( xEnd - wRightIndent ) - ( xStart + wLeftIndent ) 
+                var wSpacing = ( spacing / viewport.w );
+
                 if ( !( xEnd <= 0 || xStart > 1 ) ) {
     
-                    var xLeft = xStart;
+                    var xLeft;
                     var xRight;
                     if ( extendBeyondBar ) {
                         if ( eventIndex+1 < lane.length ) {
@@ -903,19 +904,22 @@ module Webglimpse {
                         else {
                             xRight = xRightMax;
                         }
+                        
+                        if ( eventIndex-1 >= 0 ) {
+                            var nextEvent = lane.event( eventIndex-1 );
+                            var nextEnd_PMILLIS = effectiveEdges_PMILLIS( ui, nextEvent )[ 1 ];
+                            xStart = timeAxis.tFrac( nextEnd_PMILLIS );
+                        }
+                        else {
+                            xStart = xLeftMin;
+                        }
                     }
                     else {
                         xRight = xEnd;
+                        xLeft  = xStart;
                     }
     
-                    var xLeftVisible = Math.max( xStart + wLeftIndent, xLeftMin );
-                    var xRightVisible = Math.min( xRight - wRightIndent, xRightMax );
-                    var wTotal = ( xEnd - wRightIndent ) - ( xStart + wLeftIndent ) 
-                    var wVisible = ( xRightVisible - xLeftVisible );
-    
-                    var wSpacing = ( spacing / viewport.w );
-                    
-                    // pre-calculate text width (needed to position icon when labelHAlign != 0)
+                    // calculate Text width
                     var wText = 0;
                     var textTexture;
                     if ( textEnabled && event.label ) {
@@ -924,14 +928,17 @@ module Webglimpse {
                         wText = ( textTexture.w / viewport.w );
                     }
                     
-                    // Icon
+                    // calculate Icon width (and start load if necessary)
                     var wIcon = 0;
                     var wIconPlusSpacing = 0;
+                    var iconWidth;
+                    var iconHeight;
+                    var iconTexture;
                     if ( iconsEnabled && event.labelIcon ) {
-                        var iconTexture = iconTextures[ event.labelIcon ];
+                        iconTexture = iconTextures[ event.labelIcon ];
                         if ( hasval( iconTexture ) ) {
-                            var iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
-                            var iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
+                            iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
+                            iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
     
                             var wIconKnown = hasval( iconWidth );
                             var hIconKnown = hasval( iconHeight );
@@ -955,35 +962,6 @@ module Webglimpse {
                             wIcon = ( iconWidth / viewport.w );
                             
                             wIconPlusSpacing = wIcon + wSpacing;
-                            
-                            //TODO: if labelHAlign and labelHPos are set to place text outside of the event start/end bounds,
-                            //      this logic doesn't turn off text/icons exactly when you would really want
-                            
-                            // if we can't display text, the icon positioning is effected (when labelHAlign != 0)
-                            if ( !forceVisible || wIconPlusSpacing + wText > wVisible ) {
-                                wText = 0;
-                                textTexture = undefined;
-                            }
-                            
-                            if ( forceVisible || wIcon <= wVisible ) {
-                                
-                                // coordinates of the start edge of the icon + label
-                                var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
-                            
-                                // coordinates of the end edge of the icon + label
-                                var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
-                            
-                                if ( xStartLabel < xLeftMin ) {
-                                    textureRenderer.draw( gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                                else if ( xEndLabel > xRightMax ) {
-                                    textureRenderer.draw( gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                                else {
-                                    var xFrac = xStart + wLeftIndent - ( wSpacing + wText ) * labelHPos + ( wTotal ) * labelHAlign;
-                                    textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                            }
                         }
                         // A null in the map means a fetch has already been initiated
                         // ... either it is still in progress, or it has already failed
@@ -1002,6 +980,51 @@ module Webglimpse {
                                 };
                             } )( event.labelIcon, image );
                             image.src = event.labelIcon;
+                        }
+                    }
+                    
+                    // Determine whether there is enough space to display both text and icon,
+                    // or only icon, or neither
+
+                    // coordinates of the start edge of the icon + label
+                    var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                    // coordinates of the end edge of the icon + label
+                    var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    
+                    if ( xEndLabel > xRight || xStartLabel < xLeft ) {
+                        // there is not enough room for the text, try with just the icon
+                        wText = 0;
+                        textTexture = null;
+                        
+                        // coordinates of the start edge of the icon + label
+                        var xStartLabel = xStart + wLeftIndent - ( wIcon ) * labelHPos + ( wTotal ) * labelHAlign;
+                        // coordinates of the end edge of the icon + label
+                        var xEndLabel = xStartLabel + ( wIcon );
+                        
+                        // if there is still not enough room, don't show anything
+                        if ( xEndLabel > xRight || xStartLabel < xLeft ) {
+                            wIcon = 0;
+                            iconTexture = null;
+                        }
+                    }
+                    
+                    // Icons
+                    if ( hasval( iconTexture ) ) {
+                        // coordinates of the start edge of the icon + label
+                        var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                    
+                        // coordinates of the end edge of the icon + label
+                        var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    
+                        if ( xStartLabel < xLeftMin ) {
+                            textureRenderer.draw( gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                        }
+                        else if ( xEndLabel > xRightMax ) {
+                            textureRenderer.draw( gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                        }
+                        else {
+                            var xFrac = xStart + wLeftIndent - ( wSpacing + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                            textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
                         }
                     }
     
