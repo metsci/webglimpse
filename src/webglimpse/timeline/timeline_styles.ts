@@ -117,6 +117,7 @@ module Webglimpse {
         rowBottomPadding: 0,
         laneHeight: 23,
         allowMultipleLanes: false,
+        forceVisible: true,
         
         painterFactories: [
             newCombinedEventPainterFactory( 
@@ -133,8 +134,6 @@ module Webglimpse {
                     rightMargin: 2,
                     vAlign: 0.0,
                     spacing: 2,
-                    extendBeyondBar: true,
-                    forceVisible: true
                 },
                 {
                     bottomMargin: 0,

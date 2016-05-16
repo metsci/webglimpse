@@ -817,6 +817,7 @@ module Webglimpse {
         vAlign? : number;
         spacing? : number;
         extendBeyondBar? : boolean;
+        forceVisible? : boolean;
 
         iconsEnabled? : boolean;
         // Can be a number, or 'imageSize', or 'auto'
@@ -843,6 +844,7 @@ module Webglimpse {
         var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
         var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
         var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
+        var forceVisible    = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible    ) ? labelOpts.forceVisible    : false );
 
         // Icon options
         var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
@@ -906,12 +908,12 @@ module Webglimpse {
                         }
                         
                         if ( eventIndex-1 >= 0 ) {
-                            var nextEvent = lane.event( eventIndex-1 );
-                            var nextEnd_PMILLIS = effectiveEdges_PMILLIS( ui, nextEvent )[ 1 ];
-                            xStart = timeAxis.tFrac( nextEnd_PMILLIS );
+                            var previousEvent = lane.event( eventIndex-1 );
+                            var previousEnd_PMILLIS = effectiveEdges_PMILLIS( ui, previousEvent )[ 1 ];
+                            xLeft = timeAxis.tFrac( previousEnd_PMILLIS );
                         }
                         else {
-                            xStart = xLeftMin;
+                            xLeft = xLeftMin;
                         }
                     }
                     else {
@@ -983,28 +985,54 @@ module Webglimpse {
                         }
                     }
                     
-                    // Determine whether there is enough space to display both text and icon,
-                    // or only icon, or neither
+                    // NOTE: With extendBeyondBar=true, we detect when there is insufficient space between the current event
+                    //       and those to either side to display the text + icon. However, if one event has right aligned text
+                    //       and the other has left aligned text, so both text labels overlap into the same space between the
+                    //       events, we don't currently try to detect that.
+                    
+                    // Determine whether there is enough space to display both text and icon, or only icon, or neither
 
                     // coordinates of the start edge of the icon + label
                     var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
                     // coordinates of the end edge of the icon + label
                     var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
                     
-                    if ( xEndLabel > xRight || xStartLabel < xLeft ) {
-                        // there is not enough room for the text, try with just the icon
-                        wText = 0;
-                        textTexture = null;
-                        
-                        // coordinates of the start edge of the icon + label
-                        var xStartLabel = xStart + wLeftIndent - ( wIcon ) * labelHPos + ( wTotal ) * labelHAlign;
-                        // coordinates of the end edge of the icon + label
-                        var xEndLabel = xStartLabel + ( wIcon );
-                        
-                        // if there is still not enough room, don't show anything
+                    // adjust xStartLabel and xEndLabel if they fall off the screen
+                    if ( xStartLabel < xLeftMin ) {
+                        xStartLabel = xLeftMin;
+                        xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    }
+                    else if ( xEndLabel > xRightMax ) {
+                        xEndLabel = xRightMax;
+                        xStartLabel = xEndLabel - ( wSpacing + wIcon + wText );
+                    }
+                    
+                    if ( forceVisible ) {
                         if ( xEndLabel > xRight || xStartLabel < xLeft ) {
-                            wIcon = 0;
-                            iconTexture = null;
+                            // there is not enough room for the text, try with just the icon
+                            wText = 0;
+                            textTexture = null;
+                            
+                            // coordinates of the start edge of the icon + label
+                            var xStartLabel = xStart + wLeftIndent - ( wIcon ) * labelHPos + ( wTotal ) * labelHAlign;
+                            // coordinates of the end edge of the icon + label
+                            var xEndLabel = xStartLabel + ( wIcon );
+                            
+                            // adjust xStartLabel and xEndLabel if they fall off the screen
+                            if ( xStartLabel < xLeftMin ) {
+                                xStartLabel = xLeftMin;
+                                xEndLabel = xStartLabel + ( wIcon );
+                            }
+                            else if ( xEndLabel > xRightMax ) {
+                                xEndLabel = xRightMax;
+                                xStartLabel = xEndLabel - ( wIcon );
+                            }
+                            
+                            // if there is still not enough room, don't show anything
+                            if ( xEndLabel > xRight || xStartLabel < xLeft ) {
+                                wIcon = 0;
+                                iconTexture = null;
+                            }
                         }
                     }
                     
