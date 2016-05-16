@@ -114,7 +114,7 @@ module Webglimpse {
             selectedIntervalFillColor: rgba( 0, 0.6, 0.8, 0.157 ),
             selectedIntervalBorderColor: rgb( 0, 0.2, 1.0 ),
 
-            rowPaneFactoryChooser: eventsRowPaneFactory_THIN
+            rowPaneFactoryChooser: rowPaneFactoryChooser_THIN
 
         };
         var model = new TimelineModel( );
@@ -127,9 +127,6 @@ module Webglimpse {
         contentPane.addPane( timelinePane );
         drawable.setContentPane( newInsetPane( contentPane, newInsets( 12, 10, 2 ), timelineOptions.bgColor ) );
         drawable.redraw( );
-
-
-
 
         // Load UI styles
         //
