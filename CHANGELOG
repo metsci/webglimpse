@@ -1,3 +1,7 @@
+Webglimpse 1.7.2-pre4 (released 2016-5-23)
+
+* Fix issue with ui Pane references after recreating timeline to adjust settings.
+
 Webglimpse 1.7.2-pre3 (released 2016-5-23)
 
 * Fix event label placement issues caused by additional event text options
