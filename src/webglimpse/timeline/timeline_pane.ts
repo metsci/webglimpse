@@ -136,8 +136,13 @@ module Webglimpse {
         if ( !ui ) {
             ui = new TimelineUi( model );
         }
+        else {
+            // remove old panes (if the ui is being reused)
+            ui.panes.removeAll( );    
+        }
+        
         var selection = ui.selection;
-
+        
         var redraw = function( ) {
             drawable.redraw( );
         };

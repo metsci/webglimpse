@@ -161,6 +161,7 @@ module Webglimpse {
         
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
+            this._panes.removeId( paneId );
             this._panes.add( pane );
         }
         
@@ -235,6 +236,7 @@ module Webglimpse {
         
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
+            this._panes.removeId( paneId );
             this._panes.add( pane );
         }
         
