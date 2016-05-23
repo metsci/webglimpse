@@ -1007,7 +1007,7 @@ module Webglimpse {
                         xStartLabel = xEndLabel - ( wSpacing + wIcon + wText );
                     }
                     
-                    if ( forceVisible ) {
+                    if ( !forceVisible ) {
                         if ( xEndLabel > xRight || xStartLabel < xLeft ) {
                             // there is not enough room for the text, try with just the icon
                             wText = 0;
