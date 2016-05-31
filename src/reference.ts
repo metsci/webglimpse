@@ -66,6 +66,7 @@
 
 //grunt-start
 /// <reference path="webglimpse/layout/card_layout.ts" />
+/// <reference path="webglimpse/timeline/timeline_cursor_painter.ts" />
 //grunt-end
 
 

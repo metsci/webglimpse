@@ -88,8 +88,6 @@ module Webglimpse {
         $( window ).resize( updateCanvasSize );
         updateCanvasSize( );
 
-
-
         // Timeline Setup
         //
 
@@ -309,6 +307,16 @@ module Webglimpse {
             if ( customRowHeight > 200 ) customRowHeight = 135;
             
             model.row( 'metsci.timelineExample.row03a' ).rowHeight = customRowHeight;
+            
+            // make sure no-one references the event
+            model.rows.forEach( function( row : TimelineRowModel ) {
+                row.eventGuids.removeValue( 'metsci.timelineExample.event01' );
+            } );
+            
+            // remove the event
+            model.events.removeId( 'metsci.timelineExample.event01' );
+            
+            drawable.redraw( );
         };
 
         // Example Event-Hover Overlay
