@@ -71,7 +71,13 @@ module Webglimpse {
 
     export interface TimelineEvent {
         eventGuid : string;
+        // the minimum allowed value of start_ISO8601
+        startLimit_ISO8601? : string;
+        // the maximum allowed value of end_ISO8601
+        endLimit_ISO8601? : string;
+        // the left side (earliest) time bound of the event box
         start_ISO8601 : string;
+        // the right side (latest) time bound of the event box
         end_ISO8601 : string;
         // text to be displayed with the event
         label : string;
@@ -518,6 +524,8 @@ module Webglimpse {
     export class TimelineEventModel {
         private _eventGuid : string;
         private _attrsChanged : Notification;
+        private _startLimit_PMILLIS : number;
+        private _endLimit_PMILLIS : number;
         private _start_PMILLIS : number;
         private _end_PMILLIS : number;
         private _label : string;
@@ -553,6 +561,8 @@ module Webglimpse {
 
         setAttrs( event : TimelineEvent ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._startLimit_PMILLIS = parseTime_PMILLIS( event.startLimit_ISO8601 );
+            this._endLimit_PMILLIS = parseTime_PMILLIS( event.endLimit_ISO8601 );
             this._start_PMILLIS = parseTime_PMILLIS( event.start_ISO8601 );
             this._end_PMILLIS = parseTime_PMILLIS( event.end_ISO8601 );
             this._label = event.label;
@@ -576,19 +586,27 @@ module Webglimpse {
 
         setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
-                this._start_PMILLIS = start_PMILLIS;
-                this._end_PMILLIS = end_PMILLIS;
+                this._start_PMILLIS = this.limit_start_PMILLIS( start_PMILLIS );
+                this._end_PMILLIS = this.limit_end_PMILLIS( end_PMILLIS );
                 this._attrsChanged.fire( );
             }
         }
-
+        
+        private limit_start_PMILLIS( start_PMILLIS : number ) {
+            return hasval( this._startLimit_PMILLIS ) ? Math.max( start_PMILLIS, this._startLimit_PMILLIS ) : start_PMILLIS;
+        }
+        
+        private limit_end_PMILLIS( end_PMILLIS : number ) {
+            return hasval( this._endLimit_PMILLIS ) ? Math.min( end_PMILLIS, this._endLimit_PMILLIS ) : end_PMILLIS;
+        }
+        
         get start_PMILLIS( ) : number {
             return this._start_PMILLIS;
         }
 
         set start_PMILLIS( start_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS ) {
-                this._start_PMILLIS = start_PMILLIS;
+                this._start_PMILLIS = this.limit_start_PMILLIS( start_PMILLIS );
                 this._attrsChanged.fire( );
             }
         }
@@ -599,7 +617,7 @@ module Webglimpse {
 
         set end_PMILLIS( end_PMILLIS : number ) {
             if ( end_PMILLIS !== this._end_PMILLIS ) {
-                this._end_PMILLIS = end_PMILLIS;
+                this._end_PMILLIS = this.limit_end_PMILLIS( end_PMILLIS );
                 this._attrsChanged.fire( );
             }
         }
@@ -783,6 +801,8 @@ module Webglimpse {
         snapshot( ) : TimelineEvent {
             return {
                 eventGuid: this._eventGuid,
+                startLimit_ISO8601: ( hasval( this._startLimit_PMILLIS ) ? formatTime_ISO8601( this._startLimit_PMILLIS ) : null ),
+                endLimit_ISO8601: ( hasval( this._endLimit_PMILLIS ) ? formatTime_ISO8601( this._endLimit_PMILLIS ) : null ),
                 start_ISO8601: formatTime_ISO8601( this._start_PMILLIS ),
                 end_ISO8601: formatTime_ISO8601( this._end_PMILLIS ),
                 label: this._label,
