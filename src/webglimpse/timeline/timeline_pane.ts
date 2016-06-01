@@ -311,15 +311,28 @@ module Webglimpse {
 
 
 
-    function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel ) : Mask2D {
-        return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
-            var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
-            
-            // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
-            var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
-            
-            return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
-        };
+    function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel, selectedIntervalMode : string ) : Mask2D {
+        
+        if ( selectedIntervalMode === 'range' ) {
+            return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
+                var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
+                
+                // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
+                var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+                
+                return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
+            };
+        }
+        else if ( selectedIntervalMode === 'single' ) {
+            return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
+                var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
+                
+                // allow a 10 pixel selection buffer to make it easier to grab the selection
+                var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+                
+                return time_PMILLIS < interval.cursor_PMILLIS + buffer_MILLIS && time_PMILLIS > interval.cursor_PMILLIS - buffer_MILLIS;
+            };
+        }
     }
 
 
@@ -370,7 +383,7 @@ module Webglimpse {
 
         if ( selectedIntervalMode === 'single' || selectedIntervalMode === 'range' ) {
             var selection = ui.selection;
-            var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
+            var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval, selectedIntervalMode ) );
             attachTimeSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode );
             axisPane.addPane( selectedIntervalPane, false );
 
