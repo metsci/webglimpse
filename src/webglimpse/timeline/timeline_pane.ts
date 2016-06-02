@@ -90,6 +90,9 @@ module Webglimpse {
         axisPaneHeight? : number;
         draggableEdgeWidth? : number;
         snapToDistance? : number;
+        
+        // Selection
+        allowEventMultiSelection? : boolean;
     }
 
     export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
@@ -133,8 +136,11 @@ module Webglimpse {
         var draggableEdgeWidth = ( hasval( options ) && hasval( options.draggableEdgeWidth ) ? options.draggableEdgeWidth : 6   );
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
+        // Selection
+        var allowEventMultiSelection   = ( hasval( options ) && hasval( options.allowEventMultiSelection ) ? options.allowEventMultiSelection : true    );
+
         if ( !ui ) {
-            ui = new TimelineUi( model );
+            ui = new TimelineUi( model, { allowEventMultiSelection: allowEventMultiSelection } );
         }
         else {
             // remove old panes (if the ui is being reused)
