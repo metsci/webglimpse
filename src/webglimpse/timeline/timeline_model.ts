@@ -561,8 +561,8 @@ module Webglimpse {
 
         setAttrs( event : TimelineEvent ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
-            this._startLimit_PMILLIS = parseTime_PMILLIS( event.startLimit_ISO8601 );
-            this._endLimit_PMILLIS = parseTime_PMILLIS( event.endLimit_ISO8601 );
+            this._startLimit_PMILLIS = ( hasval( event.startLimit_ISO8601 ) ? parseTime_PMILLIS( event.startLimit_ISO8601 ) : null );
+            this._endLimit_PMILLIS = ( hasval( event.endLimit_ISO8601 ) ? parseTime_PMILLIS( event.endLimit_ISO8601 ) : null );
             this._start_PMILLIS = parseTime_PMILLIS( event.start_ISO8601 );
             this._end_PMILLIS = parseTime_PMILLIS( event.end_ISO8601 );
             this._label = event.label;
@@ -586,9 +586,40 @@ module Webglimpse {
 
         setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
-                this._start_PMILLIS = this.limit_start_PMILLIS( start_PMILLIS );
-                this._end_PMILLIS = this.limit_end_PMILLIS( end_PMILLIS );
-                this._attrsChanged.fire( );
+                
+                var initial_start_PMILLIS = this._start_PMILLIS;
+                var initial_end_PMILLIS = this._end_PMILLIS;
+                
+                var underStartLimit = hasval( this._startLimit_PMILLIS ) && start_PMILLIS < this._startLimit_PMILLIS;
+                var overEndLimit = hasval( this._endLimit_PMILLIS ) && end_PMILLIS > this._endLimit_PMILLIS;
+                var duration_PMILLIS = end_PMILLIS - start_PMILLIS;
+                var durationLimit_PMILLIS = this._endLimit_PMILLIS - this._startLimit_PMILLIS;
+                
+                // If both limits are present and the event is larger than the total distance between them
+                // then shrink the event to fit between the limits.
+                if ( hasval( this._startLimit_PMILLIS ) && hasval( this._endLimit_PMILLIS ) && durationLimit_PMILLIS < duration_PMILLIS ) {
+                    this._start_PMILLIS = this._startLimit_PMILLIS;
+                    this._end_PMILLIS = this._endLimit_PMILLIS; 
+                }
+                // Otherwise shift the event to comply with the limits without adjusting its total duration
+                else if ( underStartLimit ) {
+                    this._start_PMILLIS = this._startLimit_PMILLIS;
+                    this._end_PMILLIS = this._start_PMILLIS + duration_PMILLIS;
+                }
+                else if ( overEndLimit ) {
+                    this._end_PMILLIS = this._endLimit_PMILLIS;
+                    this._start_PMILLIS = this._end_PMILLIS - duration_PMILLIS;
+                }
+                else {
+                    this._end_PMILLIS = end_PMILLIS;
+                    this._start_PMILLIS = start_PMILLIS; 
+                }
+                
+                // its possible due to the limits that the values didn't actually change
+                // only fire attrsChanged if one of the values did actually change
+                if ( initial_start_PMILLIS !== this._start_PMILLIS || initial_end_PMILLIS !== this._end_PMILLIS ) {
+                    this._attrsChanged.fire( );
+                }
             }
         }
         
@@ -621,6 +652,31 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+        
+        get startLimit_PMILLIS( ) : number {
+            return this._startLimit_PMILLIS;
+        }
+
+        set startLimit_PMILLIS( startLimit_PMILLIS : number ) {
+            if ( startLimit_PMILLIS !== this._startLimit_PMILLIS ) {
+                this._startLimit_PMILLIS = startLimit_PMILLIS;
+                this._start_PMILLIS = this.limit_start_PMILLIS( this._start_PMILLIS );
+                this._attrsChanged.fire( );
+            }
+        }
+
+        get endLimit_PMILLIS( ) : number {
+            return this._endLimit_PMILLIS;
+        }
+
+        set endLimit_PMILLIS( endLimit_PMILLIS : number ) {
+            if ( endLimit_PMILLIS !== this._endLimit_PMILLIS ) {
+                this._endLimit_PMILLIS = endLimit_PMILLIS;
+                this._end_PMILLIS = this.limit_end_PMILLIS( this._end_PMILLIS );
+                this._attrsChanged.fire( );
+            }
+        }
+
 
         get label( ) : string {
             return this._label;

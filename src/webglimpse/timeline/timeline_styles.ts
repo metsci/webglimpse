@@ -42,6 +42,7 @@ module Webglimpse {
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {
         rowHeight: 135,
         painterFactories: [
+            newEventLimitsPainterFactory( ),
             newEventBarsPainterFactory( ),
             newEventIconsPainterFactory( ),
             newEventLabelsPainterFactory( {
@@ -77,6 +78,10 @@ module Webglimpse {
         rowBottomPadding: 0,
         laneHeight: 23,
         painterFactories: [
+            newEventLimitsPainterFactory( {
+                lineColor: new Color( 1, 0, 0, 1 ),
+                lineThickness: 2
+            } ),
             newEventBarsPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
@@ -120,6 +125,10 @@ module Webglimpse {
         forceVisible: true,
         
         painterFactories: [
+            newEventLimitsPainterFactory( {
+                lineColor: new Color( 1, 0, 0, 1 ),
+                lineThickness: 2
+            } ),
             newCombinedEventPainterFactory( 
                 {
                     bottomMargin: 0,
