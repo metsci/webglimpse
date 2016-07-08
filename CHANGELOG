@@ -1,3 +1,9 @@
+Webglimpse 1.7.2-pre7 (released 2016-7-8)
+
+* Updates to TimelineEventModel.order now properly adjust rendering order if modified after an event is added to a row.
+* Default row label background color can be set using TimelinePaneOptions.rowLabelBgColor.
+* Fixed issue with reloading timeline with different TimelinePaneOptions.
+
 Webglimpse 1.7.2-pre6 (released 2016-6-2)
 
 * Add option (TimelinePaneOptions.allowEventMultiSelection) to turn on/off multiple event selection.
