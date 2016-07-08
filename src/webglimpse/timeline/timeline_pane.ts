@@ -65,6 +65,7 @@ module Webglimpse {
         // Colors
         fgColor? : Color;
         rowLabelColor? : Color;
+        rowLabelBgColor? : Color;
         groupLabelColor? : Color;
         axisLabelColor? : Color;
         bgColor? : Color;
@@ -108,10 +109,11 @@ module Webglimpse {
         
         // Colors
         var fgColor                     = ( hasval( options ) && hasval( options.fgColor                     ) ? options.fgColor                     : white                      );
+        var bgColor                     = ( hasval( options ) && hasval( options.bgColor                     ) ? options.bgColor                     : rgb( 0.098, 0.165, 0.243 ) );
         var rowLabelColor               = ( hasval( options ) && hasval( options.rowLabelColor               ) ? options.rowLabelColor               : fgColor                    );
+        var rowLabelBgColor             = ( hasval( options ) && hasval( options.rowLabelBgColor             ) ? options.rowLabelBgColor             : bgColor                    );
         var groupLabelColor             = ( hasval( options ) && hasval( options.groupLabelColor             ) ? options.groupLabelColor             : fgColor                    );
         var axisLabelColor              = ( hasval( options ) && hasval( options.axisLabelColor              ) ? options.axisLabelColor              : fgColor                    );
-        var bgColor                     = ( hasval( options ) && hasval( options.bgColor                     ) ? options.bgColor                     : rgb( 0.098, 0.165, 0.243 ) );
         var rowBgColor                  = ( hasval( options ) && hasval( options.rowBgColor                  ) ? options.rowBgColor                  : rgb( 0.020, 0.086, 0.165 ) );
         var rowAltBgColor               = ( hasval( options ) && hasval( options.rowAltBgColor               ) ? options.rowAltBgColor               : rgb( 0.020, 0.086, 0.165 ) );
         var gridColor                   = ( hasval( options ) && hasval( options.gridColor                   ) ? options.gridColor                   : gray( 0.5 )                );
@@ -140,10 +142,12 @@ module Webglimpse {
         var allowEventMultiSelection   = ( hasval( options ) && hasval( options.allowEventMultiSelection ) ? options.allowEventMultiSelection : true    );
 
         if ( !ui ) {
+            var outsideManagedUi = false;
             ui = new TimelineUi( model, { allowEventMultiSelection: allowEventMultiSelection } );
         }
         else {
             // remove old panes (if the ui is being reused)
+            var outsideManagedUi = true;
             ui.panes.removeAll( );    
         }
         
@@ -166,7 +170,7 @@ module Webglimpse {
         // Scroll Pane
         
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
         var contentPaneArgs;
         
         if ( showScrollbar ) {
@@ -301,7 +305,8 @@ module Webglimpse {
         }
                 
         timelinePane.dispose.on( function( ) {
-            ui.dispose.fire( );
+            // only dispose the ui if we created it (and this manage its lifecycle)
+            if ( !outsideManagedUi ) ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
             selection.hoveredEvent.changed.off( redraw );
             selection.selectedEvents.valueAdded.off( redraw );
@@ -826,6 +831,7 @@ module Webglimpse {
         font : string;
         fgColor : Color;
         rowLabelColor : Color;
+        rowLabelBgColor : Color;
         groupLabelColor : Color;
         axisLabelColor : Color;
         bgColor : Color;
@@ -1163,7 +1169,7 @@ module Webglimpse {
             var row = model.row( rowGuid );
             var rowUi = ui.rowUi( rowGuid );
             
-            var rowLabelColorBg : Color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.bgColor;
+            var rowLabelColorBg : Color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.rowLabelBgColor;
             var rowLabelColorFg : Color = hasval( row.fgLabelColor ) ? row.fgLabelColor : options.rowLabelColor;
             var rowLabelFont : string = hasval( row.labelFont ) ? row.labelFont : options.font;
             

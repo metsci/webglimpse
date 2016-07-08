@@ -96,13 +96,10 @@ module Webglimpse {
         var timeAxis = new TimeAxis1D( parseTime_PMILLIS( '2014-01-01T00:00:00Z' ), parseTime_PMILLIS( '2014-01-01T12:00:00Z' ) );
         timeAxis.limitsChanged.on( drawable.redraw );
 
-        var timelineOptions = {
+        var timelineOptions : TimelinePaneOptions = {
 
             selectedIntervalMode: 'single',
-            
             topTimeZone: '-0500',
-            breakGridLines: true,
-
             fgColor: white,
             rowLabelColor: white,
             groupLabelColor: white,
@@ -113,15 +110,13 @@ module Webglimpse {
             gridColor: gray( 0.5 ),
             selectedIntervalFillColor: rgba( 0, 0.6, 0.8, 0.157 ),
             selectedIntervalBorderColor: rgb( 0, 0.2, 1.0 ),
-
             allowEventMultiSelection: true,
-            
             rowPaneFactoryChooser: rowPaneFactoryChooser_THIN
 
         };
         var model = new TimelineModel( );
-        var timelinePane = newTimelinePane( drawable, timeAxis, model, timelineOptions );
-        var ui = timelinePane.ui;
+        var ui = new TimelineUi( model, { allowEventMultiSelection : true } );
+        var timelinePane = newTimelinePane( drawable, timeAxis, model, timelineOptions, ui );
         var selection = ui.selection;
         selection.selectedInterval.setInterval( parseTime_PMILLIS( '2014-01-01T08:30:00Z' ), parseTime_PMILLIS( '2014-01-01T08:50:00Z' ) );
 
@@ -278,7 +273,7 @@ module Webglimpse {
         // Link a button to pin / unpin some rows to the top/bottom of the timeline
         
         var a = document.getElementById( 'pin-button' );
-        a.onclick = function() {    
+        a.onclick = function() {
             if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01a' ) ) {
                 model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01a' );
             }
@@ -306,7 +301,6 @@ module Webglimpse {
         var customRowHeight = 135;
         var a = document.getElementById( 'flag-button' );
         a.onclick = function() {
-            
             customRowHeight = customRowHeight + 10;
             if ( customRowHeight > 200 ) customRowHeight = 135;
             
