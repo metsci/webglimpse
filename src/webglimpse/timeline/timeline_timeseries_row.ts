@@ -96,10 +96,10 @@ module Webglimpse {
             if ( !hasval( axisOptions.textColor ) ) axisOptions.textColor = timelineFgColor;
             if ( !hasval( axisOptions.showLabel ) ) axisOptions.showLabel = true;
             if ( !hasval( axisOptions.shortenLabels ) ) axisOptions.shortenLabels = false;
-            
+
             // setup pane for data (y) axis painter and mouse listener
             var yAxisPane = new Pane( { updatePrefSize: fixedSize( axisWidth, rowHeight ) } );
-            dataAxis.limitsChanged.on( drawable.redraw );
+            dataAxis.limitsChanged.on( redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
             // add listener to update the height of the row if the rowHeight attribute changes
@@ -122,6 +122,10 @@ module Webglimpse {
                 var createPainter = painterFactories[ n ];
                 rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, ui, painterOptions ) );
             }
+
+                        var redraw = function( ) {
+                drawable.redraw( );
+            };
             
             yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
             rowContentPane.addPane( yAxisPane, 0 );
@@ -132,10 +136,6 @@ module Webglimpse {
             rowUi.addPane( keyPrefix+'overlay', overlayPane );
             rowUi.addPane( keyPrefix+'underlay', underlayPane );
             rowUi.addPane( keyPrefix+'y-axis', yAxisPane );
-            
-            var redraw = function( ) {
-                drawable.redraw( );
-            };
 
             row.timeseriesGuids.valueAdded.on( redraw );
             row.timeseriesGuids.valueMoved.on( redraw );
@@ -436,7 +436,7 @@ module Webglimpse {
                 rowUi.removePane( keyPrefix+'underlay' );
                 rowUi.removePane( keyPrefix+'y-axis' );
                 
-                dataAxis.limitsChanged.off( drawable.redraw );
+                dataAxis.limitsChanged.off( redraw );
                 
                 row.timeseriesGuids.valueAdded.off( redraw );
                 row.timeseriesGuids.valueMoved.off( redraw );
