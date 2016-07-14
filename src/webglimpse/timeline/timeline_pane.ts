@@ -81,6 +81,7 @@ module Webglimpse {
         topTimeZone? : string;
         bottomTimeZone? : string;
         tickSpacing? : number;
+        axisLabelAlign? : number;
 
         // Sizing
         groupLabelInsets? : Insets;
@@ -126,6 +127,7 @@ module Webglimpse {
         var topTimeZone      = ( hasval( options ) && hasval( options.topTimeZone    ) ? options.topTimeZone    : '+0000' );
         var bottomTimeZone   = ( hasval( options ) && hasval( options.bottomTimeZone ) ? options.bottomTimeZone : '+0000' );
         var tickSpacing      = ( hasval( options ) && hasval( options.tickSpacing    ) ? options.tickSpacing    : 60      );
+        var axisLabelAlign   = ( hasval( options ) && hasval( options.axisLabelAlign ) ? options.axisLabelAlign : 0.5      );
 
         // Sizing
         var groupLabelInsets   = ( hasval( options ) && hasval( options.groupLabelInsets   ) ? options.groupLabelInsets   : newInsets( 6, 10 ) );
@@ -240,7 +242,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
         
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, axisLabelAlign: axisLabelAlign };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );

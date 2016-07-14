@@ -39,6 +39,7 @@ module Webglimpse {
         textColor?   : Color;
         tickColor?   : Color;
         tickSize?    : number;
+        labelAlign?  : number;
     }
 
 
@@ -48,6 +49,7 @@ module Webglimpse {
         var textColor   = ( hasval( options ) && hasval( options.textColor   ) ? options.textColor   : black       );
         var tickColor   = ( hasval( options ) && hasval( options.tickColor   ) ? options.tickColor   : black       );
         var tickSize    = ( hasval( options ) && hasval( options.tickSize    ) ? options.tickSize    : 6           );
+        var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.tickSize    : 0.5         );
 
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
@@ -181,15 +183,15 @@ module Webglimpse {
             //
 
             if ( timeStructFactory ) {
-                var timeStructs = createTimeStructs( timeAxis, timeStructFactory, tickTimeZone, tickTimes_PMILLIS );
+                var timeStructs = createTimeStructs( timeAxis, timeStructFactory, tickTimeZone, tickTimes_PMILLIS, labelAlign );
                 for ( var n = 0 ; n < timeStructs.length ; n++ ) {
                     var timeStruct = timeStructs[ n ];
                     var text = moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( prefixFormat );
                     var textTexture = textTextures.value( text );
 
                     var halfTextFrac = 0.5 * textTexture.w / viewport.w;
-                    var minFrac = timeAxis.tFrac( timeStruct.start_PMILLIS ) + halfTextFrac;
-                    var maxFrac = timeAxis.tFrac( timeStruct.end_PMILLIS ) - halfTextFrac;
+                    var minFrac = timeAxis.tFrac( timeStruct.start_PMILLIS ) - halfTextFrac;
+                    var maxFrac = timeAxis.tFrac( timeStruct.end_PMILLIS ) + halfTextFrac;
                     var tFrac = clamp( minFrac, maxFrac, timeAxis.tFrac( timeStruct.textCenter_PMILLIS ) );
                     if ( tFrac-halfTextFrac < 0 || tFrac+halfTextFrac > 1 ) continue;
 
@@ -310,7 +312,7 @@ module Webglimpse {
     }
 
 
-    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, tickTimes_PMILLIS : number[] ) : TimeStruct[] {
+    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
@@ -343,7 +345,7 @@ module Webglimpse {
         for ( var n = 0; n < timeStructs.length; n++ ) {
             var timeStruct = timeStructs[ n ];
             var duration_MILLIS = timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS;
-            var midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + 0.5*duration_MILLIS;
+            var midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + labelAlign*duration_MILLIS;
             var edge_PMILLIS = ( timeStruct.viewStart_PMILLIS === timeStruct.start_PMILLIS ? timeStruct.viewEnd_PMILLIS : timeStruct.viewStart_PMILLIS );
             var edginess = 1 - clamp( 0, 1, duration_MILLIS / maxViewDuration_MILLIS );
             timeStruct.textCenter_PMILLIS = midpoint_PMILLIS + edginess*( edge_PMILLIS - midpoint_PMILLIS );
