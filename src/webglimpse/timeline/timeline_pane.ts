@@ -305,6 +305,28 @@ module Webglimpse {
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
+
+        // Enable double click to center selection on mouse
+        
+        var doubleClick = function( ev : PointerEvent ) {
+
+console.log( 'double click' );
+
+            if ( selectedIntervalMode === 'single' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    selection.selectedInterval.setInterval( time_PMILLIS, time_PMILLIS );
+                }
+            }
+            else if ( selectedIntervalMode === 'range' ) {
+                if ( ev.clickCount > 1 ) {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    var offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5*selection.selectedInterval.duration_MILLIS;
+                    selection.selectedInterval.pan( time_PMILLIS - offset_PMILLIS );
+                }            
+            }
+        };
+        ui.input.mouseDown.on( doubleClick );
                 
         timelinePane.dispose.on( function( ) {
             // only dispose the ui if we created it (and this manage its lifecycle)
@@ -488,26 +510,6 @@ module Webglimpse {
         // see comments in attachTimeSelectionMouseListeners( ... )
         var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
         var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
-        
-        // Enable double click to center selection on mouse
-        
-        var doubleClick = function( ev : PointerEvent ) {
-            
-            if ( selectedIntervalMode === 'single' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    interval.setInterval( time_PMILLIS, time_PMILLIS );
-                }
-            }
-            else if ( selectedIntervalMode === 'range' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
-                }            
-            }
-        };
-        input.mouseDown.on( doubleClick );
-
 
         // Hook up input notifications
         //
@@ -595,7 +597,6 @@ module Webglimpse {
             }
         };
         pane.mouseMove.on( dragStart );
-        timeAxis.limitsChanged.on( dragStart );
 
 
         // Dragging interval-end
@@ -617,7 +618,6 @@ module Webglimpse {
             }
         };
         pane.mouseMove.on( dragEnd );
-        timeAxis.limitsChanged.on( dragEnd );
 
 
         // Finish interval-drag
@@ -628,17 +628,6 @@ module Webglimpse {
             dragPointer_PMILLIS = null;
             dragMode = null;
         } );
-        
-        // Dispose
-        //
-        
-        pane.dispose.on( function( ) {
-            // mouse listeners are disposed of automatically by Pane
-            input.mouseDown.off( doubleClick );
-            timeAxis.limitsChanged.off( dragStart );
-            timeAxis.limitsChanged.off( dragEnd );
-        } );
-
     }
     
     function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
