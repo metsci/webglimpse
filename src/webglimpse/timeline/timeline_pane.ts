@@ -255,7 +255,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
         
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, axisLabelAlign: axisLabelAlign };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );

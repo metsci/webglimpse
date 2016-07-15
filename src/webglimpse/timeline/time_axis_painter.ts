@@ -49,7 +49,7 @@ module Webglimpse {
         var textColor   = ( hasval( options ) && hasval( options.textColor   ) ? options.textColor   : black       );
         var tickColor   = ( hasval( options ) && hasval( options.tickColor   ) ? options.tickColor   : black       );
         var tickSize    = ( hasval( options ) && hasval( options.tickSize    ) ? options.tickSize    : 6           );
-        var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.tickSize    : 0.5         );
+        var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.labelAlign  : 0.5         );
 
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
