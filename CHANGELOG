@@ -1,3 +1,10 @@
+Webglimpse 1.7.2-pre8 (released 2016-7-15)
+
+* Fix bug with maximized rows which broke y axis scrolling after unmaximizing.
+* Add TimelinePaneOptions.axisLabelAlign to control how date labels are centered relative to the start/end of the day on timeline.
+* Add TimelinePaneOptions.mouseWheelListener to provide an alternative listener to handle mouse wheel events on timeline.
+* Add TimelinePaneOptions.centerSelectedIntervalOnDoubleClick to control whether timeline selection centers on double clicks. 
+
 Webglimpse 1.7.2-pre7 (released 2016-7-8)
 
 * Updates to TimelineEventModel.order now properly adjust rendering order if modified after an event is added to a row.
