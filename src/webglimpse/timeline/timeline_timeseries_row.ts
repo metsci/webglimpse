@@ -96,6 +96,10 @@ module Webglimpse {
             if ( !hasval( axisOptions.textColor ) ) axisOptions.textColor = timelineFgColor;
             if ( !hasval( axisOptions.showLabel ) ) axisOptions.showLabel = true;
             if ( !hasval( axisOptions.shortenLabels ) ) axisOptions.shortenLabels = false;
+            
+            var redraw = function( ) {
+                drawable.redraw( );
+            };
 
             // setup pane for data (y) axis painter and mouse listener
             var yAxisPane = new Pane( { updatePrefSize: fixedSize( axisWidth, rowHeight ) } );
@@ -122,10 +126,6 @@ module Webglimpse {
                 var createPainter = painterFactories[ n ];
                 rowContentPane.addPainter( createPainter( drawable, timeAxis, dataAxis, model, row, ui, painterOptions ) );
             }
-
-                        var redraw = function( ) {
-                drawable.redraw( );
-            };
             
             yAxisPane.addPainter( newEdgeAxisPainter( dataAxis, Side.RIGHT, axisOptions ) );
             rowContentPane.addPane( yAxisPane, 0 );
