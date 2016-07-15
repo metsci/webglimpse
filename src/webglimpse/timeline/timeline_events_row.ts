@@ -60,10 +60,10 @@ module Webglimpse {
 
         // Pane Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
-            var rowTopPadding    = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
-            var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
-            var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
-            var painterFactories = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
+            var rowTopPadding      = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
+            var rowBottomPadding   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
+            var laneHeight         = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
+            var painterFactories   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
             var allowMultipleLanes = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.allowMultipleLanes ) ? eventsRowOpts.allowMultipleLanes : true );
 
             var timelineFont       = options.timelineFont;
@@ -188,10 +188,7 @@ module Webglimpse {
                 input.mouseDown.fire( ev );
             } );
 
-            rowContentPane.mouseWheel.on( function( ev : PointerEvent ) {
-                var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
-                timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
-            } );
+            rowContentPane.mouseWheel.on( options.mouseWheelListener );
 
             rowContentPane.contextMenu.on( function( ev : PointerEvent ) {
                 input.contextMenu.fire( ev );

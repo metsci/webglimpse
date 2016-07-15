@@ -49,13 +49,6 @@ module Webglimpse {
 
         // Misc
         font? : string;
-        // Options:
-        // 'none' or any falsy value : no time selection
-        // 'single'                  : single selected time
-        // 'range'                   : range of selected times
-        // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
-        // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
-        selectedIntervalMode? : string;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
 
         // Scroll
@@ -93,15 +86,28 @@ module Webglimpse {
         draggableEdgeWidth? : number;
         snapToDistance? : number;
         
-        // Selection
+        // Event / Selection
         allowEventMultiSelection? : boolean;
+        // Options:
+        // 'none' or any falsy value : no time selection
+        // 'single'                  : single selected time
+        // 'range'                   : range of selected times
+        // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
+        // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
+        selectedIntervalMode? : string;
+        // enable / disable centering of time selection interval on double click
+        // (this has no effect for selectedIntervalMode 'none', 'single-unmodifiable', or 'range-unmodifiable'
+        //  because mouse controls are off by default in those modes)
+        centerSelectedIntervalOnDoubleClick? : boolean;
+        // provide a custom listener callback function to modify the default behavior when the mouse
+        // scroll wheel is rotate over the timeline (default behavior is to zoom in/out in time)
+        mouseWheelListener? : ( PointerEvent ) => void;
     }
 
     export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var selectedIntervalMode   = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
     
         // Scroll
@@ -140,8 +146,15 @@ module Webglimpse {
         var draggableEdgeWidth = ( hasval( options ) && hasval( options.draggableEdgeWidth ) ? options.draggableEdgeWidth : 6   );
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
-        // Selection
-        var allowEventMultiSelection   = ( hasval( options ) && hasval( options.allowEventMultiSelection ) ? options.allowEventMultiSelection : true    );
+        // Event / Selection
+        var allowEventMultiSelection               = ( hasval( options ) && hasval( options.allowEventMultiSelection            ) ? options.allowEventMultiSelection            : true    );
+        var selectedIntervalMode                   = ( hasval( options ) && hasval( options.selectedIntervalMode                ) ? options.selectedIntervalMode                : 'range' );
+        var centerSelectedIntervalOnDoubleClick    = ( hasval( options ) && hasval( options.centerSelectedIntervalOnDoubleClick ) ? options.centerSelectedIntervalOnDoubleClick : true    );
+        var defaultMouseWheelListener = function( ev : PointerEvent ) {
+            var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
+            timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
+        }
+        var mouseWheelListener                     = ( hasval( options ) && hasval( options.mouseWheelListener                  ) ? options.mouseWheelListener : defaultMouseWheelListener);
 
         if ( !ui ) {
             var outsideManagedUi = false;
@@ -172,7 +185,7 @@ module Webglimpse {
         // Scroll Pane
         
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
         var contentPaneArgs;
         
         if ( showScrollbar ) {
@@ -308,25 +321,24 @@ module Webglimpse {
 
         // Enable double click to center selection on mouse
         
-        var doubleClick = function( ev : PointerEvent ) {
-
-console.log( 'double click' );
-
-            if ( selectedIntervalMode === 'single' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    selection.selectedInterval.setInterval( time_PMILLIS, time_PMILLIS );
+        if ( centerSelectedIntervalOnDoubleClick ) {
+            var doubleClick = function( ev : PointerEvent ) {
+                if ( selectedIntervalMode === 'single' ) {
+                    if ( ev.clickCount > 1 ) {
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        selection.selectedInterval.setInterval( time_PMILLIS, time_PMILLIS );
+                    }
                 }
-            }
-            else if ( selectedIntervalMode === 'range' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    var offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5*selection.selectedInterval.duration_MILLIS;
-                    selection.selectedInterval.pan( time_PMILLIS - offset_PMILLIS );
-                }            
-            }
-        };
-        ui.input.mouseDown.on( doubleClick );
+                else if ( selectedIntervalMode === 'range' ) {
+                    if ( ev.clickCount > 1 ) {
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        var offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5*selection.selectedInterval.duration_MILLIS;
+                        selection.selectedInterval.pan( time_PMILLIS - offset_PMILLIS );
+                    }            
+                }
+            };
+            ui.input.mouseDown.on( doubleClick );
+        }
                 
         timelinePane.dispose.on( function( ) {
             // only dispose the ui if we created it (and this manage its lifecycle)
@@ -370,7 +382,27 @@ console.log( 'double click' );
         }
     }
 
+    function attachTimeAxisMouseListeners( pane : Pane, axis : Axis1D, args : TimelineContentPaneArguments ) {
+        var vGrab : number = null;
 
+        pane.mouseDown.on( function( ev : PointerEvent ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && !hasval( vGrab ) ) {
+                vGrab = axis.vAtFrac( xFrac( ev ) );
+            }
+        } );
+
+        pane.mouseMove.on( function( ev : PointerEvent ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && hasval( vGrab ) ) {
+                axis.pan( vGrab - axis.vAtFrac( xFrac( ev ) ) );
+            }
+        } );
+
+        pane.mouseUp.on( function( ev : PointerEvent ) {
+            vGrab = null;
+        } );
+
+        pane.mouseWheel.on( args.options.mouseWheelListener );
+    }
 
     function newTimeAxisPane( args : TimelineContentPaneArguments, row : TimelineRowModel ) : Pane {       
         var timeAxis = args.timeAxis;
@@ -384,7 +416,7 @@ console.log( 'double click' );
 
         var axisPane = new Pane( newOverlayLayout( ) );
         if ( scrollLayout ) attachTimelineVerticalScrollMouseListeners( axisPane, scrollLayout, drawable );
-        attachAxisMouseListeners1D( axisPane, timeAxis, false );
+        attachTimeAxisMouseListeners( axisPane, timeAxis, args );
 
         var onMouseMove = function( ev : PointerEvent ) {
             var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( xFrac( ev ) );
@@ -840,6 +872,8 @@ console.log( 'double click' );
 
         draggableEdgeWidth : number;
         snapToDistance : number;
+
+        mouseWheelListener? : ( PointerEvent ) => void;
     }
     
     interface TimelineContentPaneArguments {
@@ -947,7 +981,7 @@ console.log( 'double click' );
                 
                 var rollupContentPane : Pane = null;
                 var rollupPaneFactory : TimelineRowPaneFactory = null;
-                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false };
+                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false, mouseWheelListener: args.options.mouseWheelListener };
                 var refreshRollupContentPane = function( ) {
                     var newRollupPaneFactory = ( rollupUi.paneFactory || rowPaneFactoryChooser( rollupRow ) );
                     if ( newRollupPaneFactory !== rollupPaneFactory ) {
@@ -1202,7 +1236,7 @@ console.log( 'double click' );
         
             var rowContentPane : Pane = null;
             var rowPaneFactory : TimelineRowPaneFactory = null;
-            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized };
+            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized, mouseWheelListener: options.mouseWheelListener };
             var refreshRowContentPane = function( ) {
                 var newRowPaneFactory = ( rowUi.paneFactory || options.rowPaneFactoryChooser( row ) );
                 if ( newRowPaneFactory !== rowPaneFactory ) {

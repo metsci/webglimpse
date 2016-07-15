@@ -224,10 +224,7 @@ module Webglimpse {
                 input.mouseDown.fire( ev );
             } );
 
-            rowContentPane.mouseWheel.on( function( ev : PointerEvent ) {
-                var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
-                timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
-            } );
+            rowContentPane.mouseWheel.on( options.mouseWheelListener );
 
             rowContentPane.contextMenu.on( function( ev : PointerEvent ) {
                 input.contextMenu.fire( ev );
