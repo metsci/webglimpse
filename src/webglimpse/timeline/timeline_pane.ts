@@ -234,7 +234,7 @@ module Webglimpse {
         timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
         timelineCardPane.addPane( contentPane, contentActive );
         
-        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true );
+        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true, 'maximized' );
         
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
@@ -270,7 +270,7 @@ module Webglimpse {
         var insetTopPinnedPane = newInsetPane( topPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
         ui.addPane( 'inset-top-pinned-pane', insetTopPinnedPane );
         
-        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false );
+        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false, 'toppinned' );
         underlayPane.addPane( insetTopPinnedPane, 1 );
 
         // main pane containing timeline groups and rows
@@ -283,7 +283,7 @@ module Webglimpse {
         var insetBottomPinnedPane = newInsetPane( bottomPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
         ui.addPane( 'inset-bottom-pinned-pane', insetBottomPinnedPane );
 
-        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false );
+        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false, 'bottompinned' );
         underlayPane.addPane( insetBottomPinnedPane, 3 );
 
         // bottom time axis pane
@@ -1065,7 +1065,7 @@ module Webglimpse {
             timelineContentPane.layoutOptions( groupContentPane ).hide = group.hidden;
             timelineContentPane.layoutOptions( groupHeaderPane ).hide = group.hidden;
 
-            setupRowContainerPane( args, groupContentPane, group.rowGuids, false );
+            setupRowContainerPane( args, groupContentPane, group.rowGuids, false, group.groupGuid );
             
             groupContentPane.dispose.on( function( ) {
                 group.attrsChanged.off( redrawLabel );
@@ -1179,7 +1179,7 @@ module Webglimpse {
         return { rowInsetPane : rowInsetPane, rowBackgroundPane : rowBackgroundPane };
     }
     
-    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean ) {
+    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean, keyPrefix : string ) {
         
         var drawable = args.drawable;
         var scrollLayout = args.scrollLayout;
@@ -1224,13 +1224,11 @@ module Webglimpse {
             rowPane.addPane( rowHeaderPane, 0, { width: options.rowLabelPaneWidth } );
             rowPane.addPane( rowBackgroundPane, 1, { width: null } );
         
-            var keyPrefix = isMaximized ? 'maximized-' : '';
-            
             // expose panes in api via TimelineRowUi
-            rowUi.addPane( keyPrefix+'background', rowBackgroundPane );
-            rowUi.addPane( keyPrefix+'inset', rowInsetPane );
-            rowUi.addPane( keyPrefix+'label', rowLabelPane );
-            rowUi.addPane( keyPrefix+'header', rowHeaderPane );
+            rowUi.addPane( keyPrefix+'-background', rowBackgroundPane );
+            rowUi.addPane( keyPrefix+'-inset', rowInsetPane );
+            rowUi.addPane( keyPrefix+'-label', rowLabelPane );
+            rowUi.addPane( keyPrefix+'-header', rowHeaderPane );
             
             var rowDataAxis = row.dataAxis;
         
@@ -1284,10 +1282,10 @@ module Webglimpse {
                 row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
                 row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
                 
-                rowUi.removePane( keyPrefix+'background' );
-                rowUi.removePane( keyPrefix+'inset' );
-                rowUi.removePane( keyPrefix+'label' );
-                rowUi.removePane( keyPrefix+'header' );
+                rowUi.removePane( keyPrefix+'-background' );
+                rowUi.removePane( keyPrefix+'-inset' );
+                rowUi.removePane( keyPrefix+'-label' );
+                rowUi.removePane( keyPrefix+'-header' );
             } );
         };
         guidList.forEach( addRow );
