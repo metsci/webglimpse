@@ -243,27 +243,28 @@ module Webglimpse {
         
         // Toggle row maximize by double clicking on row label
         
-        // add listener for new TimelineRowUi
+        //add listener for new TimelineRowUi
         ui.rowUis.valueAdded.on( function ( rowUi : TimelineRowUi ) {
             // add listener for new Panes
-            rowUi.panes.valueAdded.on( function ( pane : Pane ) {
-                // test if the new Pane is the row label Pane
-                if ( rowUi.getPane( 'label' ) === pane ) {
-                     // add a mouse listener to the row label Pane
-                    pane.mouseDown.on( function( event : PointerEvent ) {
-                        if ( event.clickCount === 2 ) {
-                            // maximize the double clicked row
-                            model.root.maximizedRowGuids.add( rowUi.rowGuid );
-                        }
-                    } );
-                }
-                // test if the new Pane is the maximized row label Pane
-                else if ( rowUi.getPane( 'maximized-label' ) === pane ) {
+            rowUi.panes.valueAdded.on( function ( pane : Pane, index : number ) {
+                var id = rowUi.panes.idAt( index );
+                // test if the new Pane is a maximized row label pane
+                if ( id === 'maximized-label' ) {
                      // add a mouse listener to the maximized row label Pane
                     pane.mouseDown.on( function( event : PointerEvent ) {
                         if ( event.clickCount === 2 ) {
                             // minimize the double clicked row
                             model.root.maximizedRowGuids.removeValue( rowUi.rowGuid );
+                        }
+                    } );
+                }
+                // test if the new Pane is a label pane (id ends with '-label')
+                else if ( id.search( '-label$' ) !== -1 ) {
+                     // add a mouse listener to the row label Pane
+                    pane.mouseDown.on( function( event : PointerEvent ) {
+                        if ( event.clickCount === 2 ) {
+                            // maximize the double clicked row
+                            model.root.maximizedRowGuids.add( rowUi.rowGuid );
                         }
                     } );
                 }
