@@ -76,6 +76,12 @@ module Webglimpse {
         tickSpacing? : number;
         axisLabelAlign? : number;
 
+        // date in time_ISO8601 format (see util.ts:parseTime_PMILLIS)
+        // that time labels on the timeline should be referenced from
+        // (i.e. Day 1, Day 2...)
+        // (if not provided, timeline labels will be in absolute time)
+        referenceDate? : string;
+
         // Sizing
         groupLabelInsets? : Insets;
         rowLabelInsets? : Insets;
@@ -185,7 +191,7 @@ module Webglimpse {
         // Scroll Pane
         
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
         var contentPaneArgs;
         
         if ( showScrollbar ) {
@@ -255,7 +261,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
         
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );
@@ -864,6 +870,7 @@ module Webglimpse {
 
         gridTimeZone : string;
         gridTickSpacing : number;
+        referenceDate : string;
 
         groupLabelInsets : Insets;
         rowLabelInsets : Insets;
@@ -873,7 +880,7 @@ module Webglimpse {
         draggableEdgeWidth : number;
         snapToDistance : number;
 
-        mouseWheelListener? : ( PointerEvent ) => void;
+        mouseWheelListener : ( PointerEvent ) => void;
     }
     
     interface TimelineContentPaneArguments {
@@ -1162,7 +1169,7 @@ module Webglimpse {
         var rowBackgroundPane = newTimeAxisPane( args, row );
         rowBackgroundPane.addPainter( newRowBackgroundPainter( args, guidList, row ) );
     
-        var timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor };
+        var timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor, referenceDate: args.options.referenceDate };
         rowBackgroundPane.addPainter( newTimeGridPainter( args.timeAxis, false, args.options.gridTimeZone, timeGridOpts ) );
     
         var rowInsetTop = args.options.rowSeparatorHeight/2;
