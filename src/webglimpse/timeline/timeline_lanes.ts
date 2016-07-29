@@ -517,7 +517,8 @@ module Webglimpse {
         }
         
         update( event : TimelineEventModel ) {
-            // no action is necessary since we don't maintain any time indexed data structures
+            this.remove( event );
+            this.add( event );
         }
         
         collisionsWithInterval( start_PMILLIS : number, end_PMILLIS : number ) : TimelineEventModel[] {

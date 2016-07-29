@@ -29,16 +29,14 @@
  */
 module Webglimpse {
 
-
     export interface TimelineRowPaneOptions {
         timelineFont : string;
         timelineFgColor : Color;
         draggableEdgeWidth : number;
         snapToDistance : number;
         isMaximized : boolean;
+        mouseWheelListener? : ( PointerEvent ) => void;
     }
-
-
 
     export interface TimelineRowPaneFactory {
         ( drawable : Drawable,
@@ -50,11 +48,7 @@ module Webglimpse {
           options : TimelineRowPaneOptions ) : Pane;
     }
 
-
-
     export interface TimelineRowPaneFactoryChooser {
         ( row : TimelineRowModel ) : TimelineRowPaneFactory;
     }
-
-
 }

@@ -60,10 +60,10 @@ module Webglimpse {
 
         // Pane Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
-            var rowTopPadding    = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
-            var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
-            var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
-            var painterFactories = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
+            var rowTopPadding      = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
+            var rowBottomPadding   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
+            var laneHeight         = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
+            var painterFactories   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
             var allowMultipleLanes = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.allowMultipleLanes ) ? eventsRowOpts.allowMultipleLanes : true );
 
             var timelineFont       = options.timelineFont;
@@ -188,10 +188,7 @@ module Webglimpse {
                 input.mouseDown.fire( ev );
             } );
 
-            rowContentPane.mouseWheel.on( function( ev : PointerEvent ) {
-                var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
-                timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
-            } );
+            rowContentPane.mouseWheel.on( options.mouseWheelListener );
 
             rowContentPane.contextMenu.on( function( ev : PointerEvent ) {
                 input.contextMenu.fire( ev );
@@ -539,17 +536,140 @@ module Webglimpse {
         };
     }
 
+    export interface TimelineEventLimitsPainterOptions {
+        lineColor? : Color;
+        lineThickness? : number;
+    }
 
+    function eventLimitsPainterHelper( limitsOpts : TimelineEventLimitsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
 
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
 
+        var lineColor               = ( hasval( limitsOpts ) && hasval( limitsOpts.lineColor          ) ? limitsOpts.lineColor        : new Color( 1, 0, 0, 1 ) );
+        var lineThickness           = ( hasval( limitsOpts ) && hasval( limitsOpts.lineThickness      ) ? limitsOpts.lineThickness    : 2.5 );
+        
+        var xyFrac_vColor_VERTSHADER = concatLines(
+            '                                                                ',
+            '  attribute vec2 a_XyFrac;                                      ',
+            '  attribute vec4 a_Color;                                       ',
+            '                                                                ',
+            '  varying vec4 v_Color;                                         ',
+            '                                                                ',
+            '  void main( ) {                                                ',
+            '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
+            '      v_Color = a_Color;                                        ',
+            '  }                                                             ',
+            '                                                                '
+        );
+
+        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var a_Color = new Attribute( program, 'a_Color' );
+        
+        var xys = new Float32Array( 0 );
+        var xysBuffer = newDynamicBuffer( );
+
+        var rgbas = new Float32Array( 0 );
+        var rgbasBuffer = newDynamicBuffer( );
+        
+        return {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                if ( indexXys > 0 ) {
+                    gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                    gl.enable( GL.BLEND );
+                    
+                    program.use( gl );
+                    xysBuffer.setData( xys.subarray( 0, indexXys ) );
+                    a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                    rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
+                    a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
+    
+                    gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
+    
+                    a_Color.disable( gl );
+                    a_XyFrac.disable( gl );
+                    program.endUse( gl );
+                }
+            },
+            ensureCapacity: function( eventCount : number ) {
+                var numVertices =  ( 6 * 3 /* triangles */ * eventCount );
+                xys = ensureCapacityFloat32( xys, 2*numVertices );
+                rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
+            },
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+                
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+                
+                var wLine = lineThickness / viewport.w;
+                var hLine = lineThickness / viewport.h;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight;
+                var yTop = ( viewport.h - jTop ) / viewport.h;
+                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight;
+                var yBottom =  ( viewport.h - jBottom ) / viewport.h;
+                var yMid = ( yTop + yBottom ) / 2;
+                
+                var xLeft  = hasval( event.startLimit_PMILLIS ) ? timeAxis.tFrac( event.startLimit_PMILLIS ) : 0;
+                var xRight = hasval( event.endLimit_PMILLIS )   ? timeAxis.tFrac( event.endLimit_PMILLIS )   : 1;
+                
+                indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
+                indexXys = putQuadXys( xys, indexXys, xLeft, xLeft-wLine, yTop, yBottom );
+                indexXys = putQuadXys( xys, indexXys, xRight, xRight+wLine, yTop, yBottom );
+                indexRgbas = putRgbas( rgbas, indexRgbas, lineColor, 18 );
+                
+                return { indexXys : indexXys, indexRgbas : indexRgbas };
+            }
+        };
+    }
+    
+    export function newEventLimitsPainterFactory( limitOpts? : TimelineEventLimitsPainterOptions ) : TimelineEventsPainterFactory {
+
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
+            
+            var helper = eventLimitsPainterHelper( limitOpts, drawable, timeAxis, lanes, ui, options );
+
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                
+                var selectedEvents : OrderedSet<TimelineEventModel> = ui.selection.selectedEvents;
+                
+                //XXX Instead of estimating the number of events we will need to draw ahead of time
+                //XXX (difficult because selected events may be present in multiple lanes, so
+                //XXX selectedEvents.length might not be sufficient) just make enough space for all events.
+                //XXX Potentially quite inefficient with lots of events (and few selected events).
+                helper.ensureCapacity( lanes.numEvents );
+
+                var indexXys = 0;
+                var indexRgbas = 0;
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        
+                        // check whether the event is selected and has limits defined
+                        if ( selectedEvents.hasId( event.eventGuid ) && ( hasval( event.startLimit_PMILLIS ) || hasval( event.endLimit_PMILLIS ) ) ) {
+                            var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
+                            indexXys = indexes.indexXys;
+                            indexRgbas = indexes.indexRgbas;
+                        }
+                    }
+                }
+                
+                helper.paint( indexXys, indexRgbas, gl, viewport );
+            };
+        };
+    }
 
 
     export enum JointType {
         BEVEL, MITER
     }
-
-
-
+    
     export interface TimelineEventBarsPainterOptions {
         topMargin? : number;
         bottomMargin? : number;
@@ -564,7 +684,6 @@ module Webglimpse {
         // is smaller than this visible width, the event bar is hidden
         minimumVisibleWidth? : number;
     }
-
     
     function eventBarPainterHelper( barOpts : TimelineEventBarsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
         var rowTopPadding    = options.rowTopPadding;

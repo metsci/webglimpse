@@ -97,9 +97,13 @@ module Webglimpse {
             if ( !hasval( axisOptions.showLabel ) ) axisOptions.showLabel = true;
             if ( !hasval( axisOptions.shortenLabels ) ) axisOptions.shortenLabels = false;
             
+            var redraw = function( ) {
+                drawable.redraw( );
+            };
+
             // setup pane for data (y) axis painter and mouse listener
             var yAxisPane = new Pane( { updatePrefSize: fixedSize( axisWidth, rowHeight ) } );
-            dataAxis.limitsChanged.on( drawable.redraw );
+            dataAxis.limitsChanged.on( redraw );
             attachAxisMouseListeners1D( yAxisPane, dataAxis, true );
             
             // add listener to update the height of the row if the rowHeight attribute changes
@@ -132,10 +136,6 @@ module Webglimpse {
             rowUi.addPane( keyPrefix+'overlay', overlayPane );
             rowUi.addPane( keyPrefix+'underlay', underlayPane );
             rowUi.addPane( keyPrefix+'y-axis', yAxisPane );
-            
-            var redraw = function( ) {
-                drawable.redraw( );
-            };
 
             row.timeseriesGuids.valueAdded.on( redraw );
             row.timeseriesGuids.valueMoved.on( redraw );
@@ -224,10 +224,7 @@ module Webglimpse {
                 input.mouseDown.fire( ev );
             } );
 
-            rowContentPane.mouseWheel.on( function( ev : PointerEvent ) {
-                var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
-                timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
-            } );
+            rowContentPane.mouseWheel.on( options.mouseWheelListener );
 
             rowContentPane.contextMenu.on( function( ev : PointerEvent ) {
                 input.contextMenu.fire( ev );
@@ -436,7 +433,7 @@ module Webglimpse {
                 rowUi.removePane( keyPrefix+'underlay' );
                 rowUi.removePane( keyPrefix+'y-axis' );
                 
-                dataAxis.limitsChanged.off( drawable.redraw );
+                dataAxis.limitsChanged.off( redraw );
                 
                 row.timeseriesGuids.valueAdded.off( redraw );
                 row.timeseriesGuids.valueMoved.off( redraw );

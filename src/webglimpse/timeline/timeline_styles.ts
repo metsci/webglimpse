@@ -40,8 +40,9 @@ module Webglimpse {
     ];
     
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {
-        rowHeight: 135,
+        laneHeight: 135,
         painterFactories: [
+            newEventLimitsPainterFactory( ),
             newEventBarsPainterFactory( ),
             newEventIconsPainterFactory( ),
             newEventLabelsPainterFactory( {
@@ -76,7 +77,12 @@ module Webglimpse {
         rowTopPadding: 0,
         rowBottomPadding: 0,
         laneHeight: 23,
+        allowMultipleLanes: true,
         painterFactories: [
+            newEventLimitsPainterFactory( {
+                lineColor: new Color( 1, 0, 0, 1 ),
+                lineThickness: 2
+            } ),
             newEventBarsPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
@@ -95,6 +101,7 @@ module Webglimpse {
                 rightMargin: 2,
                 vAlign: 0.0,
                 spacing: 2,
+                forceVisible: false,
                 extendBeyondBar: true
             } )
         ]
@@ -117,9 +124,11 @@ module Webglimpse {
         rowBottomPadding: 0,
         laneHeight: 23,
         allowMultipleLanes: false,
-        forceVisible: true,
-        
         painterFactories: [
+            newEventLimitsPainterFactory( {
+                lineColor: new Color( 1, 0, 0, 1 ),
+                lineThickness: 2
+            } ),
             newCombinedEventPainterFactory( 
                 {
                     bottomMargin: 0,
@@ -134,6 +143,7 @@ module Webglimpse {
                     rightMargin: 2,
                     vAlign: 0.0,
                     spacing: 2,
+                    forceVisible: true
                 },
                 {
                     bottomMargin: 0,
