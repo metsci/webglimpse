@@ -1,6 +1,8 @@
 {
+    "compileOnSave": true,
     "compilerOptions": {
-        "target": "es5"
+        "target": "es5",
+        "sourceRoot": "."
     },
     "exclude": [
         "node_modules",
