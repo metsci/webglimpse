@@ -39,6 +39,8 @@ module Webglimpse {
         textColor?   : Color;
         tickColor?   : Color;
         tickSize?    : number;
+        labelAlign?  : number;
+        referenceDate? : string;
     }
 
 
@@ -48,6 +50,8 @@ module Webglimpse {
         var textColor   = ( hasval( options ) && hasval( options.textColor   ) ? options.textColor   : black       );
         var tickColor   = ( hasval( options ) && hasval( options.tickColor   ) ? options.tickColor   : black       );
         var tickSize    = ( hasval( options ) && hasval( options.tickSize    ) ? options.tickSize    : 6           );
+        var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.labelAlign  : 0.5         );
+        var referenceDate_PMILLIS = ( hasval( options ) && hasval( options.referenceDate  ) ? parseTime_PMILLIS( options.referenceDate )  : undefined );
 
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
@@ -66,7 +70,7 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, tickTimeZone );
+            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, tickTimeZone, referenceDate_PMILLIS );
             var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
             var tickCount = tickTimes_PMILLIS.length;
 
@@ -99,40 +103,14 @@ module Webglimpse {
             marksProgram_a_VCoord.disable( gl );
             marksProgram.endUse( gl );
 
+            gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+            gl.enable( GL.BLEND );
+
 
             // Tick labels
             //
 
-            gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
-            gl.enable( GL.BLEND );
-
-            var tickFormat : string;
-            var prefixFormat : string;
-            var timeStructFactory : TimeStructFactory;
-
-            if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
-                tickFormat = 'mm:ss';
-                prefixFormat = 'D MMM HH:00';
-                timeStructFactory = function( ) : TimeStruct { return new HourStruct( ) };
-            }
-            else if ( tickInterval_MILLIS <= hoursToMillis( 12 ) ) {
-                tickFormat = 'HH:mm';
-                prefixFormat = 'D MMM YYYY';
-                timeStructFactory = function( ) : TimeStruct { return new DayStruct( ) };
-            }
-            else if ( tickInterval_MILLIS <= daysToMillis( 10 ) ) {
-                tickFormat = 'D';
-                prefixFormat = 'MMM YYYY';
-                timeStructFactory = function( ) : TimeStruct { return new MonthStruct( ) };
-            }
-            else if ( tickInterval_MILLIS <= daysToMillis( 60 ) ) {
-                tickFormat = 'MMM';
-                prefixFormat = 'YYYY';
-                timeStructFactory = function( ) : TimeStruct { return new YearStruct( ) };
-            }
-            else {
-                tickFormat = 'YYYY';
-            }
+            var ticks : TickDisplayData = getTickDisplayData( tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone );
 
             textTextures.resetTouches( );
             textureRenderer.begin( gl, viewport );
@@ -142,7 +120,7 @@ module Webglimpse {
                 var tFrac = timeAxis.tFrac( tickTime_PMILLIS );
                 if ( tFrac < 0 || tFrac >= 1 ) continue;
 
-                var tickLabel : string = moment( tickTime_PMILLIS ).zone( displayTimeZone ).format( tickFormat );
+                var tickLabel : string = ticks.tickFormat( tickTime_PMILLIS );
                 var textTexture = textTextures.value( tickLabel );
 
                 var xFrac : number;
@@ -180,16 +158,16 @@ module Webglimpse {
             // Axis label
             //
 
-            if ( timeStructFactory ) {
-                var timeStructs = createTimeStructs( timeAxis, timeStructFactory, tickTimeZone, tickTimes_PMILLIS );
+            if ( ticks.timeStructFactory ) {
+                var timeStructs = createTimeStructs( timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
                 for ( var n = 0 ; n < timeStructs.length ; n++ ) {
                     var timeStruct = timeStructs[ n ];
-                    var text = moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( prefixFormat );
+                    var text = ticks.prefixFormat( timeStruct );;
                     var textTexture = textTextures.value( text );
 
                     var halfTextFrac = 0.5 * textTexture.w / viewport.w;
-                    var minFrac = timeAxis.tFrac( timeStruct.start_PMILLIS ) + halfTextFrac;
-                    var maxFrac = timeAxis.tFrac( timeStruct.end_PMILLIS ) - halfTextFrac;
+                    var minFrac = timeAxis.tFrac( timeStruct.start_PMILLIS ) - halfTextFrac;
+                    var maxFrac = timeAxis.tFrac( timeStruct.end_PMILLIS ) + halfTextFrac;
                     var tFrac = clamp( minFrac, maxFrac, timeAxis.tFrac( timeStruct.textCenter_PMILLIS ) );
                     if ( tFrac-halfTextFrac < 0 || tFrac+halfTextFrac > 1 ) continue;
 
@@ -226,6 +204,148 @@ module Webglimpse {
         }
     }
 
+    function getTickDisplayData( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, displayTimeZone : string ) : TickDisplayData {
+        if ( hasval( referenceDate_PMILLIS ) ) {
+            return getTickDisplayDataRelative( tickInterval_MILLIS, referenceDate_PMILLIS );
+        }
+        else {
+            return getTickDisplayDataAbsolute( tickInterval_MILLIS, displayTimeZone );
+        }
+    }
+
+    function getTickDisplayDataRelative( tickInterval_MILLIS : number, referenceDate_PMILLIS : number ) : TickDisplayData {
+        if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
+            var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
+                var elapsedTime_MILLIS     = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
+                var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
+                var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
+                var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
+                var elapsedTime_MIN         = ( elapsedTime_HOURS - elapsedTime_HOURS_WHOLE ) * 60;
+                var elapsedTime_MIN_WHOLE   = Math.floor( elapsedTime_MIN );
+                var elapsedTime_SEC         = ( elapsedTime_MIN - elapsedTime_MIN_WHOLE ) * 60;
+                // use round() here instead of floor() because we always expect ticks to be on even second
+                // boundaries but rounding error will cause us to be somewhat unpredictably above or below
+                // the nearest even second boundary
+                var elapsedTime_SEC_WHOLE   = Math.round( elapsedTime_SEC );
+                // however the above fails when we round up to a whole minute, so special case that
+                if ( elapsedTime_SEC_WHOLE >= 60 )
+                {
+                    elapsedTime_SEC_WHOLE -= 60;
+                    elapsedTime_MIN_WHOLE += 1;
+                }
+
+                var min : string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
+                var sec : string = elapsedTime_SEC_WHOLE < 10 ? '0' + elapsedTime_SEC_WHOLE : '' + elapsedTime_SEC_WHOLE;
+
+                return min + ':' + sec;
+            };
+
+            var prefixFormat = function( timeStruct : TimeStruct ) : string {
+                var elapsedTime_MILLIS      = timeStruct.start_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
+                var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
+                var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
+                var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
+
+                return 'Day ' + elapsedTime_DAYS_WHOLE + ' Hour ' + elapsedTime_HOURS_WHOLE;
+            };
+
+            var timeStructFactory = function( ) : TimeStruct { return new TimeStruct( ) };
+        }
+        else if ( tickInterval_MILLIS <= hoursToMillis( 12 ) ) {
+            var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
+                var elapsedTime_MILLIS     = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
+                var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
+                var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
+                var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
+                var elapsedTime_MIN         = ( elapsedTime_HOURS - elapsedTime_HOURS_WHOLE ) * 60;
+                // use round() here instead of floor() because we always expect ticks to be on even minute
+                // boundaries but rounding error will cause us to be somewhat unpredictably above or below
+                // the nearest even minute boundary
+                var elapsedTime_MIN_WHOLE   = Math.round( elapsedTime_MIN );
+                // however the above fails when we round up to a whole hour, so special case that
+                if ( elapsedTime_MIN_WHOLE >= 60 )
+                {
+                    elapsedTime_MIN_WHOLE -= 60;
+                    elapsedTime_HOURS_WHOLE += 1;
+                }
+
+                var hour : string = elapsedTime_HOURS_WHOLE < 10 ? '0' + elapsedTime_HOURS_WHOLE : '' + elapsedTime_HOURS_WHOLE;
+                var min : string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
+
+                return hour + ':' + min;
+            };
+
+            var prefixFormat = function( timeStruct : TimeStruct ) : string {
+                var elapsedTime_MILLIS = timeStruct.start_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_DAYS = Math.floor( millisToDays( elapsedTime_MILLIS ) );
+                return 'Day ' + elapsedTime_DAYS;
+            };
+
+            var timeStructFactory = function( ) : TimeStruct { return new TimeStruct( ) };
+        }
+        else {
+            var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
+                var elapsedTime_MILLIS = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_DAYS = Math.floor( millisToDays( elapsedTime_MILLIS ) );
+                return '' + elapsedTime_DAYS;
+            };
+        }
+
+        return { prefixFormat: prefixFormat, tickFormat: tickFormat, timeStructFactory:timeStructFactory };
+    }
+
+    function getTickDisplayDataAbsolute( tickInterval_MILLIS : number, displayTimeZone : string ) : TickDisplayData {
+
+        var defaultTickFormat = function( format : string ) : TickFormat { return function( tickTime_PMILLIS : number ) : string { return moment( tickTime_PMILLIS ).zone( displayTimeZone ).format( format ) } };
+        var defaultPrefixFormat = function( format : string ) : PrefixFormat { return function( timeStruct : TimeStruct ) : string { return moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( format ) } };
+
+        if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
+            var tickFormat = defaultTickFormat( 'mm:ss' );
+            var prefixFormat = defaultPrefixFormat( 'D MMM HH:00' );
+            var timeStructFactory = function( ) : TimeStruct { return new HourStruct( ) };
+        }
+        else if ( tickInterval_MILLIS <= hoursToMillis( 12 ) ) {
+            var tickFormat = defaultTickFormat( 'HH:mm' );
+            var prefixFormat = defaultPrefixFormat( 'D MMM YYYY' );
+            var timeStructFactory = function( ) : TimeStruct { return new DayStruct( ) };
+        }
+        else if ( tickInterval_MILLIS <= daysToMillis( 10 ) ) {
+            var tickFormat = defaultTickFormat( 'D' );
+            var prefixFormat = defaultPrefixFormat( 'MMM YYYY' );
+            var timeStructFactory = function( ) : TimeStruct { return new MonthStruct( ) };
+        }
+        else if ( tickInterval_MILLIS <= daysToMillis( 60 ) ) {
+            var tickFormat = defaultTickFormat( 'MMM' );
+            var prefixFormat = defaultPrefixFormat( 'YYYY' );
+            var timeStructFactory = function( ) : TimeStruct { return new YearStruct( ) };
+        }
+        else {
+            var tickFormat = defaultTickFormat( 'YYYY' );
+        }
+
+        return { prefixFormat: prefixFormat, tickFormat: tickFormat, timeStructFactory:timeStructFactory };
+    }
+
+    interface TickDisplayData {
+        prefixFormat : PrefixFormat;
+        tickFormat : TickFormat;
+        timeStructFactory : TimeStructFactory;
+    }
+
+    interface PrefixFormat {
+        ( timeStruct : TimeStruct ) : string;
+    }
+
+    interface TickFormat {
+        ( tickTime_PMILLIS : number ) : string;
+    }
+
+    interface TimeStructFactory {
+        ( ): TimeStruct;
+    }
 
     class TimeStruct {
         public start_PMILLIS : number;
@@ -304,13 +424,96 @@ module Webglimpse {
         }
     }
 
+    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+        if ( hasval( referenceDate_PMILLIS ) ) {
+            var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
 
-    interface TimeStructFactory {
-        ( ): TimeStruct;
+            if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
+                return createTimeStructsRelativeHours( timeAxis, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
+            }
+            else {
+                return createTimeStructsRelativeDays( timeAxis, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
+            }
+        }
+        else {
+            return createTimeStructsAbsolute( timeAxis, factory, timeZone, tickTimes_PMILLIS, labelAlign );
+        }
     }
 
 
-    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, tickTimes_PMILLIS : number[] ) : TimeStruct[] {
+    function createTimeStructsRelativeHours( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+
+        var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+        var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+
+        var timeStructs : TimeStruct[] = [];
+        var maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
+
+        var previous_HOURS = null;
+
+        for ( var n = 0; n < tickTimes_PMILLIS.length; n++ ) {
+
+            var elapsedTime_MILLIS      = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
+            var elapsedTime_HOURS       = millisToHours( elapsedTime_MILLIS );
+            var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
+
+            if ( hasval( previous_HOURS ) && elapsedTime_HOURS_WHOLE === previous_HOURS ) continue;
+            previous_HOURS = elapsedTime_HOURS_WHOLE;
+
+            var timeStruct = new TimeStruct( );
+
+            timeStruct.start_PMILLIS = hoursToMillis( elapsedTime_HOURS_WHOLE ) + referenceDate_PMILLIS;
+            timeStruct.end_PMILLIS = hoursToMillis( 1 ) + timeStruct.start_PMILLIS;
+            timeStruct.viewStart_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMin_PMILLIS );
+            timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
+
+            maxViewDuration_MILLIS = Math.max( maxViewDuration_MILLIS, timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS );
+            
+            timeStructs.push( timeStruct );
+        }
+
+         setTimeStructTextCenter( timeStructs, labelAlign, maxViewDuration_MILLIS );
+
+        return timeStructs;
+    }
+
+    function createTimeStructsRelativeDays( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+
+        var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+        var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+
+        var timeStructs : TimeStruct[] = [];
+        var maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
+
+        var previous_DAYS = null;
+
+        for ( var n = 0; n < tickTimes_PMILLIS.length; n++ ) {
+
+            var elapsedTime_MILLIS      = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
+            var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
+            var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
+
+            if ( hasval( previous_DAYS ) && elapsedTime_DAYS_WHOLE === previous_DAYS ) continue;
+            previous_DAYS = elapsedTime_DAYS_WHOLE;
+
+            var timeStruct = new TimeStruct( );
+
+            timeStruct.start_PMILLIS = daysToMillis( elapsedTime_DAYS_WHOLE ) + referenceDate_PMILLIS;
+            timeStruct.end_PMILLIS = daysToMillis( 1 ) + timeStruct.start_PMILLIS;
+            timeStruct.viewStart_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMin_PMILLIS );
+            timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
+
+            maxViewDuration_MILLIS = Math.max( maxViewDuration_MILLIS, timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS );
+            
+            timeStructs.push( timeStruct );
+        }
+
+         setTimeStructTextCenter( timeStructs, labelAlign, maxViewDuration_MILLIS );
+
+        return timeStructs;
+    }
+
+    function createTimeStructsAbsolute( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
@@ -340,20 +543,71 @@ module Webglimpse {
             timeStructs.push( timeStruct );
         }
 
-        for ( var n = 0; n < timeStructs.length; n++ ) {
-            var timeStruct = timeStructs[ n ];
-            var duration_MILLIS = timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS;
-            var midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + 0.5*duration_MILLIS;
-            var edge_PMILLIS = ( timeStruct.viewStart_PMILLIS === timeStruct.start_PMILLIS ? timeStruct.viewEnd_PMILLIS : timeStruct.viewStart_PMILLIS );
-            var edginess = 1 - clamp( 0, 1, duration_MILLIS / maxViewDuration_MILLIS );
-            timeStruct.textCenter_PMILLIS = midpoint_PMILLIS + edginess*( edge_PMILLIS - midpoint_PMILLIS );
-        }
+        setTimeStructTextCenter( timeStructs, labelAlign, maxViewDuration_MILLIS );
 
         return timeStructs;
     }
 
+    function setTimeStructTextCenter( timeStructs : TimeStruct[], labelAlign : number, maxViewDuration_MILLIS : number ) {
+        for ( var n = 0; n < timeStructs.length; n++ ) {
+            var timeStruct = timeStructs[ n ];
+            var duration_MILLIS = timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS;
+            var midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + labelAlign*duration_MILLIS;
+            var edge_PMILLIS = ( timeStruct.viewStart_PMILLIS === timeStruct.start_PMILLIS ? timeStruct.viewEnd_PMILLIS : timeStruct.viewStart_PMILLIS );
+            var edginess = 1 - clamp( 0, 1, duration_MILLIS / maxViewDuration_MILLIS );
+            timeStruct.textCenter_PMILLIS = midpoint_PMILLIS + edginess*( edge_PMILLIS - midpoint_PMILLIS );
+        }
+    }
 
-    export function getTickTimes_PMILLIS( timeAxis : TimeAxis1D, sizePixels : number, tickSpacing : number, timeZone : string ) : number[] {
+    export function getTickTimes_PMILLIS( timeAxis : TimeAxis1D, sizePixels : number, tickSpacing : number, timeZone : string, referenceDate_PMILLIS : number ) : number[] {
+        if ( hasval( referenceDate_PMILLIS ) ) {
+            return getTickTimesRelative_PMILLIS( timeAxis, sizePixels, tickSpacing, referenceDate_PMILLIS );
+        }
+        else
+        {
+            return getTickTimesAbsolute_PMILLIS( timeAxis, sizePixels, tickSpacing, timeZone );
+        }
+    }
+
+    function getTickTimesRelative_PMILLIS( timeAxis : TimeAxis1D, sizePixels : number, tickSpacing : number, referenceDate_PMILLIS : number ) : number[] {
+        
+        var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+        var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+        var approxTickInterval_MILLIS = tickSpacing * ( dMax_PMILLIS - dMin_PMILLIS ) / sizePixels;
+
+        if ( approxTickInterval_MILLIS < daysToMillis( 1 ) ) {
+            return getHourTickTimesRelative_PMILLIS( dMin_PMILLIS, dMax_PMILLIS, approxTickInterval_MILLIS, referenceDate_PMILLIS );
+        }
+        else {
+            return getDayTickTimesRelative_PMILLIS( dMin_PMILLIS, dMax_PMILLIS, sizePixels, tickSpacing, referenceDate_PMILLIS );
+        }
+    }
+
+    function getHourTickTimesRelative_PMILLIS( dMin_PMILLIS : number, dMax_PMILLIS : number, approxTickInterval_MILLIS : number, referenceDate_PMILLIS : number ) : number[] {
+        var tickTimes = getHourTickTimes_PMILLIS( dMin_PMILLIS - referenceDate_PMILLIS, dMax_PMILLIS - referenceDate_PMILLIS, approxTickInterval_MILLIS, 0 );
+    
+        for ( var n = 0; n < tickTimes.length; n++ ) {
+            tickTimes[n] = tickTimes[n] + referenceDate_PMILLIS;
+        }
+
+        return tickTimes;
+    }
+
+    function getDayTickTimesRelative_PMILLIS( dMin_PMILLIS : number, dMax_PMILLIS : number, sizePixels : number, tickSpacing : number, referenceDate_PMILLIS : number ) : number[] {
+        var axis = new Axis1D( millisToDays( dMin_PMILLIS - referenceDate_PMILLIS ), millisToDays( dMax_PMILLIS - referenceDate_PMILLIS ) );
+        var approxNumTicks = sizePixels / tickSpacing;
+        var tickInterval = getTickInterval( axis, approxNumTicks );
+        var tickCount = getTickCount( axis, tickInterval );
+        var tickPositions = new Float32Array( tickCount );
+        getTickPositions( axis, tickInterval, tickCount, tickPositions );
+        var tickTimes_PMILLIS = <number[]> [ ];
+        for ( var n = 0; n < tickCount; n++ ) {
+            tickTimes_PMILLIS.push( daysToMillis( tickPositions[n] ) + referenceDate_PMILLIS );
+        }
+        return tickTimes_PMILLIS;
+    }
+
+    function getTickTimesAbsolute_PMILLIS( timeAxis : TimeAxis1D, sizePixels : number, tickSpacing : number, timeZone : string ) : number[] {
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 

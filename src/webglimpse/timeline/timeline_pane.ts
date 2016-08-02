@@ -49,19 +49,16 @@ module Webglimpse {
 
         // Misc
         font? : string;
-        // Options:
-        // 'none' or any falsy value : no time selection
-        // 'single'                  : single selected time
-        // 'range'                   : range of selected times
-        // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
-        // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
-        selectedIntervalMode? : string;
-        scrollbarOptions? : ScrollbarOptions;
         rowPaneFactoryChooser? : TimelineRowPaneFactoryChooser;
 
+        // Scroll
+        showScrollbar? : boolean;
+        scrollbarOptions? : ScrollbarOptions;
+        
         // Colors
         fgColor? : Color;
         rowLabelColor? : Color;
+        rowLabelBgColor? : Color;
         groupLabelColor? : Color;
         axisLabelColor? : Color;
         bgColor? : Color;
@@ -77,6 +74,13 @@ module Webglimpse {
         topTimeZone? : string;
         bottomTimeZone? : string;
         tickSpacing? : number;
+        axisLabelAlign? : number;
+
+        // date in time_ISO8601 format (see util.ts:parseTime_PMILLIS)
+        // that time labels on the timeline should be referenced from
+        // (i.e. Day 1, Day 2...)
+        // (if not provided, timeline labels will be in absolute time)
+        referenceDate? : string;
 
         // Sizing
         groupLabelInsets? : Insets;
@@ -87,22 +91,42 @@ module Webglimpse {
         axisPaneHeight? : number;
         draggableEdgeWidth? : number;
         snapToDistance? : number;
+        
+        // Event / Selection
+        allowEventMultiSelection? : boolean;
+        // Options:
+        // 'none' or any falsy value : no time selection
+        // 'single'                  : single selected time
+        // 'range'                   : range of selected times
+        // 'single-unmodifiable'     : single selected time (cannot be adjusted by user mouse clicks)
+        // 'range-unmodifiable'      : range of selected times (cannot be adjusted by user mouse clicks)
+        selectedIntervalMode? : string;
+        // enable / disable centering of time selection interval on double click
+        // (this has no effect for selectedIntervalMode 'none', 'single-unmodifiable', or 'range-unmodifiable'
+        //  because mouse controls are off by default in those modes)
+        centerSelectedIntervalOnDoubleClick? : boolean;
+        // provide a custom listener callback function to modify the default behavior when the mouse
+        // scroll wheel is rotate over the timeline (default behavior is to zoom in/out in time)
+        mouseWheelListener? : ( PointerEvent ) => void;
     }
 
     export function newTimelinePane( drawable : Drawable, timeAxis : TimeAxis1D, model : TimelineModel, options? : TimelinePaneOptions, ui? : TimelineUi ) : TimelinePane {
 
         // Misc
         var font                   = ( hasval( options ) && hasval( options.font ) ? options.font : '11px verdana,sans-serif' );
-        var selectedIntervalMode   = ( hasval( options ) && hasval( options.selectedIntervalMode ) ? options.selectedIntervalMode : 'range' );
-        var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
         var rowPaneFactoryChooser  = ( hasval( options ) && hasval( options.rowPaneFactoryChooser ) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT );
-
+    
+        // Scroll
+        var showScrollbar          = ( hasval( options ) && hasval( options.showScrollbar ) ? options.showScrollbar : true );
+        var scrollbarOptions       = ( hasval( options ) ? options.scrollbarOptions : null );
+        
         // Colors
         var fgColor                     = ( hasval( options ) && hasval( options.fgColor                     ) ? options.fgColor                     : white                      );
+        var bgColor                     = ( hasval( options ) && hasval( options.bgColor                     ) ? options.bgColor                     : rgb( 0.098, 0.165, 0.243 ) );
         var rowLabelColor               = ( hasval( options ) && hasval( options.rowLabelColor               ) ? options.rowLabelColor               : fgColor                    );
+        var rowLabelBgColor             = ( hasval( options ) && hasval( options.rowLabelBgColor             ) ? options.rowLabelBgColor             : bgColor                    );
         var groupLabelColor             = ( hasval( options ) && hasval( options.groupLabelColor             ) ? options.groupLabelColor             : fgColor                    );
         var axisLabelColor              = ( hasval( options ) && hasval( options.axisLabelColor              ) ? options.axisLabelColor              : fgColor                    );
-        var bgColor                     = ( hasval( options ) && hasval( options.bgColor                     ) ? options.bgColor                     : rgb( 0.098, 0.165, 0.243 ) );
         var rowBgColor                  = ( hasval( options ) && hasval( options.rowBgColor                  ) ? options.rowBgColor                  : rgb( 0.020, 0.086, 0.165 ) );
         var rowAltBgColor               = ( hasval( options ) && hasval( options.rowAltBgColor               ) ? options.rowAltBgColor               : rgb( 0.020, 0.086, 0.165 ) );
         var gridColor                   = ( hasval( options ) && hasval( options.gridColor                   ) ? options.gridColor                   : gray( 0.5 )                );
@@ -115,6 +139,7 @@ module Webglimpse {
         var topTimeZone      = ( hasval( options ) && hasval( options.topTimeZone    ) ? options.topTimeZone    : '+0000' );
         var bottomTimeZone   = ( hasval( options ) && hasval( options.bottomTimeZone ) ? options.bottomTimeZone : '+0000' );
         var tickSpacing      = ( hasval( options ) && hasval( options.tickSpacing    ) ? options.tickSpacing    : 60      );
+        var axisLabelAlign   = ( hasval( options ) && hasval( options.axisLabelAlign ) ? options.axisLabelAlign : 0.5      );
 
         // Sizing
         var groupLabelInsets   = ( hasval( options ) && hasval( options.groupLabelInsets   ) ? options.groupLabelInsets   : newInsets( 6, 10 ) );
@@ -122,15 +147,33 @@ module Webglimpse {
         var rowLabelPaneWidth  = ( hasval( options ) && hasval( options.rowLabelPaneWidth  ) ? options.rowLabelPaneWidth  : 140 );
         var rowSeparatorHeight = ( hasval( options ) && hasval( options.rowSeparatorHeight ) ? options.rowSeparatorHeight : 2   );
         var scrollbarWidth     = ( hasval( options ) && hasval( options.scrollbarWidth     ) ? options.scrollbarWidth     : 16  );
+        scrollbarWidth         = showScrollbar ? scrollbarWidth : 0; // if the scrollbar is not showing, set its width to 0
         var axisPaneHeight     = ( hasval( options ) && hasval( options.axisPaneHeight     ) ? options.axisPaneHeight     : 40  );
         var draggableEdgeWidth = ( hasval( options ) && hasval( options.draggableEdgeWidth ) ? options.draggableEdgeWidth : 6   );
         var snapToDistance     = ( hasval( options ) && hasval( options.snapToDistance     ) ? options.snapToDistance     : 10  );
 
-        if ( !ui ) {
-            ui = new TimelineUi( model );
+        // Event / Selection
+        var allowEventMultiSelection               = ( hasval( options ) && hasval( options.allowEventMultiSelection            ) ? options.allowEventMultiSelection            : true    );
+        var selectedIntervalMode                   = ( hasval( options ) && hasval( options.selectedIntervalMode                ) ? options.selectedIntervalMode                : 'range' );
+        var centerSelectedIntervalOnDoubleClick    = ( hasval( options ) && hasval( options.centerSelectedIntervalOnDoubleClick ) ? options.centerSelectedIntervalOnDoubleClick : true    );
+        var defaultMouseWheelListener = function( ev : PointerEvent ) {
+            var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
+            timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
         }
-        var selection = ui.selection;
+        var mouseWheelListener                     = ( hasval( options ) && hasval( options.mouseWheelListener                  ) ? options.mouseWheelListener : defaultMouseWheelListener);
 
+        if ( !ui ) {
+            var outsideManagedUi = false;
+            ui = new TimelineUi( model, { allowEventMultiSelection: allowEventMultiSelection } );
+        }
+        else {
+            // remove old panes (if the ui is being reused)
+            var outsideManagedUi = true;
+            ui.panes.removeAll( );    
+        }
+        
+        var selection = ui.selection;
+        
         var redraw = function( ) {
             drawable.redraw( );
         };
@@ -147,27 +190,40 @@ module Webglimpse {
         
         // Scroll Pane
         
-        var scrollLayout = newVerticalScrollLayout( );
-        var scrollable = new Pane( scrollLayout, false );
-        ui.addPane( 'scroll-content-pane', scrollable );
-
         var tickTimeZone = ( showTopAxis ? topTimeZone : bottomTimeZone );
-        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance };
-        var contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+        var contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
+        var contentPaneArgs;
         
-        var contentPane = newTimelineContentPane( contentPaneArgs );
-        ui.addPane( 'content-pane', contentPane );
+        if ( showScrollbar ) {
+        
+            var scrollLayout = newVerticalScrollLayout( );
+            var scrollable = new Pane( scrollLayout, false );
+            ui.addPane( 'scroll-content-pane', scrollable );
 
-        scrollable.addPane( contentPane, 0 );
+            contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
 
-        var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
-        ui.addPane( 'scrollbar', scrollbar );
-        
-        var scrollPane = new Pane( newColumnLayout( false ), false );
-        ui.addPane( 'scroll-outer-pane', scrollPane );
-        
-        scrollPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
-        scrollPane.addPane( scrollable, 1 );
+            var scrollContentPane = newTimelineContentPane( contentPaneArgs );
+            ui.addPane( 'content-pane', scrollContentPane );
+    
+            scrollable.addPane( scrollContentPane, 0 );
+    
+            var scrollbar = newVerticalScrollbar( scrollLayout, drawable, scrollbarOptions );
+            ui.addPane( 'scrollbar', scrollbar );
+            
+            var contentPane = new Pane( newColumnLayout( false ), false );
+            ui.addPane( 'scroll-outer-pane', contentPane );
+            
+            contentPane.addPane( scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true } );
+            contentPane.addPane( scrollable, 1 );
+            
+        }
+        else {
+            
+            contentPaneArgs = { drawable: drawable, scrollLayout: null, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
+            var contentPane = newTimelineContentPane( contentPaneArgs );
+            ui.addPane( 'content-pane', contentPane );
+            
+        }
         
         // Card Pane Switching Logic
         
@@ -182,14 +238,14 @@ module Webglimpse {
          
         var contentActive = model.root.maximizedRowGuids.isEmpty;
         timelineCardPane.addPane( insetMaximizedContentPane, !contentActive );
-        timelineCardPane.addPane( scrollPane, contentActive );
+        timelineCardPane.addPane( contentPane, contentActive );
         
-        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true );
+        setupRowContainerPane( contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true, 'maximized' );
         
         var updateMaximizedRows = function( rowGuid : string, rowIndex : number ) {
             var contentActive = model.root.maximizedRowGuids.isEmpty;
             timelineCardPane.setLayoutArg( insetMaximizedContentPane, !contentActive );
-            timelineCardPane.setLayoutArg( scrollPane, contentActive );
+            timelineCardPane.setLayoutArg( contentPane, contentActive );
             drawable.redraw( );
         }
         
@@ -205,7 +261,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
         
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );
@@ -220,11 +276,11 @@ module Webglimpse {
         var insetTopPinnedPane = newInsetPane( topPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
         ui.addPane( 'inset-top-pinned-pane', insetTopPinnedPane );
         
-        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false );
+        setupRowContainerPane( contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false, 'toppinned' );
         underlayPane.addPane( insetTopPinnedPane, 1 );
 
         // main pane containing timeline groups and rows
-        underlayPane.addPane( timelineCardPane, 2, { height: null, width: null } );
+        underlayPane.addPane( timelineCardPane, 2, { height: 'pref-max', width: null } );
         
         // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
         var bottomPinnedPane = new Pane( newRowLayout( ) );
@@ -233,7 +289,7 @@ module Webglimpse {
         var insetBottomPinnedPane = newInsetPane( bottomPinnedPane, newInsets( 0, scrollbarWidth, 0, 0 ) );
         ui.addPane( 'inset-bottom-pinned-pane', insetBottomPinnedPane );
 
-        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false );
+        setupRowContainerPane( contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false, 'bottompinned' );
         underlayPane.addPane( insetBottomPinnedPane, 3 );
 
         // bottom time axis pane
@@ -268,9 +324,31 @@ module Webglimpse {
             overlayPane.addPainter( newTimelineRangeSelectionPainter( timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor ) );
             timelinePane.addPane( newInsetPane( overlayPane, axisInsets, null, false ) );
         }
+
+        // Enable double click to center selection on mouse
+        
+        if ( centerSelectedIntervalOnDoubleClick ) {
+            var doubleClick = function( ev : PointerEvent ) {
+                if ( selectedIntervalMode === 'single' ) {
+                    if ( ev.clickCount > 1 ) {
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        selection.selectedInterval.setInterval( time_PMILLIS, time_PMILLIS );
+                    }
+                }
+                else if ( selectedIntervalMode === 'range' ) {
+                    if ( ev.clickCount > 1 ) {
+                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                        var offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5*selection.selectedInterval.duration_MILLIS;
+                        selection.selectedInterval.pan( time_PMILLIS - offset_PMILLIS );
+                    }            
+                }
+            };
+            ui.input.mouseDown.on( doubleClick );
+        }
                 
         timelinePane.dispose.on( function( ) {
-            ui.dispose.fire( );
+            // only dispose the ui if we created it (and this manage its lifecycle)
+            if ( !outsideManagedUi ) ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
             selection.hoveredEvent.changed.off( redraw );
             selection.selectedEvents.valueAdded.off( redraw );
@@ -286,18 +364,51 @@ module Webglimpse {
 
 
 
-    function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel ) : Mask2D {
-        return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
-            var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
-            
-            // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
-            var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
-            
-            return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
-        };
+    function newTimeIntervalMask( timeAxis : TimeAxis1D, interval : TimeIntervalModel, selectedIntervalMode : string ) : Mask2D {
+        
+        if ( selectedIntervalMode === 'range' ) {
+            return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
+                var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
+                
+                // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
+                var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+                
+                return interval.overlaps( time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS );
+            };
+        }
+        else if ( selectedIntervalMode === 'single' ) {
+            return function( viewport : BoundsUnmodifiable, i : number, j : number ) : boolean {
+                var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( viewport.xFrac( i ) );
+                
+                // allow a 10 pixel selection buffer to make it easier to grab the selection
+                var buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+                
+                return time_PMILLIS < interval.cursor_PMILLIS + buffer_MILLIS && time_PMILLIS > interval.cursor_PMILLIS - buffer_MILLIS;
+            };
+        }
     }
 
+    function attachTimeAxisMouseListeners( pane : Pane, axis : Axis1D, args : TimelineContentPaneArguments ) {
+        var vGrab : number = null;
 
+        pane.mouseDown.on( function( ev : PointerEvent ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && !hasval( vGrab ) ) {
+                vGrab = axis.vAtFrac( xFrac( ev ) );
+            }
+        } );
+
+        pane.mouseMove.on( function( ev : PointerEvent ) {
+            if ( isLeftMouseDown( ev.mouseEvent ) && hasval( vGrab ) ) {
+                axis.pan( vGrab - axis.vAtFrac( xFrac( ev ) ) );
+            }
+        } );
+
+        pane.mouseUp.on( function( ev : PointerEvent ) {
+            vGrab = null;
+        } );
+
+        pane.mouseWheel.on( args.options.mouseWheelListener );
+    }
 
     function newTimeAxisPane( args : TimelineContentPaneArguments, row : TimelineRowModel ) : Pane {       
         var timeAxis = args.timeAxis;
@@ -311,7 +422,7 @@ module Webglimpse {
 
         var axisPane = new Pane( newOverlayLayout( ) );
         if ( scrollLayout ) attachTimelineVerticalScrollMouseListeners( axisPane, scrollLayout, drawable );
-        attachAxisMouseListeners1D( axisPane, timeAxis, false );
+        attachTimeAxisMouseListeners( axisPane, timeAxis, args );
 
         var onMouseMove = function( ev : PointerEvent ) {
             var time_PMILLIS = timeAxis.tAtFrac_PMILLIS( xFrac( ev ) );
@@ -345,7 +456,7 @@ module Webglimpse {
 
         if ( selectedIntervalMode === 'single' || selectedIntervalMode === 'range' ) {
             var selection = ui.selection;
-            var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval ) );
+            var selectedIntervalPane = new Pane( null, true, newTimeIntervalMask( timeAxis, selection.selectedInterval, selectedIntervalMode ) );
             attachTimeSelectionMouseListeners( selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode );
             axisPane.addPane( selectedIntervalPane, false );
 
@@ -379,7 +490,7 @@ module Webglimpse {
         if ( selectedIntervalMode === 'single' ) {
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                return isLeftMouseDown( ev.mouseEvent ) ? 'center' : null;
+                return 'center';
             }
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -399,33 +510,27 @@ module Webglimpse {
             var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
             
             var chooseDragMode = function chooseDragMode( ev : PointerEvent ) : string {
-                if ( isLeftMouseDown( ev.mouseEvent ) ) {
-                    var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                    if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
-                        // If interval isn't very wide, don't try to allow edge dragging
+                var intervalWidth = ( interval.duration_MILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                if ( intervalWidth < minIntervalWidthForEdgeDraggability ) {
+                    // If interval isn't very wide, don't try to allow edge dragging
+                    return 'center';
+                }
+                else {
+                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
+                    var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
+                    if ( mouseOffset < draggableEdgeWidth ) {
+                        // If mouse is near the left edge, drag the interval's start-time
+                        return 'start';
+                    }
+                    else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
+                        // If mouse is in the center, drag the whole interval
                         return 'center';
                     }
                     else {
-                        var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                        var mouseOffset = ( time_PMILLIS - interval.start_PMILLIS ) * ev.paneViewport.w / timeAxis.vSize;
-                        if ( mouseOffset < draggableEdgeWidth ) {
-                            // If mouse is near the left edge, drag the interval's start-time
-                            return 'start';
-                        }
-                        else if ( mouseOffset < intervalWidth - draggableEdgeWidth ) {
-                            // If mouse is in the center, drag the whole interval
-                            return 'center';
-                        }
-                        else {
-                            // If mouse is near the right edge, drag the interval's end-time
-                            return 'end';
-                        }
+                        // If mouse is near the right edge, drag the interval's end-time
+                        return 'end';
                     }
                 }
-                else {
-                    return null;
-                }
-                    
             };
             
             attachTimeIntervalSelectionMouseListeners( pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode );
@@ -443,26 +548,6 @@ module Webglimpse {
         // see comments in attachTimeSelectionMouseListeners( ... )
         var minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
         var minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
-        
-        // Enable double click to center selection on mouse
-        
-        var doubleClick = function( ev : PointerEvent ) {
-            
-            if ( selectedIntervalMode === 'single' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    interval.setInterval( time_PMILLIS, time_PMILLIS );
-                }
-            }
-            else if ( selectedIntervalMode === 'range' ) {
-                if ( ev.clickCount > 1 ) {
-                    var time_PMILLIS = timeAtPointer_PMILLIS( timeAxis, ev );
-                    interval.pan( time_PMILLIS - ( interval.start_PMILLIS + 0.5*interval.duration_MILLIS ) );
-                }            
-            }
-        };
-        input.mouseDown.on( doubleClick );
-
 
         // Hook up input notifications
         //
@@ -491,7 +576,7 @@ module Webglimpse {
         } );
 
         pane.mouseDown.on( function( ev : PointerEvent ) {
-            dragMode = chooseDragMode( ev );
+            dragMode = isLeftMouseDown( ev.mouseEvent ) ? chooseDragMode( ev ) : null;
             if ( !hasval( dragMode ) ) {
                 dragOffset_MILLIS = null;
             }
@@ -550,7 +635,6 @@ module Webglimpse {
             }
         };
         pane.mouseMove.on( dragStart );
-        timeAxis.limitsChanged.on( dragStart );
 
 
         // Dragging interval-end
@@ -572,7 +656,6 @@ module Webglimpse {
             }
         };
         pane.mouseMove.on( dragEnd );
-        timeAxis.limitsChanged.on( dragEnd );
 
 
         // Finish interval-drag
@@ -583,17 +666,6 @@ module Webglimpse {
             dragPointer_PMILLIS = null;
             dragMode = null;
         } );
-        
-        // Dispose
-        //
-        
-        pane.dispose.on( function( ) {
-            // mouse listeners are disposed of automatically by Pane
-            input.mouseDown.off( doubleClick );
-            timeAxis.limitsChanged.off( dragStart );
-            timeAxis.limitsChanged.off( dragEnd );
-        } );
-
     }
     
     function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
@@ -788,6 +860,7 @@ module Webglimpse {
         font : string;
         fgColor : Color;
         rowLabelColor : Color;
+        rowLabelBgColor : Color;
         groupLabelColor : Color;
         axisLabelColor : Color;
         bgColor : Color;
@@ -797,6 +870,7 @@ module Webglimpse {
 
         gridTimeZone : string;
         gridTickSpacing : number;
+        referenceDate : string;
 
         groupLabelInsets : Insets;
         rowLabelInsets : Insets;
@@ -805,6 +879,8 @@ module Webglimpse {
 
         draggableEdgeWidth : number;
         snapToDistance : number;
+
+        mouseWheelListener : ( PointerEvent ) => void;
     }
     
     interface TimelineContentPaneArguments {
@@ -865,7 +941,7 @@ module Webglimpse {
         var addGroup = function( groupGuid : string, groupIndex : number ) {
             var group = model.group( groupGuid );
 
-            var groupLabel = new Label( font, groupLabelColor, group.label );
+            var groupLabel = new Label( group.label, font, groupLabelColor );
             var groupLabelPane = new Pane( { updatePrefSize: fitToLabel( groupLabel ) }, false );
             groupLabelPane.addPainter( newLabelPainter( groupLabel, 0, 1, 0, 1 ) );
 
@@ -912,7 +988,7 @@ module Webglimpse {
                 
                 var rollupContentPane : Pane = null;
                 var rollupPaneFactory : TimelineRowPaneFactory = null;
-                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false };
+                var rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false, mouseWheelListener: args.options.mouseWheelListener };
                 var refreshRollupContentPane = function( ) {
                     var newRollupPaneFactory = ( rollupUi.paneFactory || rowPaneFactoryChooser( rollupRow ) );
                     if ( newRollupPaneFactory !== rollupPaneFactory ) {
@@ -996,7 +1072,7 @@ module Webglimpse {
             timelineContentPane.layoutOptions( groupContentPane ).hide = group.hidden;
             timelineContentPane.layoutOptions( groupHeaderPane ).hide = group.hidden;
 
-            setupRowContainerPane( args, groupContentPane, group.rowGuids, false );
+            setupRowContainerPane( args, groupContentPane, group.rowGuids, false, group.groupGuid );
             
             groupContentPane.dispose.on( function( ) {
                 group.attrsChanged.off( redrawLabel );
@@ -1093,7 +1169,7 @@ module Webglimpse {
         var rowBackgroundPane = newTimeAxisPane( args, row );
         rowBackgroundPane.addPainter( newRowBackgroundPainter( args, guidList, row ) );
     
-        var timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor };
+        var timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor, referenceDate: args.options.referenceDate };
         rowBackgroundPane.addPainter( newTimeGridPainter( args.timeAxis, false, args.options.gridTimeZone, timeGridOpts ) );
     
         var rowInsetTop = args.options.rowSeparatorHeight/2;
@@ -1110,7 +1186,7 @@ module Webglimpse {
         return { rowInsetPane : rowInsetPane, rowBackgroundPane : rowBackgroundPane };
     }
     
-    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean ) {
+    function setupRowContainerPane( args : TimelineContentPaneArguments, parentPane : Pane, guidList : OrderedStringSet, isMaximized : boolean, keyPrefix : string ) {
         
         var drawable = args.drawable;
         var scrollLayout = args.scrollLayout;
@@ -1125,13 +1201,24 @@ module Webglimpse {
             var row = model.row( rowGuid );
             var rowUi = ui.rowUi( rowGuid );
             
-            var rowLabel = new Label( options.font, options.rowLabelColor, row.label );
+            var rowLabelColorBg : Color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.rowLabelBgColor;
+            var rowLabelColorFg : Color = hasval( row.fgLabelColor ) ? row.fgLabelColor : options.rowLabelColor;
+            var rowLabelFont : string = hasval( row.labelFont ) ? row.labelFont : options.font;
+            
+            var rowLabel = new Label( row.label, rowLabelFont, rowLabelColorFg );
             var rowLabelPane = new Pane( { updatePrefSize: fitToLabel( rowLabel ) }, false );
             rowLabelPane.addPainter( newLabelPainter( rowLabel, 0, 0.5, 0, 0.5 ) );
-            var rowHeaderPane = newInsetPane( rowLabelPane, options.rowLabelInsets, options.bgColor );
             
+            var rowLabelBackground = new Background( rowLabelColorBg );
+            var rowHeaderPane = new Pane( newInsetLayout( options.rowLabelInsets ), true );
+            rowHeaderPane.addPainter( rowLabelBackground.newPainter( ) );
+            rowHeaderPane.addPane( rowLabelPane );
+                        
             var rowAttrsChanged = function( ) {
                 rowLabel.text = row.label;
+                rowLabel.fgColor = hasval( row.fgLabelColor ) ? row.fgLabelColor : options.rowLabelColor;
+                rowLabel.font = hasval( row.labelFont ) ? row.labelFont : options.font;
+                rowLabelBackground.color = hasval( row.bgLabelColor ) ? row.bgLabelColor : options.bgColor;
                 drawable.redraw( );
             }
             row.attrsChanged.on( rowAttrsChanged );
@@ -1144,19 +1231,17 @@ module Webglimpse {
             rowPane.addPane( rowHeaderPane, 0, { width: options.rowLabelPaneWidth } );
             rowPane.addPane( rowBackgroundPane, 1, { width: null } );
         
-            var keyPrefix = isMaximized ? 'maximized-' : '';
-            
             // expose panes in api via TimelineRowUi
-            rowUi.addPane( keyPrefix+'background', rowBackgroundPane );
-            rowUi.addPane( keyPrefix+'inset', rowInsetPane );
-            rowUi.addPane( keyPrefix+'label', rowLabelPane );
-            rowUi.addPane( keyPrefix+'header', rowHeaderPane );
+            rowUi.addPane( keyPrefix+'-background', rowBackgroundPane );
+            rowUi.addPane( keyPrefix+'-inset', rowInsetPane );
+            rowUi.addPane( keyPrefix+'-label', rowLabelPane );
+            rowUi.addPane( keyPrefix+'-header', rowHeaderPane );
             
             var rowDataAxis = row.dataAxis;
         
             var rowContentPane : Pane = null;
             var rowPaneFactory : TimelineRowPaneFactory = null;
-            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized };
+            var rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized, mouseWheelListener: options.mouseWheelListener };
             var refreshRowContentPane = function( ) {
                 var newRowPaneFactory = ( rowUi.paneFactory || options.rowPaneFactoryChooser( row ) );
                 if ( newRowPaneFactory !== rowPaneFactory ) {
@@ -1204,10 +1289,10 @@ module Webglimpse {
                 row.timeseriesGuids.valueAdded.off( refreshRowContentPane );
                 row.timeseriesGuids.valueRemoved.off( refreshRowContentPane );
                 
-                rowUi.removePane( keyPrefix+'background' );
-                rowUi.removePane( keyPrefix+'inset' );
-                rowUi.removePane( keyPrefix+'label' );
-                rowUi.removePane( keyPrefix+'header' );
+                rowUi.removePane( keyPrefix+'-background' );
+                rowUi.removePane( keyPrefix+'-inset' );
+                rowUi.removePane( keyPrefix+'-label' );
+                rowUi.removePane( keyPrefix+'-header' );
             } );
         };
         guidList.forEach( addRow );

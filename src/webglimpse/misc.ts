@@ -80,6 +80,35 @@ module Webglimpse {
         };
     }
     
+    export class Background {
+        
+        private _color : Color;
+
+        constructor( color? : Color ) {
+            this._color = color;
+        }
+        
+        get color( ) : Color {
+            return this._color;
+        }
+
+        set color( color : Color ) {
+            if ( !sameColor( this._color, color ) ) {
+                this._color = color;
+            }
+        }
+        
+        newPainter( ) {
+            var background : Background = this;
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                if ( hasval( background.color ) ) {
+                    gl.clearColor( background.color.r, background.color.g, background.color.b, background.color.a );
+                    gl.clear( GL.COLOR_BUFFER_BIT );
+                }
+            };
+        }
+    }
+    
 
     export function newBackgroundPainter( color : Color ) : Painter {
         return function( gl : WebGLRenderingContext ) {

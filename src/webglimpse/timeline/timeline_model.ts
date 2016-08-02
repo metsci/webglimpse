@@ -71,7 +71,13 @@ module Webglimpse {
 
     export interface TimelineEvent {
         eventGuid : string;
+        // the minimum allowed value of start_ISO8601
+        startLimit_ISO8601? : string;
+        // the maximum allowed value of end_ISO8601
+        endLimit_ISO8601? : string;
+        // the left side (earliest) time bound of the event box
         start_ISO8601 : string;
+        // the right side (latest) time bound of the event box
         end_ISO8601 : string;
         // text to be displayed with the event
         label : string;
@@ -121,6 +127,9 @@ module Webglimpse {
         timeseriesGuids? : string[];
         annotationGuids? : string[];
         bgColor? : string;
+        fgLabelColor? : string;
+        bgLabelColor? : string;
+        labelFont? : string;
     }
 
 
@@ -515,6 +524,8 @@ module Webglimpse {
     export class TimelineEventModel {
         private _eventGuid : string;
         private _attrsChanged : Notification;
+        private _startLimit_PMILLIS : number;
+        private _endLimit_PMILLIS : number;
         private _start_PMILLIS : number;
         private _end_PMILLIS : number;
         private _label : string;
@@ -550,6 +561,8 @@ module Webglimpse {
 
         setAttrs( event : TimelineEvent ) {
             // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
+            this._startLimit_PMILLIS = ( hasval( event.startLimit_ISO8601 ) ? parseTime_PMILLIS( event.startLimit_ISO8601 ) : null );
+            this._endLimit_PMILLIS = ( hasval( event.endLimit_ISO8601 ) ? parseTime_PMILLIS( event.endLimit_ISO8601 ) : null );
             this._start_PMILLIS = parseTime_PMILLIS( event.start_ISO8601 );
             this._end_PMILLIS = parseTime_PMILLIS( event.end_ISO8601 );
             this._label = event.label;
@@ -573,19 +586,58 @@ module Webglimpse {
 
         setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
-                this._start_PMILLIS = start_PMILLIS;
-                this._end_PMILLIS = end_PMILLIS;
-                this._attrsChanged.fire( );
+                
+                var initial_start_PMILLIS = this._start_PMILLIS;
+                var initial_end_PMILLIS = this._end_PMILLIS;
+                
+                var underStartLimit = hasval( this._startLimit_PMILLIS ) && start_PMILLIS < this._startLimit_PMILLIS;
+                var overEndLimit = hasval( this._endLimit_PMILLIS ) && end_PMILLIS > this._endLimit_PMILLIS;
+                var duration_PMILLIS = end_PMILLIS - start_PMILLIS;
+                var durationLimit_PMILLIS = this._endLimit_PMILLIS - this._startLimit_PMILLIS;
+                
+                // If both limits are present and the event is larger than the total distance between them
+                // then shrink the event to fit between the limits.
+                if ( hasval( this._startLimit_PMILLIS ) && hasval( this._endLimit_PMILLIS ) && durationLimit_PMILLIS < duration_PMILLIS ) {
+                    this._start_PMILLIS = this._startLimit_PMILLIS;
+                    this._end_PMILLIS = this._endLimit_PMILLIS; 
+                }
+                // Otherwise shift the event to comply with the limits without adjusting its total duration
+                else if ( underStartLimit ) {
+                    this._start_PMILLIS = this._startLimit_PMILLIS;
+                    this._end_PMILLIS = this._start_PMILLIS + duration_PMILLIS;
+                }
+                else if ( overEndLimit ) {
+                    this._end_PMILLIS = this._endLimit_PMILLIS;
+                    this._start_PMILLIS = this._end_PMILLIS - duration_PMILLIS;
+                }
+                else {
+                    this._end_PMILLIS = end_PMILLIS;
+                    this._start_PMILLIS = start_PMILLIS; 
+                }
+                
+                // its possible due to the limits that the values didn't actually change
+                // only fire attrsChanged if one of the values did actually change
+                if ( initial_start_PMILLIS !== this._start_PMILLIS || initial_end_PMILLIS !== this._end_PMILLIS ) {
+                    this._attrsChanged.fire( );
+                }
             }
         }
-
+        
+        private limit_start_PMILLIS( start_PMILLIS : number ) {
+            return hasval( this._startLimit_PMILLIS ) ? Math.max( start_PMILLIS, this._startLimit_PMILLIS ) : start_PMILLIS;
+        }
+        
+        private limit_end_PMILLIS( end_PMILLIS : number ) {
+            return hasval( this._endLimit_PMILLIS ) ? Math.min( end_PMILLIS, this._endLimit_PMILLIS ) : end_PMILLIS;
+        }
+        
         get start_PMILLIS( ) : number {
             return this._start_PMILLIS;
         }
 
         set start_PMILLIS( start_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS ) {
-                this._start_PMILLIS = start_PMILLIS;
+                this._start_PMILLIS = this.limit_start_PMILLIS( start_PMILLIS );
                 this._attrsChanged.fire( );
             }
         }
@@ -596,10 +648,35 @@ module Webglimpse {
 
         set end_PMILLIS( end_PMILLIS : number ) {
             if ( end_PMILLIS !== this._end_PMILLIS ) {
-                this._end_PMILLIS = end_PMILLIS;
+                this._end_PMILLIS = this.limit_end_PMILLIS( end_PMILLIS );
                 this._attrsChanged.fire( );
             }
         }
+        
+        get startLimit_PMILLIS( ) : number {
+            return this._startLimit_PMILLIS;
+        }
+
+        set startLimit_PMILLIS( startLimit_PMILLIS : number ) {
+            if ( startLimit_PMILLIS !== this._startLimit_PMILLIS ) {
+                this._startLimit_PMILLIS = startLimit_PMILLIS;
+                this._start_PMILLIS = this.limit_start_PMILLIS( this._start_PMILLIS );
+                this._attrsChanged.fire( );
+            }
+        }
+
+        get endLimit_PMILLIS( ) : number {
+            return this._endLimit_PMILLIS;
+        }
+
+        set endLimit_PMILLIS( endLimit_PMILLIS : number ) {
+            if ( endLimit_PMILLIS !== this._endLimit_PMILLIS ) {
+                this._endLimit_PMILLIS = endLimit_PMILLIS;
+                this._end_PMILLIS = this.limit_end_PMILLIS( this._end_PMILLIS );
+                this._attrsChanged.fire( );
+            }
+        }
+
 
         get label( ) : string {
             return this._label;
@@ -780,6 +857,8 @@ module Webglimpse {
         snapshot( ) : TimelineEvent {
             return {
                 eventGuid: this._eventGuid,
+                startLimit_ISO8601: ( hasval( this._startLimit_PMILLIS ) ? formatTime_ISO8601( this._startLimit_PMILLIS ) : null ),
+                endLimit_ISO8601: ( hasval( this._endLimit_PMILLIS ) ? formatTime_ISO8601( this._endLimit_PMILLIS ) : null ),
                 start_ISO8601: formatTime_ISO8601( this._start_PMILLIS ),
                 end_ISO8601: formatTime_ISO8601( this._end_PMILLIS ),
                 label: this._label,
@@ -814,6 +893,9 @@ module Webglimpse {
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
         private _bgColor : Color;
+        private _fgLabelColor : Color;
+        private _bgLabelColor : Color;
+        private _labelFont : string;
         private _dataAxis : Axis1D;
 
         constructor( row : TimelineRow ) {
@@ -845,6 +927,9 @@ module Webglimpse {
             this._hidden = row.hidden;
             this._rowHeight = row.rowHeight;
             this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
+            this._fgLabelColor = ( hasval( row.fgLabelColor ) ? parseCssColor( row.fgLabelColor ) : null );
+            this._bgLabelColor = ( hasval( row.bgLabelColor ) ? parseCssColor( row.bgLabelColor ) : null );
+            this._labelFont = row.labelFont;
             this._attrsChanged.fire( );
         }
         
@@ -907,6 +992,39 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+                
+        get bgLabelColor( ) : Color {
+            return this._bgLabelColor;
+        }
+
+        set bgLabelColor( bgLabelColor : Color ) {
+            if ( bgLabelColor !== this._bgLabelColor ) {
+                this._bgLabelColor = bgLabelColor;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get fgLabelColor( ) : Color {
+            return this._fgLabelColor;
+        }
+
+        set fgLabelColor( fgLabelColor : Color ) {
+            if ( fgLabelColor !== this._fgLabelColor ) {
+                this._fgLabelColor = fgLabelColor;
+                this._attrsChanged.fire( );
+            }
+        }
+        
+        get labelFont( ) : string {
+           return this._labelFont;
+        }
+
+        set labelFont( labelFont : string ) {
+            if ( labelFont !== this._labelFont ) {
+                this._labelFont = labelFont;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get eventGuids( ) : OrderedStringSet {
             return this._eventGuids;
@@ -931,6 +1049,9 @@ module Webglimpse {
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
+                bgLabelColor: ( hasval( this._bgLabelColor ) ? this._bgLabelColor.cssString : null ),
+                fgLabelColor: ( hasval( this._fgLabelColor ) ? this._fgLabelColor.cssString : null ),
+                labelFont: this._labelFont
             };
         }
     }

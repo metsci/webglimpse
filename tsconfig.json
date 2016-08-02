@@ -3,5 +3,9 @@
     "compilerOptions": {
         "target": "es5",
         "sourceRoot": "."
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "build"
+    ]
 }

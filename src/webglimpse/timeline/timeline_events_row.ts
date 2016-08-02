@@ -60,10 +60,10 @@ module Webglimpse {
 
         // Pane Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
-            var rowTopPadding    = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
-            var rowBottomPadding = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
-            var laneHeight       = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
-            var painterFactories = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
+            var rowTopPadding      = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowTopPadding    ) ? eventsRowOpts.rowTopPadding    : 6 );
+            var rowBottomPadding   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.rowBottomPadding ) ? eventsRowOpts.rowBottomPadding : 6 );
+            var laneHeight         = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.laneHeight       ) ? eventsRowOpts.laneHeight       : 33 );
+            var painterFactories   = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.painterFactories ) ? eventsRowOpts.painterFactories : [] );
             var allowMultipleLanes = ( hasval( eventsRowOpts ) && hasval( eventsRowOpts.allowMultipleLanes ) ? eventsRowOpts.allowMultipleLanes : true );
 
             var timelineFont       = options.timelineFont;
@@ -188,10 +188,7 @@ module Webglimpse {
                 input.mouseDown.fire( ev );
             } );
 
-            rowContentPane.mouseWheel.on( function( ev : PointerEvent ) {
-                var zoomFactor = Math.pow( axisZoomStep, ev.wheelSteps );
-                timeAxis.zoom( zoomFactor, timeAxis.vAtFrac( xFrac( ev ) ) );
-            } );
+            rowContentPane.mouseWheel.on( options.mouseWheelListener );
 
             rowContentPane.contextMenu.on( function( ev : PointerEvent ) {
                 input.contextMenu.fire( ev );
@@ -539,17 +536,140 @@ module Webglimpse {
         };
     }
 
+    export interface TimelineEventLimitsPainterOptions {
+        lineColor? : Color;
+        lineThickness? : number;
+    }
 
+    function eventLimitsPainterHelper( limitsOpts : TimelineEventLimitsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
 
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
 
+        var lineColor               = ( hasval( limitsOpts ) && hasval( limitsOpts.lineColor          ) ? limitsOpts.lineColor        : new Color( 1, 0, 0, 1 ) );
+        var lineThickness           = ( hasval( limitsOpts ) && hasval( limitsOpts.lineThickness      ) ? limitsOpts.lineThickness    : 2.5 );
+        
+        var xyFrac_vColor_VERTSHADER = concatLines(
+            '                                                                ',
+            '  attribute vec2 a_XyFrac;                                      ',
+            '  attribute vec4 a_Color;                                       ',
+            '                                                                ',
+            '  varying vec4 v_Color;                                         ',
+            '                                                                ',
+            '  void main( ) {                                                ',
+            '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
+            '      v_Color = a_Color;                                        ',
+            '  }                                                             ',
+            '                                                                '
+        );
+
+        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var a_Color = new Attribute( program, 'a_Color' );
+        
+        var xys = new Float32Array( 0 );
+        var xysBuffer = newDynamicBuffer( );
+
+        var rgbas = new Float32Array( 0 );
+        var rgbasBuffer = newDynamicBuffer( );
+        
+        return {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                if ( indexXys > 0 ) {
+                    gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                    gl.enable( GL.BLEND );
+                    
+                    program.use( gl );
+                    xysBuffer.setData( xys.subarray( 0, indexXys ) );
+                    a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                    rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
+                    a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
+    
+                    gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
+    
+                    a_Color.disable( gl );
+                    a_XyFrac.disable( gl );
+                    program.endUse( gl );
+                }
+            },
+            ensureCapacity: function( eventCount : number ) {
+                var numVertices =  ( 6 * 3 /* triangles */ * eventCount );
+                xys = ensureCapacityFloat32( xys, 2*numVertices );
+                rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
+            },
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+                
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+                
+                var wLine = lineThickness / viewport.w;
+                var hLine = lineThickness / viewport.h;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight;
+                var yTop = ( viewport.h - jTop ) / viewport.h;
+                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight;
+                var yBottom =  ( viewport.h - jBottom ) / viewport.h;
+                var yMid = ( yTop + yBottom ) / 2;
+                
+                var xLeft  = hasval( event.startLimit_PMILLIS ) ? timeAxis.tFrac( event.startLimit_PMILLIS ) : 0;
+                var xRight = hasval( event.endLimit_PMILLIS )   ? timeAxis.tFrac( event.endLimit_PMILLIS )   : 1;
+                
+                indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
+                indexXys = putQuadXys( xys, indexXys, xLeft, xLeft-wLine, yTop, yBottom );
+                indexXys = putQuadXys( xys, indexXys, xRight, xRight+wLine, yTop, yBottom );
+                indexRgbas = putRgbas( rgbas, indexRgbas, lineColor, 18 );
+                
+                return { indexXys : indexXys, indexRgbas : indexRgbas };
+            }
+        };
+    }
+    
+    export function newEventLimitsPainterFactory( limitOpts? : TimelineEventLimitsPainterOptions ) : TimelineEventsPainterFactory {
+
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
+            
+            var helper = eventLimitsPainterHelper( limitOpts, drawable, timeAxis, lanes, ui, options );
+
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                
+                var selectedEvents : OrderedSet<TimelineEventModel> = ui.selection.selectedEvents;
+                
+                //XXX Instead of estimating the number of events we will need to draw ahead of time
+                //XXX (difficult because selected events may be present in multiple lanes, so
+                //XXX selectedEvents.length might not be sufficient) just make enough space for all events.
+                //XXX Potentially quite inefficient with lots of events (and few selected events).
+                helper.ensureCapacity( lanes.numEvents );
+
+                var indexXys = 0;
+                var indexRgbas = 0;
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        
+                        // check whether the event is selected and has limits defined
+                        if ( selectedEvents.hasId( event.eventGuid ) && ( hasval( event.startLimit_PMILLIS ) || hasval( event.endLimit_PMILLIS ) ) ) {
+                            var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
+                            indexXys = indexes.indexXys;
+                            indexRgbas = indexes.indexRgbas;
+                        }
+                    }
+                }
+                
+                helper.paint( indexXys, indexRgbas, gl, viewport );
+            };
+        };
+    }
 
 
     export enum JointType {
         BEVEL, MITER
     }
-
-
-
+    
     export interface TimelineEventBarsPainterOptions {
         topMargin? : number;
         bottomMargin? : number;
@@ -564,7 +684,6 @@ module Webglimpse {
         // is smaller than this visible width, the event bar is hidden
         minimumVisibleWidth? : number;
     }
-
     
     function eventBarPainterHelper( barOpts : TimelineEventBarsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
         var rowTopPadding    = options.rowTopPadding;
@@ -608,6 +727,8 @@ module Webglimpse {
         
         return {
             paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                if ( indexXys == 0 || indexRgbas == 0 ) return;
+                
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
                 
@@ -817,6 +938,7 @@ module Webglimpse {
         vAlign? : number;
         spacing? : number;
         extendBeyondBar? : boolean;
+        forceVisible? : boolean;
 
         iconsEnabled? : boolean;
         // Can be a number, or 'imageSize', or 'auto'
@@ -828,8 +950,6 @@ module Webglimpse {
         textEnabled? : boolean;
         textDefaultColor? : Color;
         textFont? : string;
-        
-        forceVisible? : boolean;
     }
 
 
@@ -845,6 +965,7 @@ module Webglimpse {
         var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
         var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
         var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
+        var forceVisible    = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible    ) ? labelOpts.forceVisible    : false );
 
         // Icon options
         var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
@@ -853,7 +974,6 @@ module Webglimpse {
         var iconsSizeFactor  = ( hasval( labelOpts ) && hasval( labelOpts.iconsSizeFactor  ) ? labelOpts.iconsSizeFactor  : 1      );
 
         // Text options
-        var forceVisible     = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible     ) ? labelOpts.forceVisible     : false );
         var textEnabled      = ( hasval( labelOpts ) && hasval( labelOpts.textEnabled      ) ? labelOpts.textEnabled      : true );
         var textDefaultColor = ( hasval( labelOpts ) && hasval( labelOpts.textDefaultColor ) ? labelOpts.textDefaultColor : options.timelineFgColor );
         var textFont         = ( hasval( labelOpts ) && hasval( labelOpts.textFont         ) ? labelOpts.textFont         : options.timelineFont );
@@ -890,9 +1010,13 @@ module Webglimpse {
                 
                 var xStart = timeAxis.tFrac( event.start_PMILLIS );
                 var xEnd = timeAxis.tFrac( event.end_PMILLIS );
+                
+                var wTotal = ( xEnd - wRightIndent ) - ( xStart + wLeftIndent ) 
+                var wSpacing = ( spacing / viewport.w );
+
                 if ( !( xEnd <= 0 || xStart > 1 ) ) {
     
-                    var xLeft = xStart;
+                    var xLeft;
                     var xRight;
                     if ( extendBeyondBar ) {
                         if ( eventIndex+1 < lane.length ) {
@@ -903,19 +1027,22 @@ module Webglimpse {
                         else {
                             xRight = xRightMax;
                         }
+                        
+                        if ( eventIndex-1 >= 0 ) {
+                            var previousEvent = lane.event( eventIndex-1 );
+                            var previousEnd_PMILLIS = effectiveEdges_PMILLIS( ui, previousEvent )[ 1 ];
+                            xLeft = timeAxis.tFrac( previousEnd_PMILLIS );
+                        }
+                        else {
+                            xLeft = xLeftMin;
+                        }
                     }
                     else {
                         xRight = xEnd;
+                        xLeft  = xStart;
                     }
     
-                    var xLeftVisible = Math.max( xStart + wLeftIndent, xLeftMin );
-                    var xRightVisible = Math.min( xRight - wRightIndent, xRightMax );
-                    var wTotal = ( xEnd - wRightIndent ) - ( xStart + wLeftIndent ) 
-                    var wVisible = ( xRightVisible - xLeftVisible );
-    
-                    var wSpacing = ( spacing / viewport.w );
-                    
-                    // pre-calculate text width (needed to position icon when labelHAlign != 0)
+                    // calculate Text width
                     var wText = 0;
                     var textTexture;
                     if ( textEnabled && event.label ) {
@@ -924,14 +1051,17 @@ module Webglimpse {
                         wText = ( textTexture.w / viewport.w );
                     }
                     
-                    // Icon
+                    // calculate Icon width (and start load if necessary)
                     var wIcon = 0;
                     var wIconPlusSpacing = 0;
+                    var iconWidth;
+                    var iconHeight;
+                    var iconTexture;
                     if ( iconsEnabled && event.labelIcon ) {
-                        var iconTexture = iconTextures[ event.labelIcon ];
+                        iconTexture = iconTextures[ event.labelIcon ];
                         if ( hasval( iconTexture ) ) {
-                            var iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
-                            var iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
+                            iconWidth = ( isNumber( iconsForceWidth ) ? iconsForceWidth : ( iconsForceWidth === 'imageSize' ? iconTexture.w : null ) );
+                            iconHeight = ( isNumber( iconsForceHeight ) ? iconsForceHeight : ( iconsForceHeight === 'imageSize' ? iconTexture.h : null ) );
     
                             var wIconKnown = hasval( iconWidth );
                             var hIconKnown = hasval( iconHeight );
@@ -955,35 +1085,6 @@ module Webglimpse {
                             wIcon = ( iconWidth / viewport.w );
                             
                             wIconPlusSpacing = wIcon + wSpacing;
-                            
-                            //TODO: if labelHAlign and labelHPos are set to place text outside of the event start/end bounds,
-                            //      this logic doesn't turn off text/icons exactly when you would really want
-                            
-                            // if we can't display text, the icon positioning is effected (when labelHAlign != 0)
-                            if ( !forceVisible || wIconPlusSpacing + wText > wVisible ) {
-                                wText = 0;
-                                textTexture = undefined;
-                            }
-                            
-                            if ( forceVisible || wIcon <= wVisible ) {
-                                
-                                // coordinates of the start edge of the icon + label
-                                var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
-                            
-                                // coordinates of the end edge of the icon + label
-                                var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
-                            
-                                if ( xStartLabel < xLeftMin ) {
-                                    textureRenderer.draw( gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                                else if ( xEndLabel > xRightMax ) {
-                                    textureRenderer.draw( gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                                else {
-                                    var xFrac = xStart + wLeftIndent - ( wSpacing + wText ) * labelHPos + ( wTotal ) * labelHAlign;
-                                    textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
-                                }
-                            }
                         }
                         // A null in the map means a fetch has already been initiated
                         // ... either it is still in progress, or it has already failed
@@ -1002,6 +1103,77 @@ module Webglimpse {
                                 };
                             } )( event.labelIcon, image );
                             image.src = event.labelIcon;
+                        }
+                    }
+                    
+                    // NOTE: With extendBeyondBar=true, we detect when there is insufficient space between the current event
+                    //       and those to either side to display the text + icon. However, if one event has right aligned text
+                    //       and the other has left aligned text, so both text labels overlap into the same space between the
+                    //       events, we don't currently try to detect that.
+                    
+                    // Determine whether there is enough space to display both text and icon, or only icon, or neither
+
+                    // coordinates of the start edge of the icon + label
+                    var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                    // coordinates of the end edge of the icon + label
+                    var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    
+                    // adjust xStartLabel and xEndLabel if they fall off the screen
+                    if ( xStartLabel < xLeftMin ) {
+                        xStartLabel = xLeftMin;
+                        xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    }
+                    else if ( xEndLabel > xRightMax ) {
+                        xEndLabel = xRightMax;
+                        xStartLabel = xEndLabel - ( wSpacing + wIcon + wText );
+                    }
+                    
+                    if ( !forceVisible ) {
+                        if ( xEndLabel > xRight || xStartLabel < xLeft ) {
+                            // there is not enough room for the text, try with just the icon
+                            wText = 0;
+                            textTexture = null;
+                            
+                            // coordinates of the start edge of the icon + label
+                            var xStartLabel = xStart + wLeftIndent - ( wIcon ) * labelHPos + ( wTotal ) * labelHAlign;
+                            // coordinates of the end edge of the icon + label
+                            var xEndLabel = xStartLabel + ( wIcon );
+                            
+                            // adjust xStartLabel and xEndLabel if they fall off the screen
+                            if ( xStartLabel < xLeftMin ) {
+                                xStartLabel = xLeftMin;
+                                xEndLabel = xStartLabel + ( wIcon );
+                            }
+                            else if ( xEndLabel > xRightMax ) {
+                                xEndLabel = xRightMax;
+                                xStartLabel = xEndLabel - ( wIcon );
+                            }
+                            
+                            // if there is still not enough room, don't show anything
+                            if ( xEndLabel > xRight || xStartLabel < xLeft ) {
+                                wIcon = 0;
+                                iconTexture = null;
+                            }
+                        }
+                    }
+                    
+                    // Icons
+                    if ( hasval( iconTexture ) ) {
+                        // coordinates of the start edge of the icon + label
+                        var xStartLabel = xStart + wLeftIndent - ( wSpacing + wIcon + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                    
+                        // coordinates of the end edge of the icon + label
+                        var xEndLabel = xStartLabel + ( wSpacing + wIcon + wText );
+                    
+                        if ( xStartLabel < xLeftMin ) {
+                            textureRenderer.draw( gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                        }
+                        else if ( xEndLabel > xRightMax ) {
+                            textureRenderer.draw( gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
+                        }
+                        else {
+                            var xFrac = xStart + wLeftIndent - ( wSpacing + wText ) * labelHPos + ( wTotal ) * labelHAlign;
+                            textureRenderer.draw( gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight } );
                         }
                     }
     

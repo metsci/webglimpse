@@ -33,12 +33,14 @@ module Webglimpse {
     export interface TimeGridPainterOptions {
         tickSpacing? : number;
         gridColor?   : Color;
+        referenceDate? : string;
     }
 
 
     export function newTimeGridPainter( timeAxis : TimeAxis1D, isVerticalAxis : boolean, timeZone : string, options? : TimeGridPainterOptions ) : Painter {
         var tickSpacing = ( hasval( options ) && hasval( options.tickSpacing ) ? options.tickSpacing : 60    );
         var gridColor   = ( hasval( options ) && hasval( options.gridColor   ) ? options.gridColor   : black );
+        var referenceDate_PMILLIS = ( hasval( options ) && hasval( options.referenceDate  ) ? parseTime_PMILLIS( options.referenceDate )  : undefined );
 
         var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
         var u_Color = new UniformColor( program, 'u_Color' );
@@ -48,7 +50,7 @@ module Webglimpse {
         var xyFracBuffer = newDynamicBuffer( );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, timeZone );
+            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, timeZone, referenceDate_PMILLIS );
             var tickCount = tickTimes_PMILLIS.length;
 
             program.use( gl );

@@ -30,6 +30,10 @@
 module Webglimpse {
 
 
+    export interface TimelineUiOptions {
+        allowEventMultiSelection? : boolean;
+    }
+    
     export class TimelineUi {
         private _input : TimelineInput;
         private _selection : TimelineSelectionModel;
@@ -48,7 +52,7 @@ module Webglimpse {
 
         private _panes : OrderedSet<Pane>;
 
-        constructor( model : TimelineModel ) {
+        constructor( model : TimelineModel, options : TimelineUiOptions = { } ) {
             this._dispose = new Notification( );
             this._input = new TimelineInput( );
             
@@ -60,7 +64,7 @@ module Webglimpse {
             this._panes = new OrderedSet<Pane>( [], getPaneId );
 
             this._selection = new TimelineSelectionModel( );
-            attachTimelineInputToSelection( this._input, this._selection );
+            attachTimelineInputToSelection( this._input, this._selection, options );
 
             this._groupUis = new OrderedSet<TimelineGroupUi>( [], (g)=>g.groupGuid );
             var groupUis = this._groupUis;
@@ -155,8 +159,13 @@ module Webglimpse {
             return this._imageCache[ url ];
         }
         
+        get panes( ) : OrderedSet<Pane> {
+            return this._panes;
+        }
+        
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
+            this._panes.removeId( paneId );
             this._panes.add( pane );
         }
         
@@ -231,6 +240,7 @@ module Webglimpse {
         
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
+            this._panes.removeId( paneId );
             this._panes.add( pane );
         }
         
@@ -437,7 +447,10 @@ module Webglimpse {
 
 
 
-    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel ) {
+    function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel, options : TimelineUiOptions ) {
+        
+        var allowEventMultiSelection   = ( hasval( options ) && hasval( options.allowEventMultiSelection ) ? options.allowEventMultiSelection : true );
+        
         // Mouse-pos & Time
         //
         input.mouseMove.on( function( ev : PointerEvent ) {
@@ -458,34 +471,45 @@ module Webglimpse {
         input.eventHover.on( function( event : TimelineEventModel ) {
             selection.hoveredEvent.value = event;
         } );
-
-        input.mouseDown.on( function( ev : PointerEvent ) {
-            if ( isLeftMouseDown( ev.mouseEvent ) ) {
-                var event = selection.hoveredEvent.value;
-                if ( hasval( event ) ) {
-                    var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
-                    var unselectedEventClicked = !selection.selectedEvents.hasValue( event );
-                    if ( multiSelectMode ) {
-                        if ( selection.selectedEvents.hasValue( event ) ) {
-                            selection.selectedEvents.removeValue( event );
+        
+        if ( options.allowEventMultiSelection ) {
+            input.mouseDown.on( function( ev : PointerEvent ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
+                        var multiSelectMode = ( ev.mouseEvent && ( ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey ) );
+                        var unselectedEventClicked = !selection.selectedEvents.hasValue( event );
+                        if ( multiSelectMode ) {
+                            if ( selection.selectedEvents.hasValue( event ) ) {
+                                selection.selectedEvents.removeValue( event );
+                            }
+                            else {
+                                selection.selectedEvents.add( event );
+                            }
                         }
-                        else {
+                        else if ( unselectedEventClicked ) {
+                            selection.selectedEvents.retainValues( [ event ] );
                             selection.selectedEvents.add( event );
                         }
+                        else {
+                            // if a selected event is clicked, do nothing (the user is probably initiating a drag)
+                            // if they wish to deselect the event, they need to ctrl+click the event or click on
+                            // a deselected event
+                        }
                     }
-                    else if ( unselectedEventClicked ) {
+                }
+            } );
+        }
+        else {
+            input.mouseDown.on( function( ev : PointerEvent ) {
+                if ( isLeftMouseDown( ev.mouseEvent ) ) {
+                    var event = selection.hoveredEvent.value;
+                    if ( hasval( event ) ) {
                         selection.selectedEvents.retainValues( [ event ] );
                         selection.selectedEvents.add( event );
                     }
-                    else {
-                        // if a selected event is clicked, do nothing (the user is probably initiating a drag)
-                        // if they wish to deselect the event, they need to ctrl+click the event or click on
-                        // a deselected event
-                    }
                 }
-            }
-        } );
+            } );
+        }
     }
-
-
 }

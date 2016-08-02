@@ -730,11 +730,15 @@ module Webglimpse {
     export interface Drawable {
         setContentPane( pane : Pane );
         redraw( );
+        
+        getPrefSize( ) : Size;
+        prefSizeChanged( ) : Notification1<Size>;
     }
 
 
     export function newDrawable( canvas : HTMLCanvasElement ) : Drawable {
         var contentPane : Pane = null;
+        var contentPrefSizeNotification = new Notification1<Size>( );
         var contentPrefSize = { w: null, h: null };
         var contentViewport = newBoundsFromRect( 0, 0, 0, 0 );
         var gl = requireGL( canvas );
@@ -751,16 +755,29 @@ module Webglimpse {
                 if ( !hasval( pendingRequestId ) ) {
                     pendingRequestId = window.requestAnimationFrame( function( ) {
                         if ( hasval( contentPane ) ) {
+                            
+                            var oldPrefSize = { w: contentPrefSize.w, h: contentPrefSize.h };
+                            
                             contentPane.updatePrefSizes( contentPrefSize );
                             contentViewport.setRect( 0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight );
                             contentPane.updateBounds( contentViewport.unmod, contentViewport.unmod );
                             contentPane.paint( gl );
-
+                            
                             // XXX: Trigger an enter/exit check somehow (fake a mouse-event?)
                         }
                         pendingRequestId = null;
+                        
+                        if ( oldPrefSize.w !== contentPrefSize.w || oldPrefSize.h !== contentPrefSize.h ) {
+                            contentPrefSizeNotification.fire ( { w: contentPrefSize.w, h: contentPrefSize.h } );
+                        }
                     } );
                 }
+            },
+            getPrefSize: function( ) {
+                return { w: contentPrefSize.w, h: contentPrefSize.h };
+            },
+            prefSizeChanged: function( ) : Notification1<Size> {
+                return contentPrefSizeNotification;
             }
         };
     }
