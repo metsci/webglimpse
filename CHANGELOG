@@ -1,3 +1,7 @@
+Webglimpse 1.8.0 (released 2016-8-2)
+
+* Public release.
+
 Webglimpse 1.7.2-pre9 (released 2016-7-29)
 
 * Add TimelinePaneOptions.referenceDate allowing timeline tick marks to be labeled in days relative to the reference.
