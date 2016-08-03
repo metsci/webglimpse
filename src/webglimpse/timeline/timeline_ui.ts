@@ -293,6 +293,7 @@ module Webglimpse {
     export class TimelineSelectionModel {
         private _mousePos = new XyModel( );
         
+        private _hoveredY = new SimpleModel<number>( );
         private _hoveredTime_PMILLIS = new SimpleModel<number>( );
         private _selectedInterval = new TimeIntervalModel( 0, 0 );
         
@@ -307,6 +308,7 @@ module Webglimpse {
         
         get mousePos( ) : XyModel { return this._mousePos; }
         
+        get hoveredY( ) : SimpleModel<number> { return this._hoveredY; }
         get hoveredTime_PMILLIS( ) : SimpleModel<number> { return this._hoveredTime_PMILLIS; }
         get selectedInterval( ) : TimeIntervalModel { return this._selectedInterval; }
         

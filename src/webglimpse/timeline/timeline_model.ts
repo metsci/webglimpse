@@ -1127,7 +1127,7 @@ module Webglimpse {
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
-                cursorGuids: this._cursorGuid,
+                cursorGuid: this._cursorGuid,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 bgLabelColor: ( hasval( this._bgLabelColor ) ? this._bgLabelColor.cssString : null ),
                 fgLabelColor: ( hasval( this._fgLabelColor ) ? this._fgLabelColor.cssString : null ),
@@ -1556,6 +1556,18 @@ module Webglimpse {
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
         
+            var newCursors = hasval( newData.cursors ) ? newData.cursors : [];
+            for ( var n = 0; n < newCursors.length; n++ ) {
+                var newCursor = newCursors[ n ];
+                var cursorModel = this._cursors.valueFor( newCursor.cursorGuid );
+                if ( hasval( cursorModel ) ) {
+                    strategy.updateCursorModel( cursorModel, newCursor );
+                }
+                else {
+                    this._cursors.add( new TimelineCursorModel( newCursor ) );
+                }
+            }
+
             var newAnnotations = hasval( newData.annotations ) ? newData.annotations : [];
             for ( var n = 0; n < newAnnotations.length; n++ ) {
                 var newAnnotation = newAnnotations[ n ];

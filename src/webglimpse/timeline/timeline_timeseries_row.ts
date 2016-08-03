@@ -285,12 +285,18 @@ module Webglimpse {
             }
             
             overlayPane.mouseMove.on( function( ev : PointerEvent ) {
+                // update selection.hoveredYValue
+                var y : number = dataAxis.vAtFrac( yFrac( ev ) );
+                selection.hoveredY.value = y;
+
+                // update selection.hoveredAnnotation
                 var result = getNearestAnnotationEvent( ev );
                 selection.hoveredAnnotation.value = result;
             } );
             selection.hoveredAnnotation.changed.on( redraw );
             
             overlayPane.mouseExit.on( function( ) {
+                selection.hoveredY.value = undefined;
                 selection.hoveredAnnotation.value = null;
             } );
             
@@ -406,7 +412,7 @@ module Webglimpse {
                 
                     var fragment = selection.hoveredTimeseries.fragment;
                     var fragment_time = fragment.times_PMILLIS;
-                    
+
                     if ( timeseriesDragMode === 'y' ) {                    
                         fragment.setData( selection.hoveredTimeseries.index, y );
                     }

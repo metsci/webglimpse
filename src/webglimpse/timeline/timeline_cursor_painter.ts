@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2014, Metron, Inc.
  * All rights reserved.
@@ -33,7 +32,7 @@ module Webglimpse {
     export function newTimeseriesCursorPainterFactory( ) : TimelineTimeseriesPainterFactory {
         // Painter Factory
         return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi ) : Painter {
-            
+
             var textTextures = newTextTextureCache3( );
             var textureRenderer = new TextureRenderer( );
             
@@ -47,54 +46,95 @@ module Webglimpse {
             
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+
+                // only draw a cursor if we are the current hovered row
+                var hoveredRow : TimelineRowModel = ui.selection.hoveredRow.value;
+                if ( !hasval( hoveredRow ) || hoveredRow.rowGuid !== rowModel.rowGuid ) return;
+
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
                 
+                var indexXys = 0;
                 textTextures.resetTouches( );
                 
                 var time = ui.selection.hoveredTime_PMILLIS.value;
-                
+                var y    = ui.selection.hoveredY.value;
+
                 if ( hasval( time ) ) {
                 
                     var cursorModel = model.cursor( rowModel.cursorGuid );
                     
-                    for ( var i = 0 ; i < cursorModel.labeledTimeseriesGuids.length ; i++ ) {
-                        
-                        var timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt( i );
-                        var timeseries = model.timeseries( timeseriesGuid );
-                        
-                        for ( var j = 0 ; j < timeseries.fragmentGuids.length ; j++ ) {
-                            var fragmentGuid : string = timeseries.fragmentGuids.valueAt( j );
-                            var fragment : TimelineTimeseriesFragmentModel = model.timeseriesFragment( fragmentGuid );
+                    if ( hasval( cursorModel) )
+                    {
+                        for ( var i = 0 ; i < cursorModel.labeledTimeseriesGuids.length ; i++ ) {
                             
-                            // fragments should not overlap
-                            if ( fragment.start_PMILLIS < time && fragment.end_PMILLIS > time ) {
+                            var timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt( i );
+                            var timeseries = model.timeseries( timeseriesGuid );
+                            
+                            for ( var j = 0 ; j < timeseries.fragmentGuids.length ; j++ ) {
+                                var fragmentGuid : string = timeseries.fragmentGuids.valueAt( j );
+                                var fragment : TimelineTimeseriesFragmentModel = model.timeseriesFragment( fragmentGuid );
                                 
-                                var value;
-                                
-                                // bars are drawn starting at the point and continuing to the next point, so we don't interpolate them
-                                if ( timeseries.uiHint == 'bars' ) {
-                                    var index : number = indexAtOrBefore( fragment.times_PMILLIS, time );
-                                    value = fragment.data[index];
-                                }
-                                else {
-                                    var index0 : number = indexAtOrBefore( fragment.times_PMILLIS, time );
-                                    var index1 : number = indexAtOrAfter( fragment.times_PMILLIS, time );
+                                // fragments should not overlap
+                                if ( fragment.start_PMILLIS < time && fragment.end_PMILLIS > time ) {
                                     
-                                    var value0 = fragment.data[index0];
-                                    var time0 = fragment.times_PMILLIS[index0];
+                                    var value;
                                     
-                                    var value1 = fragment.data[index1];
-                                    var time1 = fragment.times_PMILLIS[index1];
-                                    
-                                    var diff = time1 - time0;
-                                    var diff0 = ( time - time0 ) / diff;
-                                    var diff1 = 1 - diff0;
-                                    
-                                    value = value0 * diff0 + value1 * diff1;                                    
+                                    // bars are drawn starting at the point and continuing to the next point, so we don't interpolate them
+                                    if ( timeseries.uiHint == 'bars' ) {
+                                        var index : number = indexAtOrBefore( fragment.times_PMILLIS, time );
+                                        value = fragment.data[index];
+                                    }
+                                    else {
+                                        var index0 : number = indexAtOrBefore( fragment.times_PMILLIS, time );
+                                        var index1 : number = indexAtOrAfter( fragment.times_PMILLIS, time );
+                                        
+                                        var value0 = fragment.data[index0];
+                                        var time0 = fragment.times_PMILLIS[index0];
+                                        
+                                        var value1 = fragment.data[index1];
+                                        var time1 = fragment.times_PMILLIS[index1];
+                                        
+                                        var diff = time1 - time0;
+                                        var diff0 = ( time - time0 ) / diff;
+                                        var diff1 = 1 - diff0;
+                                        
+                                        value = value0 * diff0 + value1 * diff1;                                    
+                                    }
                                 }
                             }
                         }
+
+                        var lineThickness = 1;
+                        var lineColor     = white;
+
+                        var wLine = lineThickness / viewport.w;
+                        var hLine = lineThickness / viewport.h;
+
+                        var xLeft  = 0;
+                        var xRight = 1;
+                        var yMid   = dataAxis.vFrac( y );
+                        var xMid   = timeAxis.tFrac( time );
+
+                        xys = ensureCapacityFloat32( xys, 2*36 );
+
+                        // draw horizontal line
+                        indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
+
+                        // draw vertical lines (split in two to avoid overlap with horizontal)
+                        indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, 0, yMid-hLine/2 );
+                        indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, yMid+hLine/2, 1 );
+
+                        // draw lines
+                        program.use( gl );
+
+                        xysBuffer.setData( xys.subarray( 0, indexXys ) );
+                        a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                        u_Color.setData( gl, lineColor );
+                        gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
+        
+                        a_Position.disable( gl );
+                        program.endUse( gl );
                     }
                 }
             }

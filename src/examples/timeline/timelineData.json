@@ -1,4 +1,11 @@
 {
+    "cursors": [ {
+        "cursorGuid" : "metsci.timelineExample.cursor01",
+        "labeledTimeseriesGuids" : [],
+        "lineColor" : "white",
+        "showVerticalLine" : true,
+        "showHorizontalLine" : true
+    } ],
     "annotations": [ {
         "annotationGuid": "metsci.timelineExample.annotation01",
         "time_ISO8601": "2014-01-01T01:00:00Z",
@@ -167,6 +174,7 @@
         "label": "Row #3A",
         "yMin": -22,
         "yMax": 20,
+        "cursorGuid" : "metsci.timelineExample.cursor01",
         "timeseriesGuids": [
         	"metsci.timelineExample.timeseries01",
         	"metsci.timelineExample.timeseries02",
