@@ -1,7 +1,8 @@
 {
     "cursors": [ {
         "cursorGuid" : "metsci.timelineExample.cursor01",
-        "labeledTimeseriesGuids" : [],
+        "labeledTimeseriesGuids" : [ "metsci.timelineExample.timeseries01",
+        	"metsci.timelineExample.timeseries04"],
         "lineColor" : "white",
         "showVerticalLine" : true,
         "showHorizontalLine" : true

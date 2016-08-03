@@ -60,12 +60,27 @@ module Webglimpse {
                 var time = ui.selection.hoveredTime_PMILLIS.value;
                 var y    = ui.selection.hoveredY.value;
 
+                var boxSize       = 18;
+                var lineThickness = 5;
+                var lineColor     = white;
+
+                var wLine = lineThickness / viewport.w;
+                var hLine = lineThickness / viewport.h;
+
+                var wBox = boxSize / viewport.w;
+                var hBox = boxSize / viewport.h;
+
                 if ( hasval( time ) ) {
                 
                     var cursorModel = model.cursor( rowModel.cursorGuid );
                     
                     if ( hasval( cursorModel) )
                     {
+                        var timeseriesCount = cursorModel.labeledTimeseriesGuids.length;
+
+                        // 36 vertices for crosshairs, 48 vertices per timeseries intersection marker
+                        xys = ensureCapacityFloat32( xys, 2 * ( 36 + timeseriesCount * 48 ) );
+
                         for ( var i = 0 ; i < cursorModel.labeledTimeseriesGuids.length ; i++ ) {
                             
                             var timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt( i );
@@ -99,24 +114,35 @@ module Webglimpse {
                                         var diff0 = ( time - time0 ) / diff;
                                         var diff1 = 1 - diff0;
                                         
-                                        value = value0 * diff0 + value1 * diff1;                                    
+                                        value = value0 * diff1 + value1 * diff0;                                    
                                     }
+
+                                    var valueFracY = dataAxis.vFrac( value );
+                                    var valueFracX = timeAxis.tFrac( time );
+
+                                    var boxLeft   = valueFracX - wBox/2;
+                                    var boxRight  = valueFracX + wBox/2;
+                                    var boxTop    = valueFracY + hBox/2;
+                                    var boxBottom = valueFracY - hBox/2;
+
+                                    // draw box at value location
+
+                                    // left edge
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft-wLine/2, boxLeft+wLine/2, boxTop+hLine/2, boxBottom-hLine/2 );
+                                    // right edge
+                                    indexXys = putQuadXys( xys, indexXys, boxRight-wLine/2, boxRight+wLine/2, boxTop+hLine/2, boxBottom-hLine/2 );
+                                    // top edge
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wLine/2, boxRight-wLine/2, boxTop-hLine/2, boxTop+hLine/2 );
+                                    // bottom edge
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wLine/2, boxRight-wLine/2, boxBottom-hLine/2, boxBottom+hLine/2 );
                                 }
                             }
                         }
-
-                        var lineThickness = 1;
-                        var lineColor     = white;
-
-                        var wLine = lineThickness / viewport.w;
-                        var hLine = lineThickness / viewport.h;
 
                         var xLeft  = 0;
                         var xRight = 1;
                         var yMid   = dataAxis.vFrac( y );
                         var xMid   = timeAxis.tFrac( time );
-
-                        xys = ensureCapacityFloat32( xys, 2*36 );
 
                         // draw horizontal line
                         indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
