@@ -162,7 +162,7 @@ module Webglimpse {
                 var timeStructs = createTimeStructs( timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
                 for ( var n = 0 ; n < timeStructs.length ; n++ ) {
                     var timeStruct = timeStructs[ n ];
-                    var text = ticks.prefixFormat( timeStruct );;
+                    var text = ticks.prefixFormat( timeStruct );
                     var textTexture = textTextures.value( text );
 
                     var halfTextFrac = 0.5 * textTexture.w / viewport.w;

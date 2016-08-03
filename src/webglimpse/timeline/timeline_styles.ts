@@ -36,7 +36,10 @@ module Webglimpse {
     export var timeseriesRowPainterFactories_DEFAULT = [
         newTimeseriesPainterFactory( ),
         newTimeseriesAnnotationPainterFactory( ),
-        newTimeseriesCursorPainterFactory( )
+        newTimeseriesCursorPainterFactory( {
+            font: '16px verdana,sans-serif',
+            buffer_px: 6
+        } )
     ];
     
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {

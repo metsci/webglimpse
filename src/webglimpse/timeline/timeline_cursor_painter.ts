@@ -29,13 +29,40 @@
  */
 module Webglimpse {
 
-    export function newTimeseriesCursorPainterFactory( ) : TimelineTimeseriesPainterFactory {
-        // Painter Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi ) : Painter {
+    export interface TimeseriesCursorPainterOptions {
+        font?         : string;
+        textColor?    : Color;
+        // number of pixels between box and label text
+        buffer_px?    : number;
+        // number of significant digits in text labels
+        textDecimals? : number;
 
-            var textTextures = newTextTextureCache3( );
-            var textureRenderer = new TextureRenderer( );
-            
+        // color of selection box and crosshair lines
+        lineColor?    : Color;
+
+        // thickness of cursor crosshair lines in pixels
+        crosshairThickness_px?   : number;
+
+        // width/height of selection box (shown at intersection beween crosshairs and timeseries) in pixels
+        boxSize_px? : number;
+        // thickness of selection box lines in pixels
+        boxThickness_px? : number;
+    }
+
+    export function newTimeseriesCursorPainterFactory( cursorOptions? : TimeseriesCursorPainterOptions ) : TimelineTimeseriesPainterFactory {
+
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi, options : TimelineTimeseriesPainterOptions ) : Painter {
+
+            var textColor             = ( hasval( cursorOptions ) && hasval( cursorOptions.textColor              ) ? cursorOptions.textColor      : white );
+            var lineColor             = ( hasval( cursorOptions ) && hasval( cursorOptions.lineColor              ) ? cursorOptions.lineColor      : white );
+            var font                  = ( hasval( cursorOptions ) && hasval( cursorOptions.font                   ) ? cursorOptions.font           : options.timelineFont );
+            var buffer_px             = ( hasval( cursorOptions ) && hasval( cursorOptions.buffer_px              ) ? cursorOptions.buffer_px      : 4 );
+            var textDecimals          = ( hasval( cursorOptions ) && hasval( cursorOptions.textDecimals           ) ? cursorOptions.textDecimals   : 2 );
+            var boxSize_px            = ( hasval( cursorOptions ) && hasval( cursorOptions.boxSize_px             ) ? cursorOptions.boxSize_px     : 8 );
+            var crosshairThickness_px = ( hasval( cursorOptions ) && hasval( cursorOptions.crosshairThickness_px  ) ? cursorOptions.boxSize_px     : 2 );
+            var boxThickness_px       = ( hasval( cursorOptions ) && hasval( cursorOptions.boxThickness_px        ) ? cursorOptions.boxSize_px     : 2 );
+
             var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
             var u_Color = new UniformColor( program, 'u_Color' );
             var a_Position = new Attribute( program, 'a_XyFrac' );
@@ -43,6 +70,9 @@ module Webglimpse {
             var xys = new Float32Array( 0 );
             xys = ensureCapacityFloat32( xys, 4 );
             var xysBuffer = newDynamicBuffer( );
+
+            var textTextures = <Cache<TextTexture2D>> newTextTextureCache( font, textColor );
+            var textureRenderer = new TextureRenderer( );
             
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -60,15 +90,14 @@ module Webglimpse {
                 var time = ui.selection.hoveredTime_PMILLIS.value;
                 var y    = ui.selection.hoveredY.value;
 
-                var boxSize       = 18;
-                var lineThickness = 5;
-                var lineColor     = white;
+                var wLine = crosshairThickness_px / viewport.w;
+                var hLine = crosshairThickness_px / viewport.h;
 
-                var wLine = lineThickness / viewport.w;
-                var hLine = lineThickness / viewport.h;
+                var wBoxLine = boxThickness_px / viewport.w;
+                var hBoxLine = boxThickness_px / viewport.h;
 
-                var wBox = boxSize / viewport.w;
-                var hBox = boxSize / viewport.h;
+                var wBox = boxSize_px / viewport.w;
+                var hBox = boxSize_px / viewport.h;
 
                 if ( hasval( time ) ) {
                 
@@ -76,16 +105,21 @@ module Webglimpse {
                     
                     if ( hasval( cursorModel) )
                     {
+                        textureRenderer.begin( gl, viewport );
+
                         var timeseriesCount = cursorModel.labeledTimeseriesGuids.length;
 
                         // 36 vertices for crosshairs, 48 vertices per timeseries intersection marker
                         xys = ensureCapacityFloat32( xys, 2 * ( 36 + timeseriesCount * 48 ) );
 
                         for ( var i = 0 ; i < cursorModel.labeledTimeseriesGuids.length ; i++ ) {
-                            
+
                             var timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt( i );
                             var timeseries = model.timeseries( timeseriesGuid );
                             
+                            // if the row doesn't contain the timeseries, don't show cursor intersections
+                            if ( !rowModel.timeseriesGuids.hasValue( timeseriesGuid ) ) continue;
+
                             for ( var j = 0 ; j < timeseries.fragmentGuids.length ; j++ ) {
                                 var fragmentGuid : string = timeseries.fragmentGuids.valueAt( j );
                                 var fragment : TimelineTimeseriesFragmentModel = model.timeseriesFragment( fragmentGuid );
@@ -93,7 +127,7 @@ module Webglimpse {
                                 // fragments should not overlap
                                 if ( fragment.start_PMILLIS < time && fragment.end_PMILLIS > time ) {
                                     
-                                    var value;
+                                    var value : number;
                                     
                                     // bars are drawn starting at the point and continuing to the next point, so we don't interpolate them
                                     if ( timeseries.uiHint == 'bars' ) {
@@ -117,6 +151,8 @@ module Webglimpse {
                                         value = value0 * diff1 + value1 * diff0;                                    
                                     }
 
+                                    var textTexture = textTextures.value( value.toFixed( textDecimals ) );
+
                                     var valueFracY = dataAxis.vFrac( value );
                                     var valueFracX = timeAxis.tFrac( time );
 
@@ -128,16 +164,30 @@ module Webglimpse {
                                     // draw box at value location
 
                                     // left edge
-                                    indexXys = putQuadXys( xys, indexXys, boxLeft-wLine/2, boxLeft+wLine/2, boxTop+hLine/2, boxBottom-hLine/2 );
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft-wBoxLine/2, boxLeft+wBoxLine/2, boxTop+hBoxLine/2, boxBottom-hBoxLine/2 );
                                     // right edge
-                                    indexXys = putQuadXys( xys, indexXys, boxRight-wLine/2, boxRight+wLine/2, boxTop+hLine/2, boxBottom-hLine/2 );
+                                    indexXys = putQuadXys( xys, indexXys, boxRight-wBoxLine/2, boxRight+wBoxLine/2, boxTop+hBoxLine/2, boxBottom-hBoxLine/2 );
                                     // top edge
-                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wLine/2, boxRight-wLine/2, boxTop-hLine/2, boxTop+hLine/2 );
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wBoxLine/2, boxRight-wBoxLine/2, boxTop-hBoxLine/2, boxTop+hBoxLine/2 );
                                     // bottom edge
-                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wLine/2, boxRight-wLine/2, boxBottom-hLine/2, boxBottom+hLine/2 );
+                                    indexXys = putQuadXys( xys, indexXys, boxLeft+wBoxLine/2, boxRight-wBoxLine/2, boxBottom-hBoxLine/2, boxBottom+hBoxLine/2 );
+
+                                    // draw text
+                                    //XXX 0.6 looks more centered to the eye than 0.5 for numeric text
+                                    textureRenderer.draw( gl, textTexture, boxRight+wBoxLine/2+buffer_px/viewport.w, valueFracY, { xAnchor: 0, yAnchor: .6 } );
+
                                 }
                             }
                         }
+
+                        if ( hasval( cursorModel.showCursorText ) ? cursorModel.showCursorText : true ) {
+                            var textTexture = textTextures.value( y.toFixed( textDecimals ) );
+                            //textureRenderer.draw( gl, textTexture, 1, timeAxis.tFrac( y ) + buffer_px/viewport.h, { xAnchor: 1, yAnchor: 0 } );
+                            textureRenderer.draw( gl, textTexture, 1, dataAxis.vFrac( y ) + buffer_px/viewport.h, { xAnchor: 1, yAnchor: 0 } );    
+                        }
+
+                        textureRenderer.end( gl );
+                        textTextures.retainTouched( );
 
                         var xLeft  = 0;
                         var xRight = 1;
@@ -145,11 +195,15 @@ module Webglimpse {
                         var xMid   = timeAxis.tFrac( time );
 
                         // draw horizontal line
-                        indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
+                        if ( hasval( cursorModel.showHorizontalLine ) ? cursorModel.showHorizontalLine : true ) {
+                            indexXys = putQuadXys( xys, indexXys, xLeft, xRight, yMid-hLine/2, yMid+hLine/2 );
+                        }
 
                         // draw vertical lines (split in two to avoid overlap with horizontal)
-                        indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, 0, yMid-hLine/2 );
-                        indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, yMid+hLine/2, 1 );
+                        if ( hasval( cursorModel.showVerticalLine ) ? cursorModel.showVerticalLine : true ) {
+                            indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, 0, yMid-hLine/2 );
+                            indexXys = putQuadXys( xys, indexXys, xMid-wLine/2, xMid+wLine/2, yMid+hLine/2, 1 );
+                        }
 
                         // draw lines
                         program.use( gl );

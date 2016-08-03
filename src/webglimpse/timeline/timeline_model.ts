@@ -36,6 +36,7 @@ module Webglimpse {
         lineColor : string;
         showVerticalLine : boolean;
         showHorizontalLine : boolean;
+        showCursorText : boolean;
     }
     
     export interface TimelineAnnotation {
@@ -176,6 +177,7 @@ module Webglimpse {
         // guids of timeseries to display values for at the selected time
         private _labeledTimeseriesGuids : OrderedStringSet;
         private _lineColor : Color;
+        private _showCursorText : boolean;
         private _showVerticalLine : boolean;
         private _showHorizontalLine : boolean;
         private _attrsChanged : Notification;
@@ -209,12 +211,17 @@ module Webglimpse {
         get showHorizontalLine( ) : boolean {
             return this._showHorizontalLine;
         }
-        
+                
+        get showCursorText( ) : boolean {
+            return this._showCursorText;
+        }
+
         setAttrs( cursor : TimelineCursor ) {
             this._labeledTimeseriesGuids = new OrderedStringSet( cursor.labeledTimeseriesGuids || [] );
             this._lineColor = ( hasval( cursor.lineColor ) ? parseCssColor( cursor.lineColor ) : null );
             this._showVerticalLine = cursor.showVerticalLine;
             this._showHorizontalLine = cursor.showHorizontalLine;
+            this._showCursorText = cursor.showCursorText;
             this._attrsChanged.fire( );
         }
         
@@ -225,6 +232,7 @@ module Webglimpse {
                 lineColor: ( hasval( this._lineColor ) ? this._lineColor.cssString : null ),
                 showVerticalLine: this._showVerticalLine,
                 showHorizontalLine: this._showHorizontalLine,
+                showCursorText: this._showCursorText
             };
         }
     }

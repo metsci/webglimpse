@@ -2,8 +2,10 @@
     "cursors": [ {
         "cursorGuid" : "metsci.timelineExample.cursor01",
         "labeledTimeseriesGuids" : [ "metsci.timelineExample.timeseries01",
-        	"metsci.timelineExample.timeseries04"],
+        	"metsci.timelineExample.timeseries03",
+            "metsci.timelineExample.timeseries04" ],
         "lineColor" : "white",
+        "showCursorText" : true,
         "showVerticalLine" : true,
         "showHorizontalLine" : true
     } ],
@@ -198,6 +200,7 @@
         "label": "Row #3C",
         "yMin": -15,
         "yMax": 15,
+        "cursorGuid" : "metsci.timelineExample.cursor01",
         "timeseriesGuids": [
             "metsci.timelineExample.timeseries03"
         ],
