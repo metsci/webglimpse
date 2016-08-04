@@ -5,6 +5,7 @@
         	"metsci.timelineExample.timeseries03",
             "metsci.timelineExample.timeseries04" ],
         "lineColor" : "white",
+        "textColor" : "white",
         "showCursorText" : true,
         "showVerticalLine" : true,
         "showHorizontalLine" : true

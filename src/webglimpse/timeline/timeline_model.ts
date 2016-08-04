@@ -34,6 +34,7 @@ module Webglimpse {
         cursorGuid : string;
         labeledTimeseriesGuids : string[];
         lineColor : string;
+        textColor : string;
         showVerticalLine : boolean;
         showHorizontalLine : boolean;
         showCursorText : boolean;
@@ -177,6 +178,7 @@ module Webglimpse {
         // guids of timeseries to display values for at the selected time
         private _labeledTimeseriesGuids : OrderedStringSet;
         private _lineColor : Color;
+        private _textColor : Color;
         private _showCursorText : boolean;
         private _showVerticalLine : boolean;
         private _showHorizontalLine : boolean;
@@ -203,6 +205,10 @@ module Webglimpse {
         get lineColor( ) : Color {
             return this._lineColor;
         }
+
+        get textColor( ) : Color {
+            return this._textColor;
+        }
         
         get showVerticalLine( ) : boolean {
             return this._showVerticalLine;
@@ -219,6 +225,7 @@ module Webglimpse {
         setAttrs( cursor : TimelineCursor ) {
             this._labeledTimeseriesGuids = new OrderedStringSet( cursor.labeledTimeseriesGuids || [] );
             this._lineColor = ( hasval( cursor.lineColor ) ? parseCssColor( cursor.lineColor ) : null );
+            this._textColor = ( hasval( cursor.textColor ) ? parseCssColor( cursor.textColor ) : null );
             this._showVerticalLine = cursor.showVerticalLine;
             this._showHorizontalLine = cursor.showHorizontalLine;
             this._showCursorText = cursor.showCursorText;
@@ -230,6 +237,7 @@ module Webglimpse {
                 cursorGuid: this._cursorGuid,
                 labeledTimeseriesGuids: this._labeledTimeseriesGuids.toArray( ),
                 lineColor: ( hasval( this._lineColor ) ? this._lineColor.cssString : null ),
+                textColor: ( hasval( this._textColor ) ? this._textColor.cssString : null ),
                 showVerticalLine: this._showVerticalLine,
                 showHorizontalLine: this._showHorizontalLine,
                 showCursorText: this._showCursorText

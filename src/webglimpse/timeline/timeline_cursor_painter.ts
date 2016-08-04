@@ -71,9 +71,9 @@ module Webglimpse {
             xys = ensureCapacityFloat32( xys, 4 );
             var xysBuffer = newDynamicBuffer( );
 
-            var textTextures = <Cache<TextTexture2D>> newTextTextureCache( font, textColor );
+            var textTextures = newTextTextureCache2( font );
             var textureRenderer = new TextureRenderer( );
-            
+
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
 
@@ -90,6 +90,8 @@ module Webglimpse {
                 var time = ui.selection.hoveredTime_PMILLIS.value;
                 var y    = ui.selection.hoveredY.value;
 
+                if ( !hasval( time ) || !hasval( y ) ) return;
+
                 var wLine = crosshairThickness_px / viewport.w;
                 var hLine = crosshairThickness_px / viewport.h;
 
@@ -105,6 +107,16 @@ module Webglimpse {
                     
                     if ( hasval( cursorModel) )
                     {
+                        if ( hasval( cursorModel.lineColor ) )
+                        {
+                            lineColor = cursorModel.lineColor;
+                        }
+
+                        if ( hasval( cursorModel.textColor ) )
+                        {
+                            textColor = cursorModel.textColor;
+                        }
+
                         textureRenderer.begin( gl, viewport );
 
                         var timeseriesCount = cursorModel.labeledTimeseriesGuids.length;
@@ -151,7 +163,7 @@ module Webglimpse {
                                         value = value0 * diff1 + value1 * diff0;                                    
                                     }
 
-                                    var textTexture = textTextures.value( value.toFixed( textDecimals ) );
+                                    var textTexture = textTextures.value( textColor.rgbaString, value.toFixed( textDecimals ) );
 
                                     var valueFracY = dataAxis.vFrac( value );
                                     var valueFracX = timeAxis.tFrac( time );
@@ -181,8 +193,7 @@ module Webglimpse {
                         }
 
                         if ( hasval( cursorModel.showCursorText ) ? cursorModel.showCursorText : true ) {
-                            var textTexture = textTextures.value( y.toFixed( textDecimals ) );
-                            //textureRenderer.draw( gl, textTexture, 1, timeAxis.tFrac( y ) + buffer_px/viewport.h, { xAnchor: 1, yAnchor: 0 } );
+                            var textTexture = textTextures.value( textColor.rgbaString, y.toFixed( textDecimals ) );
                             textureRenderer.draw( gl, textTexture, 1, dataAxis.vFrac( y ) + buffer_px/viewport.h, { xAnchor: 1, yAnchor: 0 } );    
                         }
 
