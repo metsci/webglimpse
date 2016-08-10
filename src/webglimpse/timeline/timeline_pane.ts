@@ -60,6 +60,7 @@ module Webglimpse {
         rowLabelColor? : Color;
         rowLabelBgColor? : Color;
         groupLabelColor? : Color;
+        groupHighlightColor? : Color;
         axisLabelColor? : Color;
         bgColor? : Color;
         rowBgColor? : Color;
@@ -126,6 +127,7 @@ module Webglimpse {
         var rowLabelColor               = ( hasval( options ) && hasval( options.rowLabelColor               ) ? options.rowLabelColor               : fgColor                    );
         var rowLabelBgColor             = ( hasval( options ) && hasval( options.rowLabelBgColor             ) ? options.rowLabelBgColor             : bgColor                    );
         var groupLabelColor             = ( hasval( options ) && hasval( options.groupLabelColor             ) ? options.groupLabelColor             : fgColor                    );
+        var groupHighlightColor         = ( hasval(options  ) && hasval( options.groupHighlightColor         ) ? options.groupHighlightColor         : rgb( 0, 1, 1 )             );
         var axisLabelColor              = ( hasval( options ) && hasval( options.axisLabelColor              ) ? options.axisLabelColor              : fgColor                    );
         var rowBgColor                  = ( hasval( options ) && hasval( options.rowBgColor                  ) ? options.rowBgColor                  : rgb( 0.020, 0.086, 0.165 ) );
         var rowAltBgColor               = ( hasval( options ) && hasval( options.rowAltBgColor               ) ? options.rowAltBgColor               : rgb( 0.020, 0.086, 0.165 ) );
@@ -668,7 +670,7 @@ module Webglimpse {
         } );
     }
     
-    function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
+    export function newTimelineSingleSelectionPainter( timeAxis : TimeAxis1D, interval : TimeIntervalModel, borderColor : Color, fillColor : Color ) : Painter {
 
         var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
@@ -862,6 +864,7 @@ module Webglimpse {
         rowLabelColor : Color;
         rowLabelBgColor : Color;
         groupLabelColor : Color;
+        groupHighlightColor : Color;
         axisLabelColor : Color;
         bgColor : Color;
         rowBgColor : Color;
@@ -909,6 +912,7 @@ module Webglimpse {
         var fgColor = options.fgColor;
         var rowLabelColor = options.rowLabelColor;
         var groupLabelColor = options.groupLabelColor;
+        var groupHighlightColor = options.groupHighlightColor;
         var axisLabelColor = options.axisLabelColor;
         var bgColor = options.bgColor;
         var rowBgColor = options.rowBgColor;
@@ -1051,14 +1055,24 @@ module Webglimpse {
             groupHeaderPanes[ groupGuid ] = groupHeaderPane;
             groupContentPanes[ groupGuid ] = groupContentPane;
 
-            var groupAttrsChanged = function( ) {
+            var groupAttrsChanged = function( group ) {
                 var groupContentLayoutOpts = timelineContentPane.layoutOptions( groupContentPane );
+                var groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
+                var redraw = false;
+                if(group.highlighted !== (!groupHighlightLayoutOpts.hide)) {
+                    groupHighlightLayoutOpts.hide = !group.highlighted;
+                    redraw = true;
+                }
                 if ( group.collapsed !== groupContentLayoutOpts.hide ) {
                     groupContentLayoutOpts.hide = group.collapsed;
+                    redraw = true;
+                }
+                if(redraw) {
                     drawable.redraw( );
                 }
-            };
+            }.bind(this, group);
             group.attrsChanged.on( groupAttrsChanged );
+            groupAttrsChanged();
 
             groupButton.mouseDown.on( function( ev : PointerEvent ) {
                 if ( isLeftMouseDown( ev.mouseEvent ) ) {

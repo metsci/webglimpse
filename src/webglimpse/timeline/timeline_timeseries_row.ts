@@ -466,6 +466,21 @@ module Webglimpse {
             var defaultColor = hasval( options ) && hasval( options.timelineFgColor ) ? options.timelineFgColor : white;
             var defaultThickness = hasval( options ) && hasval( options.timelineThickness ) ? options.timelineThickness : 1;
             
+            var modelview_line_VERTSHADER = concatLines(
+                    '    uniform mat4 u_modelViewMatrix;                       ',
+                    '    attribute vec4 a_Position;                            ',
+					'    attribute float a_Distance;                           ',
+					'    varying float v_Distance;                             ',
+                    '    uniform float u_PointSize;                            ',
+                    '                                                          ',
+                    '    void main( ) {                                        ',
+                    '        gl_PointSize = u_PointSize ;                      ',
+                    '        gl_Position = u_modelViewMatrix * a_Position ;    ',
+					'        v_Distance = a_Distance;                          ',
+                    '    }                                                     ',
+                    '                                                          '
+            );
+
             var modelview_pointsize_VERTSHADER = concatLines(
                     '    uniform mat4 u_modelViewMatrix;                       ',
                     '    attribute vec4 a_Position;                            ',
@@ -479,15 +494,26 @@ module Webglimpse {
             );
             
             var program = new Program( modelview_pointsize_VERTSHADER, solid_FRAGSHADER );
+            
             var u_Color = new UniformColor( program, 'u_Color' );
             var u_modelViewMatrix = new UniformMatrix4f( program, 'u_modelViewMatrix' );
             var a_Position = new Attribute( program, 'a_Position' );
             var u_PointSize = new Uniform1f( program, 'u_PointSize' );
+
+            var lineProgram = new Program( modelview_line_VERTSHADER, dash_FRAGSHADER );
+            var u_lpColor = new UniformColor( lineProgram, 'u_Color' );
+            var u_lpmodelViewMatrix = new UniformMatrix4f( lineProgram, 'u_modelViewMatrix' );
+            var a_lpPosition = new Attribute( lineProgram, 'a_Position' );
+            var u_lpPointSize = new Uniform1f( lineProgram, 'u_PointSize' );
+            var a_lpDistance = new Attribute( lineProgram, 'a_Distance' );
+			var u_lpDash = new Uniform1f( lineProgram, 'u_Dash' );
             
             var axis = new Axis2D( timeAxis, dataAxis );
             
             var xys = new Float32Array( 0 );
+			var dists = new Float32Array( 0 );
             var xysBuffer = newDynamicBuffer( );
+			var distBuffer = newDynamicBuffer( );
            
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -495,13 +521,7 @@ module Webglimpse {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
                 
-                // enable the shader
-                program.use( gl );
-                
-                u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
-                
-                for ( var i = 0 ; i < rowModel.timeseriesGuids.length ; i++ ) {
-                    
+                for ( var i = 0 ; i < rowModel.timeseriesGuids.length ; i++ ) {                    
                     // collect fragments and sort them by time
                     var totalSize = 0;
                     var sortedFragments = new Array<TimelineTimeseriesFragmentModel>( );
@@ -517,10 +537,15 @@ module Webglimpse {
                     sortedFragments.sort( ( a,b ) => { return a.start_PMILLIS - b.start_PMILLIS; } );
                     
                     if ( timeseries.uiHint == 'lines' || timeseries.uiHint == 'points' || timeseries.uiHint == 'lines-and-points' || timeseries.uiHint == undefined ) {
-                    
+
+                        // enable the shader
+                        lineProgram.use( gl );
+
+                        u_lpmodelViewMatrix.setData( gl, glOrthoAxis( axis ) );
                         var size = totalSize * 2;
                         
                         xys = ensureCapacityFloat32( xys, size );
+						dists = ensureCapacityFloat32( dists, totalSize );
                         
                         var index = 0;
                         for ( var j = 0 ; j < sortedFragments.length ; j++ ) {
@@ -531,17 +556,31 @@ module Webglimpse {
                             for ( var k = 0 ; k < data.length ; k++,index+=2 ) {
                                 xys[index] = timeAxis.vAtTime( times_PMILLIS[k] );
                                 xys[index+1] = data[k];
+								if(k != 0) {
+									var x = (timeAxis.vAtTime( times_PMILLIS[k] ) - timeAxis.vAtTime( times_PMILLIS[k - 1] ));
+									var y = data[k] - data[k - 1];
+									dists[k] = dists[k - 1] + Math.sqrt(x * x + y * y);
+								}
+								else {
+									dists[k] = 0;
+								}
                             }
                         }
                         
                         var lineColor = hasval( timeseries.lineColor ) ? timeseries.lineColor : defaultColor;
-                        u_Color.setData( gl, lineColor );
+                        u_lpColor.setData( gl, lineColor );
+						
+						var dash = hasval( timeseries.dash ) ? timeseries.dash : 0;
+						u_lpDash.setData(gl, dash);
                         
                         var lineThickness = hasval( timeseries.lineThickness ) ? timeseries.lineThickness : defaultThickness;
                         gl.lineWidth( lineThickness );
     
                         xysBuffer.setData( xys.subarray( 0, index ) );
-                        a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                        a_lpPosition.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+
+						distBuffer.setData( dists.subarray( 0, totalSize) );
+						a_lpDistance.setDataAndEnable( gl, distBuffer, 1, GL.FLOAT );
                         
                         if ( timeseries.uiHint == 'lines' || timeseries.uiHint == 'lines-and-points' || timeseries.uiHint == undefined ) {
                             // draw the lines
@@ -559,9 +598,12 @@ module Webglimpse {
                             
                             gl.drawArrays( GL.POINTS, 0, size / 2 );
                         }
+                        lineProgram.endUse( gl );
                     }
                     else if ( timeseries.uiHint == 'bars' ) {
-                        
+                        // enable the shader
+                        program.use( gl );
+                        u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
                         // The last data point defines the right edge of the bar
                         // but it does not have its own bar drawn, so we need at
                         // least 2 data points to draw any bars
@@ -596,9 +638,13 @@ module Webglimpse {
                             
                             gl.drawArrays( GL.TRIANGLES, 0, size / 2 );
                         }
+                        program.endUse( gl );
                     }
                     else if ( timeseries.uiHint == 'area' ) {
-                        
+                        // enable the shader
+                        program.use( gl );
+                        u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
+
                         var baseline : number = timeseries.baseline;
                         
                         var size = totalSize * 4;
@@ -633,11 +679,16 @@ module Webglimpse {
                         
                         gl.drawArrays( GL.TRIANGLE_STRIP, 0, size / 2 );
                         
+                        program.endUse( gl );
                     }
                     
                     // highlight hovered point
                     if ( selection.hoveredTimeseries.fragment && timeseries.fragmentGuids.hasValue( selection.hoveredTimeseries.fragment.fragmentGuid ) )
                     {
+                        // enable the shader
+                        program.use( gl );
+                        u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
+                        
                         if ( timeseries.uiHint == 'area' || timeseries.uiHint == 'lines' || timeseries.uiHint == 'points' || timeseries.uiHint == 'lines-and-points' || timeseries.uiHint == undefined ) {
                             var size = 8;
                             xys = ensureCapacityFloat32( xys, size );
@@ -696,12 +747,13 @@ module Webglimpse {
                                 gl.drawArrays( GL.LINE_LOOP, 0, size / 2 );
                             }
                         }
+                        program.endUse( gl );
                     }
                 }
                 
                 // disable shader and attribute buffers
                 a_Position.disable( gl );
-                program.endUse( gl );
+                a_lpDistance.disable( gl );
             }
         }    
     }

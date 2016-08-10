@@ -52,7 +52,8 @@ module Webglimpse {
         lineColor? : string;
         pointColor? : string;
         lineThickness? : number;
-        pointSize? : number
+        pointSize? : number;
+		dash? : number;
         fragmentGuids? : string[];
     }
 
@@ -139,6 +140,7 @@ module Webglimpse {
         label : string;
         hidden? : boolean;
         collapsed? : boolean;
+        highlighted?: boolean;
         rowGuids : string[];
     }
 
@@ -267,6 +269,7 @@ module Webglimpse {
         private _pointColor : Color;
         private _lineThickness : number;
         private _pointSize : number;
+		private _dash : number;
         private _fragmentGuids : OrderedStringSet;
 
         constructor( timeseries : TimelineTimeseries ) {
@@ -292,6 +295,7 @@ module Webglimpse {
             this._pointColor = ( hasval( timeseries.pointColor ) ? parseCssColor( timeseries.pointColor ) : null );
             this._lineThickness = timeseries.lineThickness;
             this._pointSize = timeseries.pointSize;
+			this._dash = timeseries.dash;
             this._fragmentGuids = new OrderedStringSet( timeseries.fragmentGuids || [] );
             this._attrsChanged.fire( );
         }
@@ -350,6 +354,17 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
+		
+		get dash( ) : number {
+            return this._dash;
+        }
+
+        set dash( dash : number ) {
+            if ( dash !== this._dash ) {
+                this._dash = dash;
+                this._attrsChanged.fire( );
+            }
+        }
 
         get uiHint( ) : string {
             return this._uiHint;
@@ -382,6 +397,7 @@ module Webglimpse {
                 pointColor: ( hasval( this._pointColor ) ? this._pointColor.cssString : null ),
                 lineThickness: this._lineThickness,
                 pointSize: this._pointSize,
+				dash: this._dash,
                 fragmentGuids: this._fragmentGuids.toArray( ),
             };
         }
@@ -897,6 +913,7 @@ module Webglimpse {
         private _bgLabelColor : Color;
         private _labelFont : string;
         private _dataAxis : Axis1D;
+		private _bgColor : Color;
 
         constructor( row : TimelineRow ) {
             this._rowGuid = row.rowGuid;
@@ -949,6 +966,17 @@ module Webglimpse {
         set hidden( hidden : boolean ) {
             this._hidden = hidden;
             this._attrsChanged.fire( );
+        }
+		
+		get bgColor( ) : Color {
+            return this._bgColor;
+        }
+
+        set bgColor( bgColor : Color ) {
+            if ( bgColor !== this._bgColor ) {
+                this._bgColor = bgColor;
+                this._attrsChanged.fire( );
+            }
         }
         
         get dataAxis( ) : Axis1D {
@@ -1044,6 +1072,7 @@ module Webglimpse {
                 label: this._label,
                 rowHeight: this._rowHeight,
                 hidden: this._hidden,
+				bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
@@ -1064,6 +1093,7 @@ module Webglimpse {
         private _hidden : boolean;
         private _label : string;
         private _collapsed : boolean;
+        private _highlighted : boolean;
         private _rowGuids : OrderedStringSet;
 
         constructor( group : TimelineGroup ) {
@@ -1096,6 +1126,7 @@ module Webglimpse {
             this._hidden = group.hidden;
             this._label = group.label;
             this._collapsed = group.collapsed;
+            this._highlighted = hasval(group.highlighted) ? group.highlighted : false;
             this._attrsChanged.fire( );
         }
         
@@ -1130,6 +1161,17 @@ module Webglimpse {
             }
         }
 
+        get highlighted(): boolean {
+            return this._highlighted;
+        }
+
+        set highlighted(highlighted: boolean) {
+            if (highlighted !== this._highlighted) {
+                this._highlighted = highlighted;
+                this._attrsChanged.fire();
+            }
+        }
+
         get rowGuids( ) : OrderedStringSet {
             return this._rowGuids;
         }
@@ -1141,6 +1183,7 @@ module Webglimpse {
                 label: this._label,
                 hidden: this._hidden,
                 collapsed: ( hasval( this._collapsed ) ? this._collapsed : false ),
+                highlighted: (hasval(this._highlighted) ? this._highlighted : false),
                 rowGuids: this._rowGuids.toArray( )
             };
         }
