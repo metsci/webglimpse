@@ -28,8 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 module Webglimpse {
-    
-    
+
+
     export interface TimelineAnnotation {
         annotationGuid : string;
         // time (x axis position) of annotation
@@ -39,7 +39,7 @@ module Webglimpse {
         label : string;
         styleGuid : string;
     }
-    
+
 
     export interface TimelineTimeseries {
         timeseriesGuid : string;
@@ -62,7 +62,7 @@ module Webglimpse {
         fragmentGuid : string;
         data? : number[];
         times_ISO8601? : string[];
-        
+
         // undefined : user cannot adjust data points
         // 'y'       : user can adjust y value of points, but not time value
         // 'xy       : user can adjust both x (time) and y value of points
@@ -107,7 +107,7 @@ module Webglimpse {
         labelVAlign? : number;
         // relative position within the text label of the point considered the start of the label text (0 = bottom, 1 = top) this is the point positioned by labelVAlign
         // if labelVPos is not set, it defaults to labelVAlign's value, which is usually what is intended anyway
-        labelVPos? : number; 
+        labelVPos? : number;
         // vertical alignment of label text (0=left side, 0.5 = middle of event, 1=right side)
         labelHAlign? : number;
         // relative position within the text label of the point considered the start of the label text (0 = left side, 1 = right side) this is the point positioned by labelHAlign
@@ -163,7 +163,7 @@ module Webglimpse {
         root : TimelineRoot;
     }
 
-    
+
     export class TimelineAnnotationModel {
         private _annotationGuid : string;
         private _attrsChanged : Notification;
@@ -171,13 +171,13 @@ module Webglimpse {
         private _y : number;
         private _label : string;
         private _styleGuid : string;
-        
+
         constructor( annotation : TimelineAnnotation ) {
             this._annotationGuid = annotation.annotationGuid;
             this._attrsChanged = new Notification( );
             this.setAttrs( annotation );
         }
-        
+
         get annotationGuid( ) : string {
             return this._annotationGuid;
         }
@@ -185,7 +185,7 @@ module Webglimpse {
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
-        
+
         setLocation( time_PMILLIS : number, y : number ) {
             if ( time_PMILLIS !== this._time_PMILLIS || y !== this.y ) {
                 this._y = y;
@@ -194,44 +194,44 @@ module Webglimpse {
 
             }
         }
-        
+
         get time_PMILLIS( ) : number {
             return this._time_PMILLIS;
         }
-        
+
         set time_PMILLIS( time_PMILLIS : number ) {
             if ( time_PMILLIS !== this._time_PMILLIS ) {
                 this._time_PMILLIS = time_PMILLIS;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get y( ) : number {
             return this._y;
         }
-        
+
         set y( y : number ) {
             if ( y !== this.y ) {
                 this._y = y;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get label( ) : string {
             return this._label;
         }
-        
+
         set label( label : string ) {
             if ( label !== this.label ) {
                 this._label = label;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get styleGuid( ) : string {
             return this._styleGuid;
         }
-        
+
         set styleGuid( styleGuid : string ) {
             if ( styleGuid !== this.styleGuid ) {
                 this._styleGuid = styleGuid;
@@ -247,7 +247,7 @@ module Webglimpse {
             this._styleGuid = annotation.styleGuid;
             this._attrsChanged.fire( );
         }
-        
+
         snapshot( ) : TimelineAnnotation {
             return {
                 annotationGuid: this._annotationGuid,
@@ -354,7 +354,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-		
+
 		get dash( ) : number {
             return this._dash;
         }
@@ -376,11 +376,11 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get fragmentGuids( ) : OrderedStringSet {
             return this._fragmentGuids;
         }
-        
+
         set fragmentGuids( fragmentGuids : OrderedStringSet ) {
             if ( fragmentGuids !== this._fragmentGuids ) {
                 this._fragmentGuids = fragmentGuids;
@@ -407,7 +407,7 @@ module Webglimpse {
     export class TimelineTimeseriesFragmentModel {
         private _fragmentGuid : string;
         // notification provides the start and end indexes of the modified range
-        // start index is inclusive, end index is exclusive 
+        // start index is inclusive, end index is exclusive
         private _dataChanged : Notification2<number,number>;
         private _attrsChanged : Notification;
         private _userEditMode : string;
@@ -460,7 +460,7 @@ module Webglimpse {
                 this._dataChanged.fire( 0, this._data.length );
             }
         }
-        
+
         // Time should only be modified in a way which keeps the _times_PMILLIS
         // array sorted. This is currently not enforced by the model.
         setAllData( data : number[], times_PMILLIS : number[] ) {
@@ -470,7 +470,7 @@ module Webglimpse {
                 this._dataChanged.fire( 0, this._data.length );
             }
         }
-        
+
         // Handles adjusting the _times_PMILLIS and _data arrays if the new time
         // requires them to be rearranged to stay in time order. Returns the new
         // index assigned to the data point.
@@ -488,11 +488,11 @@ module Webglimpse {
                         // remove the current point at index
                         this._times_PMILLIS.splice( index, 1 );
                         this._data.splice( index, 1 );
-                        
+
                         // find the index to reinsert new data at
                         index = indexOf( this._times_PMILLIS, time );
                         if ( index < 0 ) index = -index-1;
-                        
+
                         this._times_PMILLIS.splice( index, 0, time );
                         this._data.splice( index, 0, value );
                         this._dataChanged.fire( index, index+1 );
@@ -503,10 +503,10 @@ module Webglimpse {
                     this._dataChanged.fire( index, index+1 );
                 }
             }
-            
+
             return index;
         }
-        
+
         get start_PMILLIS( ) : number {
             return this._times_PMILLIS[ 0 ];
         }
@@ -514,7 +514,7 @@ module Webglimpse {
         get end_PMILLIS( ) : number {
             return this._times_PMILLIS.slice( -1 )[ 0 ];
         }
-        
+
         get userEditMode( ) : string {
             return this._userEditMode;
         }
@@ -602,20 +602,20 @@ module Webglimpse {
 
         setInterval( start_PMILLIS : number, end_PMILLIS : number ) {
             if ( start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS ) {
-                
+
                 var initial_start_PMILLIS = this._start_PMILLIS;
                 var initial_end_PMILLIS = this._end_PMILLIS;
-                
+
                 var underStartLimit = hasval( this._startLimit_PMILLIS ) && start_PMILLIS < this._startLimit_PMILLIS;
                 var overEndLimit = hasval( this._endLimit_PMILLIS ) && end_PMILLIS > this._endLimit_PMILLIS;
                 var duration_PMILLIS = end_PMILLIS - start_PMILLIS;
                 var durationLimit_PMILLIS = this._endLimit_PMILLIS - this._startLimit_PMILLIS;
-                
+
                 // If both limits are present and the event is larger than the total distance between them
                 // then shrink the event to fit between the limits.
                 if ( hasval( this._startLimit_PMILLIS ) && hasval( this._endLimit_PMILLIS ) && durationLimit_PMILLIS < duration_PMILLIS ) {
                     this._start_PMILLIS = this._startLimit_PMILLIS;
-                    this._end_PMILLIS = this._endLimit_PMILLIS; 
+                    this._end_PMILLIS = this._endLimit_PMILLIS;
                 }
                 // Otherwise shift the event to comply with the limits without adjusting its total duration
                 else if ( underStartLimit ) {
@@ -628,9 +628,9 @@ module Webglimpse {
                 }
                 else {
                     this._end_PMILLIS = end_PMILLIS;
-                    this._start_PMILLIS = start_PMILLIS; 
+                    this._start_PMILLIS = start_PMILLIS;
                 }
-                
+
                 // its possible due to the limits that the values didn't actually change
                 // only fire attrsChanged if one of the values did actually change
                 if ( initial_start_PMILLIS !== this._start_PMILLIS || initial_end_PMILLIS !== this._end_PMILLIS ) {
@@ -638,15 +638,15 @@ module Webglimpse {
                 }
             }
         }
-        
+
         private limit_start_PMILLIS( start_PMILLIS : number ) {
             return hasval( this._startLimit_PMILLIS ) ? Math.max( start_PMILLIS, this._startLimit_PMILLIS ) : start_PMILLIS;
         }
-        
+
         private limit_end_PMILLIS( end_PMILLIS : number ) {
             return hasval( this._endLimit_PMILLIS ) ? Math.min( end_PMILLIS, this._endLimit_PMILLIS ) : end_PMILLIS;
         }
-        
+
         get start_PMILLIS( ) : number {
             return this._start_PMILLIS;
         }
@@ -668,7 +668,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get startLimit_PMILLIS( ) : number {
             return this._startLimit_PMILLIS;
         }
@@ -730,40 +730,40 @@ module Webglimpse {
         get styleGuid( ) : string {
             return this._styleGuid;
         }
-        
+
         set styleGuid( styleGuid : string ) {
             if ( styleGuid !== this._styleGuid ) {
                 this._styleGuid = styleGuid;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get order( ) : number {
             return this._order;
         }
-        
+
         set order( order : number ) {
             if ( order !== this._order ) {
                 this._order = order;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get topMargin( ) : number {
             return this._topMargin;
         }
-        
+
         set topMargin( topMargin : number ) {
             if ( topMargin !== this._topMargin ) {
                 this._topMargin = topMargin;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get bottomMargin( ) : number {
             return this._bottomMargin;
         }
-        
+
         set bottomMargin( bottomMargin : number ) {
             if ( bottomMargin !== this._bottomMargin ) {
                 this._bottomMargin = bottomMargin;
@@ -803,66 +803,66 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelTopMargin( ) : number {
             return this._labelTopMargin;
         }
-        
+
         set labelTopMargin( labelTopMargin : number ) {
             if ( labelTopMargin !== this._labelTopMargin ) {
                 this._labelTopMargin = labelTopMargin;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelBottomMargin( ) : number {
             return this._labelBottomMargin;
         }
-        
+
         set labelBottomMargin( labelBottomMargin : number ) {
             if ( labelBottomMargin !== this._labelBottomMargin ) {
                 this._labelBottomMargin = labelBottomMargin;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelVAlign( ) : number {
             return this._labelVAlign;
         }
-        
+
         set labelVAlign( labelVAlign : number ) {
             if ( labelVAlign !== this._labelVAlign ) {
                 this._labelVAlign = labelVAlign;
                 this._attrsChanged.fire( );
             }
         }
-            
+
         get labelVPos( ) : number {
             return this._labelVPos;
         }
-        
+
         set labelVPos( labelVPos : number ) {
             if ( labelVPos !== this._labelVPos ) {
                 this._labelVPos = labelVPos;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelHAlign( ) : number {
             return this._labelHAlign;
         }
-        
+
         set labelHAlign( labelHAlign : number ) {
             if ( labelHAlign !== this._labelHAlign ) {
                 this._labelHAlign = labelHAlign;
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelHPos( ) : number {
             return this._labelHPos;
         }
-        
+
         set labelHPos( labelHPos : number ) {
             if ( labelHPos !== this._labelHPos ) {
                 this._labelHPos = labelHPos;
@@ -908,7 +908,6 @@ module Webglimpse {
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
-        private _bgColor : Color;
         private _fgLabelColor : Color;
         private _bgLabelColor : Color;
         private _labelFont : string;
@@ -918,11 +917,11 @@ module Webglimpse {
         constructor( row : TimelineRow ) {
             this._rowGuid = row.rowGuid;
             this._attrsChanged = new Notification( );
-            
+
             var min : number = hasval( row.yMin ) ? row.yMin : 0;
             var max : number = hasval( row.yMax ) ? row.yMax : 1;
             this._dataAxis = new Axis1D( min, max );
-            
+
             this.setAttrs( row );
             this._eventGuids = new OrderedStringSet( row.eventGuids || [] );
             this._timeseriesGuids = new OrderedStringSet( row.timeseriesGuids || [] );
@@ -949,40 +948,29 @@ module Webglimpse {
             this._labelFont = row.labelFont;
             this._attrsChanged.fire( );
         }
-        
+
         get rowHeight( ) : number {
             return this._rowHeight;
         }
-        
+
         set rowHeight( rowHeight : number ) {
             this._rowHeight = rowHeight;
             this._attrsChanged.fire( );
         }
-        
+
         get hidden( ) : boolean {
             return this._hidden;
         }
-        
+
         set hidden( hidden : boolean ) {
             this._hidden = hidden;
             this._attrsChanged.fire( );
         }
-		
-		get bgColor( ) : Color {
-            return this._bgColor;
-        }
 
-        set bgColor( bgColor : Color ) {
-            if ( bgColor !== this._bgColor ) {
-                this._bgColor = bgColor;
-                this._attrsChanged.fire( );
-            }
-        }
-        
         get dataAxis( ) : Axis1D {
            return this._dataAxis;
         }
-        
+
         set dataAxis( dataAxis : Axis1D ) {
             this._dataAxis = dataAxis;
             this._attrsChanged.fire( );
@@ -1009,7 +997,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get bgColor( ) : Color {
             return this._bgColor;
         }
@@ -1020,7 +1008,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-                
+
         get bgLabelColor( ) : Color {
             return this._bgLabelColor;
         }
@@ -1031,7 +1019,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get fgLabelColor( ) : Color {
             return this._fgLabelColor;
         }
@@ -1042,7 +1030,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelFont( ) : string {
            return this._labelFont;
         }
@@ -1057,11 +1045,11 @@ module Webglimpse {
         get eventGuids( ) : OrderedStringSet {
             return this._eventGuids;
         }
-        
+
         get timeseriesGuids( ) : OrderedStringSet {
             return this._timeseriesGuids;
         }
-        
+
         get annotationGuids( ) : OrderedStringSet {
             return this._annotationGuids;
         }
@@ -1072,7 +1060,6 @@ module Webglimpse {
                 label: this._label,
                 rowHeight: this._rowHeight,
                 hidden: this._hidden,
-				bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 uiHint: this._uiHint,
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
@@ -1110,12 +1097,12 @@ module Webglimpse {
         get rollupGuid( ) : string {
             return this._rollupGuid;
         }
-        
+
         set rollupGuid( rollupGuid : string ) {
             this._rollupGuid = rollupGuid;
             this._attrsChanged.fire( );
         }
-        
+
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
@@ -1129,11 +1116,11 @@ module Webglimpse {
             this._highlighted = hasval(group.highlighted) ? group.highlighted : false;
             this._attrsChanged.fire( );
         }
-        
+
         get hidden( ) : boolean {
             return this._hidden;
         }
-        
+
         set hidden( hidden : boolean ) {
             this._hidden = hidden;
             this._attrsChanged.fire( );
@@ -1219,15 +1206,15 @@ module Webglimpse {
         get groupGuids( ) : OrderedStringSet {
             return this._groupGuids;
         }
-        
+
         get topPinnedRowGuids( ) : OrderedStringSet {
             return this._topPinnedRowGuids;
         }
-        
+
         get bottomPinnedRowGuids( ) : OrderedStringSet {
             return this._bottomPinnedRowGuids;
         }
-        
+
         get maximizedRowGuids( ) : OrderedStringSet {
             return this._maximizedRowGuids;
         }
@@ -1264,25 +1251,25 @@ module Webglimpse {
         private _root : TimelineRootModel;
 
         constructor( timeline? : Timeline ) {
-        
+
             var annotations = ( hasval( timeline ) && hasval( timeline.annotations ) ? timeline.annotations : [] );
             this._annotations = new OrderedSet<TimelineAnnotationModel>( [], (g)=>g.annotationGuid );
             for ( var n = 0; n < annotations.length; n++ ) {
                 this._annotations.add( new TimelineAnnotationModel( annotations[ n ] ) );
             }
-            
+
             var timeseriesFragments = ( hasval( timeline ) && hasval( timeline.timeseriesFragments ) ? timeline.timeseriesFragments : [] );
             this._timeseriesFragments = new OrderedSet<TimelineTimeseriesFragmentModel>( [], (e)=>e.fragmentGuid );
             for ( var n = 0; n < timeseriesFragments.length; n++ ) {
                 this._timeseriesFragments.add( new TimelineTimeseriesFragmentModel( timeseriesFragments[ n ] ) );
             }
-            
+
             var timeseries = ( hasval( timeline ) && hasval( timeline.timeseries ) ? timeline.timeseries : [] );
             this._timeseries = new OrderedSet<TimelineTimeseriesModel>( [], (e)=>e.timeseriesGuid );
             for ( var n = 0; n < timeseries.length; n++ ) {
                 this._timeseries.add( new TimelineTimeseriesModel( timeseries[ n ] ) );
             }
-            
+
             var events = ( hasval( timeline ) && hasval( timeline.events ) ? timeline.events : [] );
             this._events = new OrderedSet<TimelineEventModel>( [], (e)=>e.eventGuid );
             for ( var n = 0; n < events.length; n++ ) {
@@ -1304,7 +1291,7 @@ module Webglimpse {
             var root = ( hasval( timeline ) && hasval( timeline.root ) ? timeline.root : newEmptyTimelineRoot( ) );
             this._root = new TimelineRootModel( root );
         }
-        
+
         get annotations( ) : OrderedSet<TimelineAnnotationModel> { return this._annotations; }
         get timeseriesFragments( ) : OrderedSet<TimelineTimeseriesFragmentModel> { return this._timeseriesFragments; }
         get timeseriesSets( ) : OrderedSet<TimelineTimeseriesModel> { return this._timeseries; }
@@ -1331,7 +1318,7 @@ module Webglimpse {
             this._root.topPinnedRowGuids.retainValues( freshRoot.topPinnedRowGuids );
             this._root.bottomPinnedRowGuids.retainValues( freshRoot.bottomPinnedRowGuids );
             this._root.maximizedRowGuids.retainValues( freshRoot.maximizedRowGuids );
-            
+
             var freshGroups = newTimeline.groups;
             var retainedGroupGuids : string[] = [];
             for ( var n = 0; n < freshGroups.length; n++ ) {
@@ -1381,7 +1368,7 @@ module Webglimpse {
                 }
             }
             this._timeseries.retainIds( retainedTimeseriesGuids );
-            
+
             var freshTimeseriesFragments = newTimeline.timeseriesFragments;
             var retainedTimeseriesFragmentGuids : string[] = [];
             for ( var n = 0; n < freshTimeseriesFragments.length; n++ ) {
@@ -1393,7 +1380,7 @@ module Webglimpse {
                 }
             }
             this._timeseriesFragments.retainIds( retainedTimeseriesFragmentGuids );
-            
+
             var freshAnnotations = newTimeline.annotations;
             var retainedAnnotationGuids : string[] = [];
             for ( var n = 0; n < freshAnnotations.length; n++ ) {
@@ -1405,10 +1392,10 @@ module Webglimpse {
                 }
             }
             this._annotations.retainIds( retainedAnnotationGuids );
-            
+
             // Add new items
             //
-            
+
             for ( var n = 0; n < freshAnnotations.length; n++ ) {
                 var freshAnnotation = freshAnnotations[ n ];
                 var oldAnnotation = this._annotations.valueFor( freshAnnotation.annotationGuid );
@@ -1419,7 +1406,7 @@ module Webglimpse {
                     this._annotations.add( new TimelineAnnotationModel( freshAnnotation ) );
                 }
             }
-            
+
             for ( var n = 0; n < freshTimeseriesFragments.length; n++ ) {
                 var freshTimeseriesFragment = freshTimeseriesFragments[ n ];
                 var oldTimeseriesFragment = this._timeseriesFragments.valueFor( freshTimeseriesFragment.fragmentGuid );
@@ -1430,7 +1417,7 @@ module Webglimpse {
                     this._timeseriesFragments.add( new TimelineTimeseriesFragmentModel( freshTimeseriesFragment ) );
                 }
             }
-            
+
             for ( var n = 0; n < freshTimeseriesSet.length; n++ ) {
                 var freshTimeseries = freshTimeseriesSet[ n ];
                 var oldTimeseries = this._timeseries.valueFor( freshTimeseries.timeseriesGuid );
@@ -1485,7 +1472,7 @@ module Webglimpse {
 
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
-        
+
             var newAnnotations = hasval( newData.annotations ) ? newData.annotations : [];
             for ( var n = 0; n < newAnnotations.length; n++ ) {
                 var newAnnotation = newAnnotations[ n ];
@@ -1497,7 +1484,7 @@ module Webglimpse {
                     this._annotations.add( new TimelineAnnotationModel( newAnnotation ) );
                 }
             }
-            
+
             var newTimeseriesFragments = hasval( newData.timeseriesFragments ) ? newData.timeseriesFragments : [];
             for ( var n = 0; n < newTimeseriesFragments.length; n++ ) {
                 var newTimeseriesFragment = newTimeseriesFragments[ n ];
@@ -1509,7 +1496,7 @@ module Webglimpse {
                     this._timeseriesFragments.add( new TimelineTimeseriesFragmentModel( newTimeseriesFragment ) );
                 }
             }
-            
+
             var newTimeseriesSet = hasval( newData.timeseries ) ? newData.timeseries : [];
             for ( var n = 0; n < newTimeseriesSet.length; n++ ) {
                 var newTimeseries = newTimeseriesSet[ n ];
@@ -1521,7 +1508,7 @@ module Webglimpse {
                     this._timeseries.add( new TimelineTimeseriesModel( newTimeseries ) );
                 }
             }
-            
+
             var newEvents = hasval( newData.events ) ? newData.events : [];
             for ( var n = 0; n < newEvents.length; n++ ) {
                 var newEvent = newEvents[ n ];
@@ -1587,20 +1574,20 @@ module Webglimpse {
 
 
     export var timelineMergeNewBeforeOld : TimelineMergeStrategy = {
-        
+
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
         },
-        
+
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment ) {
             timeseriesFragmentModel.setAttrs( newTimeseriesFragment );
         },
-        
+
         updateTimeseriesModel( timeseriesModel : TimelineTimeseriesModel, newTimeseries : TimelineTimeseries ) {
             timeseriesModel.setAttrs( newTimeseries );
             timeseriesModel.fragmentGuids.addAll( ( newTimeseries.fragmentGuids || [] ), 0, true );
         },
-        
+
         updateEventModel: function( eventModel : TimelineEventModel, newEvent : TimelineEvent ) {
             eventModel.setAttrs( newEvent );
         },
@@ -1626,20 +1613,20 @@ module Webglimpse {
 
 
     export var timelineMergeNewAfterOld : TimelineMergeStrategy = {
-        
+
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
         },
-        
+
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment ) {
             timeseriesFragmentModel.setAttrs( newTimeseriesFragment );
         },
-        
+
         updateTimeseriesModel( timeseriesModel : TimelineTimeseriesModel, newTimeseries : TimelineTimeseries ) {
             timeseriesModel.setAttrs( newTimeseries );
             timeseriesModel.fragmentGuids.addAll( newTimeseries.fragmentGuids || [] );
         },
-        
+
         updateEventModel: function( eventModel : TimelineEventModel, newEvent : TimelineEvent ) {
             eventModel.setAttrs( newEvent );
         },
