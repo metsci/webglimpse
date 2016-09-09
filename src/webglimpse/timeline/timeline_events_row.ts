@@ -705,12 +705,15 @@ module Webglimpse {
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
+                '  attribute float a_LengthSoFar;                                ',
                 '                                                                ',
                 '  varying vec4 v_Color;                                         ',
+                '  varying float f_LengthSoFar;                                  ',
                 '                                                                ',
                 '  void main( ) {                                                ',
                 '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
                 '      v_Color = a_Color;                                        ',
+                '      f_LengthSoFar = a_LengthSoFar;                            ',
                 '  }                                                             ',
                 '                                                                '
             );
@@ -718,6 +721,7 @@ module Webglimpse {
         var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var a_Color = new Attribute( program, 'a_Color' );
+        var a_LengthSoFar = new Attribute( program, 'a_LengthSoFar' );
 
         var xys = new Float32Array( 0 );
         var xysBuffer = newDynamicBuffer( );
@@ -725,8 +729,11 @@ module Webglimpse {
         var rgbas = new Float32Array( 0 );
         var rgbasBuffer = newDynamicBuffer( );
         
+        var lengths = new Float32Array( 0 );
+        var lengthsBuffer = newDynamicBuffer( );
+        
         return {
-            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable, indexLengthSoFar : number ) {
                 if ( indexXys == 0 || indexRgbas == 0 ) return;
                 
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
@@ -737,11 +744,14 @@ module Webglimpse {
                 a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
                 rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
                 a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
+                lengthsBuffer.setData( lengths.subarray( 0, indexLengthSoFar ) );
+                a_LengthSoFar.setDataAndEnable( gl, lengthsBuffer, 1, GL.FLOAT );
 
                 gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
 
                 a_Color.disable( gl );
                 a_XyFrac.disable( gl );
+                a_LengthSoFar.disable( gl );
                 program.endUse( gl );
             },
             ensureCapacity: function( eventCount : number ) {
@@ -753,13 +763,14 @@ module Webglimpse {
 
                     default:
                         numVertices = ( 6*( 5 /*quads*/ ) )*eventCount;
+                        lengths = ensureCapacityFloat32 ( lengths, numVertices );
                         break;
                 }
 
                 xys = ensureCapacityFloat32( xys, 2*numVertices );
                 rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
             },
-            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable, indexLengthSoFar : number ) : { indexXys : number; indexRgbas : number; indexLengthSoFar : number } {
                 var lane : TimelineLane = lanes.lane( laneIndex );
                 var event : TimelineEventModel = lane.event( eventIndex );
                 
@@ -817,12 +828,19 @@ module Webglimpse {
                                 indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight, yBottom+hBorder, yBottom );
                                 indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom );
                                 indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
+                                
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) );
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xLeft - xRight-wBorder, 2) + Math.pow(yTop-hBorder - yTop, 2) );
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(yTop-hBorder - yTop, 2) );
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) + Math.pow(yTop - yTop-hBorder, 2));
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(yTop - yTop-hBorder, 2) );
+                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) );
                                 break;
                         }
                     }
                 }
                 
-                return { indexXys : indexXys, indexRgbas : indexRgbas };
+                return { indexXys : indexXys, indexRgbas : indexRgbas, indexLengthSoFar : indexLengthSoFar };
             }
         };
     }
@@ -841,18 +859,20 @@ module Webglimpse {
 
                 var indexXys = 0;
                 var indexRgbas = 0;
+                var indexLengthSoFar = 0;
                 
                 for ( var l = 0; l < lanes.length; l++ ) {
                     var lane = lanes.lane( l );
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexLengthSoFar );
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
+                        indexLengthSoFar = indexes.indexLengthSoFar;
                     }
                 }
 
-                helper.paint( indexXys, indexRgbas, gl, viewport );
+                helper.paint( indexXys, indexRgbas, gl, viewport, indexLengthSoFar );
             };
         };
     }
@@ -1247,8 +1267,8 @@ module Webglimpse {
                         
                         // draw bar
                         barHelper.ensureCapacity( 1 );
-                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport );
-                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport );
+                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport, 0 );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexLengthSoFar );
                         
                         // draw label
                         labelHelper.textTextures.resetTouches( );
