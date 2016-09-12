@@ -789,6 +789,8 @@ module Webglimpse {
                 var xRight = timeAxis.tFrac( event.end_PMILLIS );
                 
                 var xWidthPixels = viewport.w * ( xRight - xLeft );
+                var iLeft = xLeft * xWidthPixels;
+                var iRight = xRight * xWidthPixels;
                 
                 if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
@@ -829,12 +831,12 @@ module Webglimpse {
                                 indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom );
                                 indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
                                 
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) );
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xLeft - xRight-wBorder, 2) + Math.pow(yTop-hBorder - yTop, 2) );
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(yTop-hBorder - yTop, 2) );
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) + Math.pow(yTop - yTop-hBorder, 2));
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(yTop - yTop-hBorder, 2) );
-                                lengths[ indexLengthSoFar++ ] = Math.sqrt( Math.pow(xRight-wBorder - xLeft, 2) );
+                                lengths[ indexLengthSoFar++ ] = jTop;
+                                lengths[ indexLengthSoFar++ ] = jTop + (xRight-wBorder)*xWidthPixels;
+                                lengths[ indexLengthSoFar++ ] = jBottom;
+                                lengths[ indexLengthSoFar++ ] = jBottom;
+                                lengths[ indexLengthSoFar++ ] = jTop + (xRight-wBorder)*xWidthPixels;
+                                lengths[ indexLengthSoFar++ ] = jTop*2 + (xRight-wBorder)*xWidthPixels;
                                 break;
                         }
                     }
