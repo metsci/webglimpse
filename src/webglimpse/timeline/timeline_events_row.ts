@@ -931,7 +931,13 @@ module Webglimpse {
                 
                 if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
+                    // var fillColor = ( event.bgColor || defaultColor );
+                    // if ( event === selection.hoveredEvent.value ) {
+                    //     fillColor = darker( fillColor, 0.8 );
+                    // }
+                    
                     // Border
+                    //var borderColor = ( event.borderColor || ( event.bgColor ? fillColor : null ) || defaultBorderColor || fillColor );
                     var borderColor = ( event.borderColor || ( event.bgColor ) || defaultBorderColor );
                     if ( selection.selectedEvents.hasValue( event ) ) {
                         borderColor = selectedBorderColor;
@@ -1000,7 +1006,6 @@ module Webglimpse {
         return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
             
             var helper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
-            var dashedHelper = eventDashedBorderPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
 
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -1008,8 +1013,6 @@ module Webglimpse {
 
                 var indexXys = 0;
                 var indexRgbas = 0;
-                var indexDashedXys = 0;
-                var indexDashedRgbas = 0;
                 var indexLengthSoFar = 0;
                 
                 for ( var l = 0; l < lanes.length; l++ ) {
@@ -1019,13 +1022,41 @@ module Webglimpse {
                         var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
-                        var dashedIndexes = dashedHelper.fillEvent(l, e, indexDashedXys, indexDashedRgbas, viewport, indexLengthSoFar);
-                        indexLengthSoFar = dashedIndexes.indexLengthSoFar;
                     }
                 }
 
                 helper.paint( indexXys, indexRgbas, gl, viewport );
-                dashedHelper.paint(indexDashedXys, indexDashedRgbas, gl, viewport, indexLengthSoFar);
+            };
+        };
+    }
+    
+    export function newEventBordersPainterFactory( barOpts? : TimelineEventBarsPainterOptions ) : TimelineEventsPainterFactory {
+
+        // Painter Factory
+        return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
+            
+            var helper = eventDashedBorderPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
+
+            // Painter
+            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                helper.ensureCapacity( lanes.numEvents );
+
+                var indexXys = 0;
+                var indexRgbas = 0;
+                var indexLengthSoFar = 0;
+                
+                for ( var l = 0; l < lanes.length; l++ ) {
+                    var lane = lanes.lane( l );
+                    for ( var e = 0; e < lane.length; e++ ) {
+                        var event = lane.event( e );
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexLengthSoFar );
+                        indexXys = indexes.indexXys;
+                        indexRgbas = indexes.indexRgbas;
+                        indexLengthSoFar = indexes.indexLengthSoFar;
+                    }
+                }
+
+                helper.paint( indexXys, indexRgbas, gl, viewport, indexLengthSoFar );
             };
         };
     }
