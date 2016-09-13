@@ -789,8 +789,35 @@ module Webglimpse {
                 var xRight = timeAxis.tFrac( event.end_PMILLIS );
                 
                 var xWidthPixels = viewport.w * ( xRight - xLeft );
+                
                 var iLeft = xLeft * xWidthPixels;
                 var iRight = xRight * xWidthPixels;
+                var widthPixels = iRight - iLeft;
+                var heightPixels = jBottom - jTop;  // confirmed jBottom > jTop
+                
+                var setLengthsVertical = function( bottomEdge, topEdge ) {
+                    lengths[ indexLengthSoFar++ ] = topEdge;
+                    lengths[ indexLengthSoFar++ ] = topEdge;
+                    lengths[ indexLengthSoFar++ ] = bottomEdge;
+                    lengths[ indexLengthSoFar++ ] = bottomEdge;
+                    lengths[ indexLengthSoFar++ ] = topEdge;
+                    lengths[ indexLengthSoFar++ ] = bottomEdge;
+                    
+                    // for convenience, return the length of the edge
+                    return Math.abs(bottomEdge - topEdge );
+                };
+                
+                var setLengthsHorizontal = function( leftEdge, rightEdge ) {
+                    lengths[ indexLengthSoFar++ ] = leftEdge;
+                    lengths[ indexLengthSoFar++ ] = rightEdge;
+                    lengths[ indexLengthSoFar++ ] = leftEdge;
+                    lengths[ indexLengthSoFar++ ] = leftEdge;
+                    lengths[ indexLengthSoFar++ ] = rightEdge;
+                    lengths[ indexLengthSoFar++ ] = rightEdge;
+                    
+                    // for convenience, return the length of the edge
+                    return Math.abs(leftEdge - rightEdge);
+                };
                 
                 if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
@@ -825,19 +852,57 @@ module Webglimpse {
                                 break;
 
                             default:
-                                indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
-                                indexXys = putQuadXys( xys, indexXys, xRight-wBorder, xRight, yTop, yBottom+hBorder );
-                                indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight, yBottom+hBorder, yBottom );
-                                indexXys = putQuadXys( xys, indexXys, xLeft, xLeft+wBorder, yTop-hBorder, yBottom );
-                                indexRgbas = putRgbas( rgbas, indexRgbas, borderColor, 24 );
-                                
-                                lengths[ indexLengthSoFar++ ] = jTop;
-                                lengths[ indexLengthSoFar++ ] = jTop + (xRight-wBorder)*xWidthPixels;
-                                lengths[ indexLengthSoFar++ ] = jBottom;
-                                lengths[ indexLengthSoFar++ ] = jBottom;
-                                lengths[ indexLengthSoFar++ ] = jTop + (xRight-wBorder)*xWidthPixels;
-                                lengths[ indexLengthSoFar++ ] = jTop*2 + (xRight-wBorder)*xWidthPixels;
-                                break;
+                            var cumulativeLength = 0;
+                            console.log("*1");
+                            indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                            // left edge
+                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+console.log(cumulativeLength);
+                            // top edge
+                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+console.log(cumulativeLength);
+                            // right edge, notice the arguments reverse because we’re going down
+                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+console.log(cumulativeLength);
+                            // bottom edge, arguments reversed because we’re going left
+                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
+console.log(cumulativeLength);
+
+                            console.log("*2");
+                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
+                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
+console.log(cumulativeLength);
+
+                            console.log("*3");
+                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
+                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
+console.log(cumulativeLength);
+
+                            console.log("*4");
+                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
+                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+console.log(cumulativeLength);
+                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
+console.log(cumulativeLength);
+
+                            indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
+                            break;
                         }
                     }
                 }
@@ -846,7 +911,6 @@ module Webglimpse {
             }
         };
     }
-
 
     export function newEventBarsPainterFactory( barOpts? : TimelineEventBarsPainterOptions ) : TimelineEventsPainterFactory {
 

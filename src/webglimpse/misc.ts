@@ -196,7 +196,7 @@ module Webglimpse {
         '  precision lowp float;        ',
         '  varying vec4 v_Color;        ',
         '  varying float f_LengthSoFar; ',
-        '  const float NumDashes = 0.1; // 10 dashes for every 1 unit in f_LengthSoFar ',
+        '  const float NumDashes = 10.0; // 10 dashes for every 1 unit in f_LengthSoFar ',
         '                               ',
         '  void main( ) {               ',
         '      // float alpha = floor(2.0 * fract(f_LengthSoFar * NumDashes));  ',
