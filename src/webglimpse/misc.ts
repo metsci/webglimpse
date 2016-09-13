@@ -195,11 +195,21 @@ module Webglimpse {
         '                               ',
         '  precision lowp float;        ',
         '  varying vec4 v_Color;        ',
+        '                               ',
+        '  void main( ) {               ',
+        '      gl_FragColor = v_Color;  ',
+        '  }                            ',
+        '                               '
+    );
+    
+    export var varyingBorder_FRAGSHADER = concatLines(
+        '                               ',
+        '  precision lowp float;        ',
+        '  varying vec4 v_Color;        ',
         '  varying float f_LengthSoFar; ',
         '  const float NumDashes = 10.0; // 10 dashes for every 1 unit in f_LengthSoFar ',
         '                               ',
         '  void main( ) {               ',
-        '      // float alpha = floor(2.0 * fract(f_LengthSoFar * NumDashes));  ',
         '      float alpha = mod(f_LengthSoFar, NumDashes);  ',
         '      gl_FragColor = v_Color;  ',
         '      gl_FragColor.a = alpha;  ',

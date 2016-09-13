@@ -705,6 +705,116 @@ module Webglimpse {
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
+                '                                                                ',
+                '  varying vec4 v_Color;                                         ',
+                '                                                                ',
+                '  void main( ) {                                                ',
+                '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
+                '      v_Color = a_Color;                                        ',
+                '  }                                                             ',
+                '                                                                '
+            );
+
+        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
+        var a_Color = new Attribute( program, 'a_Color' );
+
+        var xys = new Float32Array( 0 );
+        var xysBuffer = newDynamicBuffer( );
+
+        var rgbas = new Float32Array( 0 );
+        var rgbasBuffer = newDynamicBuffer( );
+        
+        return {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+                if ( indexXys == 0 || indexRgbas == 0 ) return;
+                
+                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
+                gl.enable( GL.BLEND );
+                
+                program.use( gl );
+                xysBuffer.setData( xys.subarray( 0, indexXys ) );
+                a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+                rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
+                a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
+
+                gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
+
+                a_Color.disable( gl );
+                a_XyFrac.disable( gl );
+                program.endUse( gl );
+            },
+            ensureCapacity: function( eventCount : number ) {
+                var numVertices;
+                switch ( cornerType ) {
+                    case JointType.BEVEL:
+                        numVertices = ( 6*( 5 /*quads*/ ) + 3*( 4 /*triangles*/ ) )*eventCount;
+                        break;
+
+                    default:
+                        numVertices = ( 6*( 5 /*quads*/ ) )*eventCount;
+                        break;
+                }
+
+                xys = ensureCapacityFloat32( xys, 2*numVertices );
+                rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
+            },
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+                var lane : TimelineLane = lanes.lane( laneIndex );
+                var event : TimelineEventModel = lane.event( eventIndex );
+                
+                var wBorder = borderThickness / viewport.w;
+                var hBorder = borderThickness / viewport.h;
+                
+                var _topMargin = hasval( event.topMargin ) ? event.topMargin : topMargin;
+                var _bottomMargin = hasval( event.bottomMargin ) ? event.bottomMargin : bottomMargin;
+                
+                var jTop = rowTopPadding + ( laneIndex )*laneHeight + _topMargin;
+                var yTop = ( viewport.h - jTop ) / viewport.h;
+                var jBottom = rowTopPadding + ( laneIndex + 1 )*laneHeight - _bottomMargin;
+                var yBottom =  ( viewport.h - jBottom ) / viewport.h;
+                
+                var xLeft = timeAxis.tFrac( event.start_PMILLIS );
+                var xRight = timeAxis.tFrac( event.end_PMILLIS );
+                
+                var xWidthPixels = viewport.w * ( xRight - xLeft );
+                
+                if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
+
+                    // Fill
+                    var fillColor = ( event.bgColor || defaultColor );
+                    if ( event === selection.hoveredEvent.value ) {
+                        fillColor = darker( fillColor, 0.8 );
+                    }
+                    indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
+                    indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
+                }
+                
+                return { indexXys : indexXys, indexRgbas : indexRgbas };
+            }
+        };
+    }
+
+    function eventDashedBorderPainterHelper( barOpts : TimelineEventBarsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
+        var rowTopPadding    = options.rowTopPadding;
+        var rowBottomPadding = options.rowBottomPadding;
+        var laneHeight       = options.laneHeight;
+
+        var topMargin           = ( hasval( barOpts ) && hasval( barOpts.topMargin           ) ? barOpts.topMargin           : 1.2 );
+        var bottomMargin        = ( hasval( barOpts ) && hasval( barOpts.bottomMargin        ) ? barOpts.bottomMargin        : 1.2 );
+        var borderThickness     = ( hasval( barOpts ) && hasval( barOpts.borderThickness     ) ? barOpts.borderThickness     : 2 );
+        var cornerType          = ( hasval( barOpts ) && hasval( barOpts.cornerType          ) ? barOpts.cornerType          : JointType.BEVEL );
+        var defaultColor        = ( hasval( barOpts ) && hasval( barOpts.defaultColor        ) ? barOpts.defaultColor        : options.timelineFgColor.withAlphaTimes( 0.4 ) );
+        var defaultBorderColor  = ( hasval( barOpts ) && hasval( barOpts.defaultBorderColor  ) ? barOpts.defaultBorderColor  : null );
+        var selectedBorderColor = ( hasval( barOpts ) && hasval( barOpts.selectedBorderColor ) ? barOpts.selectedBorderColor : options.timelineFgColor );
+        var minimumVisibleWidth = ( hasval( barOpts ) && hasval( barOpts.minimumVisibleWidth ) ? barOpts.minimumVisibleWidth : 0 );
+        
+        var selection = ui.selection;
+        
+        var dashedBorder_VERTSHADER = concatLines(
+                '                                                                ',
+                '  attribute vec2 a_XyFrac;                                      ',
+                '  attribute vec4 a_Color;                                       ',
                 '  attribute float a_LengthSoFar;                                ',
                 '                                                                ',
                 '  varying vec4 v_Color;                                         ',
@@ -718,7 +828,7 @@ module Webglimpse {
                 '                                                                '
             );
 
-        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+        var program = new Program( dashedBorder_VERTSHADER, varyingBorder_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var a_Color = new Attribute( program, 'a_Color' );
         var a_LengthSoFar = new Attribute( program, 'a_LengthSoFar' );
@@ -821,16 +931,8 @@ module Webglimpse {
                 
                 if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
 
-                    // Fill
-                    var fillColor = ( event.bgColor || defaultColor );
-                    if ( event === selection.hoveredEvent.value ) {
-                        fillColor = darker( fillColor, 0.8 );
-                    }
-                    indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
-                    indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
-
                     // Border
-                    var borderColor = ( event.borderColor || ( event.bgColor ? fillColor : null ) || defaultBorderColor || fillColor );
+                    var borderColor = ( event.borderColor || ( event.bgColor ) || defaultBorderColor );
                     if ( selection.selectedEvents.hasValue( event ) ) {
                         borderColor = selectedBorderColor;
                     }
@@ -852,57 +954,37 @@ module Webglimpse {
                                 break;
 
                             default:
-                            var cumulativeLength = 0;
-                            console.log("*1");
-                            indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
-                            // left edge
-                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
-console.log(cumulativeLength);
-                            // top edge
-                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
-console.log(cumulativeLength);
-                            // right edge, notice the arguments reverse because we’re going down
-                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
-console.log(cumulativeLength);
-                            // bottom edge, arguments reversed because we’re going left
-                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
-console.log(cumulativeLength);
+                                var cumulativeLength = 0;
+                                indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                                // left edge
+                                cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+                                // top edge
+                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                // right edge, notice the arguments reverse because we’re going down
+                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+                                // bottom edge, arguments reversed because we’re going left
+                                cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
 
-                            console.log("*2");
-                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
-                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
-console.log(cumulativeLength);
+                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
+                                cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
 
-                            console.log("*3");
-                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
-                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
-console.log(cumulativeLength);
+                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
+                                cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
 
-                            console.log("*4");
-                            indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
-                            cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
-console.log(cumulativeLength);
-                            cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
-console.log(cumulativeLength);
+                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
+                                cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + heightPixels);
+                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+                                cumulativeLength += setLengthsVertical(cumulativeLength + widthPixels, cumulativeLength);
 
-                            indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
-                            break;
+                                indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
+                                break;
                         }
                     }
                 }
@@ -918,6 +1000,7 @@ console.log(cumulativeLength);
         return function( drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) : Painter {
             
             var helper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
+            var dashedHelper = eventDashedBorderPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
 
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -925,20 +1008,24 @@ console.log(cumulativeLength);
 
                 var indexXys = 0;
                 var indexRgbas = 0;
+                var indexDashedXys = 0;
+                var indexDashedRgbas = 0;
                 var indexLengthSoFar = 0;
                 
                 for ( var l = 0; l < lanes.length; l++ ) {
                     var lane = lanes.lane( l );
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexLengthSoFar );
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
-                        indexLengthSoFar = indexes.indexLengthSoFar;
+                        var dashedIndexes = dashedHelper.fillEvent(l, e, indexDashedXys, indexDashedRgbas, viewport, indexLengthSoFar);
+                        indexLengthSoFar = dashedIndexes.indexLengthSoFar;
                     }
                 }
 
-                helper.paint( indexXys, indexRgbas, gl, viewport, indexLengthSoFar );
+                helper.paint( indexXys, indexRgbas, gl, viewport );
+                dashedHelper.paint(indexDashedXys, indexDashedRgbas, gl, viewport, indexLengthSoFar);
             };
         };
     }
@@ -1321,6 +1408,7 @@ console.log(cumulativeLength);
             var labelHelper = eventLabelsPainterHelper( labelOpts, drawable, timeAxis, lanes, ui, options );
             var iconHelper = eventIconsPainterHelper( iconOpts, drawable, timeAxis, lanes, ui, options );
             var barHelper = eventBarPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
+            var dashedHelper = eventDashedBorderPainterHelper( barOpts, drawable, timeAxis, lanes, ui, options );
 
             // Painter
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -1333,8 +1421,10 @@ console.log(cumulativeLength);
                         
                         // draw bar
                         barHelper.ensureCapacity( 1 );
-                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport, 0 );
-                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexLengthSoFar );
+                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport );
+                        var dashedIndexes = dashedHelper.fillEvent( l, e, 0, 0, viewport, 0 );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport );
+                        dashedHelper.paint( dashedIndexes.indexXys, dashedIndexes.indexRgbas, gl, viewport, dashedIndexes.indexLengthSoFar );
                         
                         // draw label
                         labelHelper.textTextures.resetTouches( );
