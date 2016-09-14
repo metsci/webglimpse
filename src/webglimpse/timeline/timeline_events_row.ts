@@ -898,11 +898,7 @@ module Webglimpse {
                 var xLeft = timeAxis.tFrac( event.start_PMILLIS );
                 var xRight = timeAxis.tFrac( event.end_PMILLIS );
                 
-                var xWidthPixels = viewport.w * ( xRight - xLeft );
-                
-                var iLeft = xLeft * xWidthPixels;
-                var iRight = xRight * xWidthPixels;
-                var widthPixels = iRight - iLeft;
+                var widthPixels = viewport.w * ( xRight - xLeft );
                 var heightPixels = jBottom - jTop;  // confirmed jBottom > jTop
                 
                 var setLengthsVertical = function( bottomEdge, topEdge ) {
@@ -929,7 +925,7 @@ module Webglimpse {
                     return Math.abs(leftEdge - rightEdge);
                 };
                 
-                if ( !( xRight < 0 || xLeft > 1 ) && xWidthPixels > minimumVisibleWidth ) {
+                if ( !( xRight < 0 || xLeft > 1 ) && widthPixels > minimumVisibleWidth ) {
 
                     // var fillColor = ( event.bgColor || defaultColor );
                     // if ( event === selection.hoveredEvent.value ) {
@@ -972,7 +968,7 @@ module Webglimpse {
                                         
                                 // bottom edge
                                 indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
-                                cumulativeLength += setLengthsVertical(cumulativeLength, cumulativeLength + widthPixels);
+                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
 
                                 // left edge
                                 indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
