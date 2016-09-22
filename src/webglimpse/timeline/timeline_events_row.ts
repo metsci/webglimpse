@@ -957,33 +957,44 @@ module Webglimpse {
 
                             default:
                                 var cumulativeLength = 0;
-                                if ( event.isBorderDashed != true ) {
+                                if ( event.isBorderDashed == false ) {
+                                    // top edge
                                     indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                                    setLengthsHorizontal(-1, -1);
+
+                                    // right edge
                                     indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
+                                    setLengthsVertical(-1, -1);
+                                            
+                                    // bottom edge
                                     indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
+                                    setLengthsHorizontal(-1, -1);
+
+                                    // left edge
                                     indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
+                                    setLengthsVertical(-1, -1);
+
                                     indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
-                                    cumulativeLength = -1.0;
-                                    break;
                                 }
-                                
-                                // top edge
-                                indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
-                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                else {
+                                    // top edge
+                                    indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                                    cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
 
-                                // right edge
-                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
-                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
-                                        
-                                // bottom edge
-                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
-                                cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
+                                    // right edge
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
+                                    cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels, cumulativeLength);
+                                            
+                                    // bottom edge
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
+                                    cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);
 
-                                // left edge
-                                indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
-                                cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels , cumulativeLength);
+                                    // left edge
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
+                                    cumulativeLength += setLengthsVertical(cumulativeLength + heightPixels , cumulativeLength);
 
-                                indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
+                                    indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
+                                }
                                 break;
                         }
                     }
