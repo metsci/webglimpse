@@ -957,7 +957,16 @@ module Webglimpse {
 
                             default:
                                 var cumulativeLength = 0;
-
+                                if ( event.isBorderDashed != true ) {
+                                    indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xRight - wBorder, xRight, yTop, yBottom + hBorder);
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft + wBorder, xRight, yBottom + hBorder, yBottom);
+                                    indexXys = Webglimpse.putQuadXys(xys, indexXys, xLeft, xLeft + wBorder, yTop - hBorder, yBottom);
+                                    indexRgbas = Webglimpse.putRgbas(rgbas, indexRgbas, borderColor, 24);
+                                    cumulativeLength = -1.0;
+                                    break;
+                                }
+                                
                                 // top edge
                                 indexXys = putQuadXys( xys, indexXys, xLeft, xRight-wBorder, yTop, yTop-hBorder );
                                 cumulativeLength += setLengthsHorizontal(cumulativeLength, cumulativeLength + widthPixels);

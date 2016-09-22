@@ -112,6 +112,8 @@ module Webglimpse {
         // relative position within the text label of the point considered the start of the label text (0 = left side, 1 = right side) this is the point positioned by labelHAlign
         // if labelHPos is not set, it defaults to labelHAlign's value, which is usually what is intended anyway
         labelHPos? : number;
+        // determines if the borders are dashed or not
+        isBorderDashed : boolean;
     }
 
 
@@ -544,6 +546,7 @@ module Webglimpse {
         private _labelVPos : number;
         private _labelHAlign : number;
         private _labelHPos : number;
+        private _isBorderDashed : boolean;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -581,6 +584,7 @@ module Webglimpse {
             this._labelVPos = event.labelVPos;
             this._labelHAlign = event.labelHAlign;
             this._labelHPos = event.labelHPos;
+            this._isBorderDashed = ( hasval( event.isBorderDashed ) ? event.isBorderDashed : false );
             this._attrsChanged.fire( );
         }
 
@@ -854,7 +858,18 @@ module Webglimpse {
             }
         }
 
-        snapshot( ) : TimelineEvent {
+        get isBorderDashed( ) : boolean {
+            return this._isBorderDashed;
+        }
+
+        set isBorderDashed( isBorderDashed : boolean ) {
+            if ( isBorderDashed !== this._isBorderDashed ) {
+                this._isBorderDashed = isBorderDashed;
+                this._attrsChanged.fire( );
+            }
+        }
+
+       snapshot( ) : TimelineEvent {
             return {
                 eventGuid: this._eventGuid,
                 startLimit_ISO8601: ( hasval( this._startLimit_PMILLIS ) ? formatTime_ISO8601( this._startLimit_PMILLIS ) : null ),
@@ -876,7 +891,8 @@ module Webglimpse {
                 labelVAlign: this._labelVAlign,
                 labelVPos: this._labelVPos,
                 labelHAlign: this._labelHAlign,
-                labelHPos: this._labelHPos
+                labelHPos: this._labelHPos,
+                isBorderDashed: this._isBorderDashed
             };
         }
     }
