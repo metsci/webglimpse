@@ -1197,9 +1197,8 @@ module Webglimpse {
         };
     }
 
-    // MJC
     function calculateTextWidth(textEnabled: boolean, labelText: string, fgColor: Color, textDefaultColor: Color,
-        textTextures: Cache<TextTexture2D>, viewport: Bounds) {
+        textTextures: TwoKeyCache<TextTexture2D>, viewport: BoundsUnmodifiable) {
         var wText = 0;
         var textTexture;
         if (textEnabled && labelText) {
