@@ -29,7 +29,6 @@
  */
 module Webglimpse {
     
-    
     export interface TimelineAnnotation {
         annotationGuid : string;
         // time (x axis position) of annotation
@@ -67,7 +66,6 @@ module Webglimpse {
         // 'xy       : user can adjust both x (time) and y value of points
         userEditMode? : string;
     }
-
 
     export interface TimelineEvent {
         eventGuid : string;
@@ -114,6 +112,8 @@ module Webglimpse {
         labelHPos? : number;
         // determines if the borders are dashed or not
         isBorderDashed : boolean;
+        // determines the fill pattern of the event ('solid', 'diagonal-stripes')
+        fillPattern: FillPattern;
     }
 
 
@@ -547,6 +547,7 @@ module Webglimpse {
         private _labelHAlign : number;
         private _labelHPos : number;
         private _isBorderDashed : boolean;
+        private _fillPattern: FillPattern;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -585,6 +586,7 @@ module Webglimpse {
             this._labelHAlign = event.labelHAlign;
             this._labelHPos = event.labelHPos;
             this._isBorderDashed = ( hasval( event.isBorderDashed ) ? event.isBorderDashed : false );
+            this._fillPattern = ( hasval( event.fillPattern ) ? event.fillPattern : FillPattern.SOLID );
             this._attrsChanged.fire( );
         }
 
@@ -869,6 +871,17 @@ module Webglimpse {
             }
         }
 
+        get fillPattern( ) : FillPattern {
+            return this._fillPattern;
+        }
+
+        set fillPattern( fillPattern : FillPattern ) {
+            if ( fillPattern !== this._fillPattern ) {
+                this._fillPattern = fillPattern;
+                this._attrsChanged.fire( );
+            }
+        }
+
        snapshot( ) : TimelineEvent {
             return {
                 eventGuid: this._eventGuid,
@@ -892,7 +905,8 @@ module Webglimpse {
                 labelVPos: this._labelVPos,
                 labelHAlign: this._labelHAlign,
                 labelHPos: this._labelHPos,
-                isBorderDashed: this._isBorderDashed
+                isBorderDashed: this._isBorderDashed,
+                fillPattern: this._fillPattern
             };
         }
     }
