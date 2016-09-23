@@ -685,6 +685,11 @@ module Webglimpse {
         minimumVisibleWidth? : number;
     }
     
+    export enum FillPattern {
+        SOLID = 0.0,
+        DIAGONAL_STRIPES = 1.0
+    };
+
     function eventBarPainterHelper( barOpts : TimelineEventBarsPainterOptions, drawable : Drawable, timeAxis : TimeAxis1D, lanes : TimelineLaneArray, ui : TimelineUi, options : TimelineEventsPainterOptions ) {
         var rowTopPadding    = options.rowTopPadding;
         var rowBottomPadding = options.rowBottomPadding;
@@ -705,38 +710,89 @@ module Webglimpse {
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
-                '                                                                ',
+                '  attribute vec2 a_minQuadXy;                                   ',
+                '  attribute float a_fillPattern;                                    ',     
+                '                                                                ',                
                 '  varying vec4 v_Color;                                         ',
+                '  varying vec2 v_minQuadXy;                                     ', 
+                '  varying float v_fillPattern;                                     ',                                               
                 '                                                                ',
                 '  void main( ) {                                                ',
                 '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
                 '      v_Color = a_Color;                                        ',
+                '      v_minQuadXy = a_minQuadXy;                                ',
+                '      v_fillPattern = a_fillPattern;                                ',                
                 '  }                                                             ',
                 '                                                                '
             );
 
-        var program = new Program( xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER );
+
+         var fillPattern_FRAGSHADER = Webglimpse.concatLines(
+                '                                                                           ',
+				'  precision highp float;                                                   ',
+				'  varying vec4 v_Color;                                                    ',
+   				'  varying vec2 v_minQuadXy;                                                ',
+   				'  varying float v_fillPattern;                                              ',                   
+				'  uniform vec2 uResolution;                                                ',
+				'  void main( ) {                                                           ',
+                '       if(v_fillPattern==0.){                                               ', // If fillPattern is solid, set the color and return
+				'           gl_FragColor = v_Color;                                         ',	
+                '           return;                                                         ',
+				'       }                                                                   ',
+				'       vec2 position = (gl_FragCoord.xy/uResolution.xy) - v_minQuadXy.xy;  ',
+				'       float pi = 3.14159265359;                                           ',
+				'       float wave = sin(32.*2.*pi*(position.x+position.y*0.05));           ',
+				'       wave = (wave+1.)/2.;                                                ',
+				'       if(wave>0.95){                                                      ',
+				'           gl_FragColor = v_Color;                                         ',	
+				'       }else if(wave>0.4) {                                                ',
+				'           gl_FragColor = wave*v_Color;                                    ',
+				'       }	                                                                ',
+				'  }                                                                        ',
+				'                                                                           ' 
+        );
+
+        var program = new Program( xyFrac_vColor_VERTSHADER, fillPattern_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var a_Color = new Attribute( program, 'a_Color' );
+        var a_minQuadXy = new Attribute( program, 'a_minQuadXy');
+        var a_fillPattern = new Attribute( program, 'a_fillPattern');
+		var uResolution = new Webglimpse.Uniform2f(program, "uResolution");
 
         var xys = new Float32Array( 0 );
         var xysBuffer = newDynamicBuffer( );
 
         var rgbas = new Float32Array( 0 );
         var rgbasBuffer = newDynamicBuffer( );
-        
+
+        var minQuadXy = new Float32Array( 0 ); // Need to keep track of the min xy per quad to calculate relative position in the fragment shader
+        var minQuadXyBuffer = newDynamicBuffer( );
+
+        var fillPattern = new Float32Array( 0 ); // Used to keep track of which fill pattern is being applied
+        var fillPatternBuffer = newDynamicBuffer( );
+
         return {
-            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable, indexMinQuadXyBuffer : number, indexFillPattern: number ) {
                 if ( indexXys == 0 || indexRgbas == 0 ) return;
                 
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
                 
                 program.use( gl );
+                
+                uResolution.setData(gl, viewport.w, viewport.h);
+
                 xysBuffer.setData( xys.subarray( 0, indexXys ) );
                 a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
+
                 rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
                 a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
+
+                minQuadXyBuffer.setData( minQuadXy.subarray(0, indexMinQuadXyBuffer ) );
+                a_minQuadXy.setDataAndEnable( gl, minQuadXyBuffer, 2, GL.FLOAT );
+
+                fillPatternBuffer.setData( fillPattern.subarray(0, indexFillPattern) );
+                a_fillPattern.setDataAndEnable( gl, fillPatternBuffer, 1, GL.FLOAT );
 
                 gl.drawArrays( GL.TRIANGLES, 0, Math.floor( indexXys / 2 ) );
 
@@ -758,11 +814,13 @@ module Webglimpse {
 
                 xys = ensureCapacityFloat32( xys, 2*numVertices );
                 rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
+                minQuadXy = Webglimpse.ensureCapacityFloat32(minQuadXy, 2 * numVertices);
+				fillPattern = Webglimpse.ensureCapacityFloat32(fillPattern, numVertices);
             },
-            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable ) : { indexXys : number; indexRgbas : number } {
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable, indexMinQuadXy: number, indexFillPattern: number ) : { indexXys : number; indexRgbas : number; indexMinQuadXy: number; indexFillPattern: number; } {
                 var lane : TimelineLane = lanes.lane( laneIndex );
                 var event : TimelineEventModel = lane.event( eventIndex );
-                
+
                 var wBorder = borderThickness / viewport.w;
                 var hBorder = borderThickness / viewport.h;
                 
@@ -788,9 +846,26 @@ module Webglimpse {
                     }
                     indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
                     indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
+                    var minX = xLeft+wBorder;
+                    var minY = yBottom+hBorder;
+                    // There are 12 vertices in a quad (2 triangles)
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    // Set the fillPatternValue per vertex of the quad
+                    var fillPatternValue = event.fillPattern;
+                    fillPattern[indexFillPattern++] = fillPatternValue;  
+                    fillPattern[indexFillPattern++] = fillPatternValue;  
+                    fillPattern[indexFillPattern++] = fillPatternValue;  
+                    fillPattern[indexFillPattern++] = fillPatternValue;  
+                    fillPattern[indexFillPattern++] = fillPatternValue;  
+                    fillPattern[indexFillPattern++] = fillPatternValue; 
                 }
                 
-                return { indexXys : indexXys, indexRgbas : indexRgbas };
+                return { indexXys : indexXys, indexRgbas : indexRgbas, indexMinQuadXy: indexMinQuadXy, indexFillPattern: indexFillPattern };
             }
         };
     }
@@ -927,13 +1002,7 @@ module Webglimpse {
                 
                 if ( !( xRight < 0 || xLeft > 1 ) && widthPixels > minimumVisibleWidth ) {
 
-                    // var fillColor = ( event.bgColor || defaultColor );
-                    // if ( event === selection.hoveredEvent.value ) {
-                    //     fillColor = darker( fillColor, 0.8 );
-                    // }
-                    
                     // Border
-                    //var borderColor = ( event.borderColor || ( event.bgColor ? fillColor : null ) || defaultBorderColor || fillColor );
                     var borderColor = ( event.borderColor || ( event.bgColor ) || defaultBorderColor );
                     if ( selection.selectedEvents.hasValue( event ) ) {
                         borderColor = selectedBorderColor;
@@ -1018,19 +1087,22 @@ module Webglimpse {
 
                 var indexXys = 0;
                 var indexRgbas = 0;
-                var indexLengthSoFar = 0;
+                var indexMinQuadXy = 0;
+                var indexFillPattern = 0;
                 
                 for ( var l = 0; l < lanes.length; l++ ) {
                     var lane = lanes.lane( l );
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport );
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexMinQuadXy,  indexFillPattern);
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
+                        indexMinQuadXy = indexes.indexMinQuadXy;
+                        indexFillPattern = indexes.indexFillPattern;
                     }
                 }
 
-                helper.paint( indexXys, indexRgbas, gl, viewport );
+                helper.paint( indexXys, indexRgbas, gl, viewport, indexMinQuadXy, indexFillPattern);
             };
         };
     }
@@ -1065,8 +1137,6 @@ module Webglimpse {
             };
         };
     }
-
-
 
     export interface TimelineEventIconsPainterOptions {
         topMargin? : number;
@@ -1457,9 +1527,9 @@ module Webglimpse {
                         
                         // draw bar
                         barHelper.ensureCapacity( 1 );
-                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport );
+                        var indexes = barHelper.fillEvent( l, e, 0, 0, viewport, 0, 0 );
                         var dashedIndexes = dashedHelper.fillEvent( l, e, 0, 0, viewport, 0 );
-                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexMinQuadXy, indexes.indexFillPattern );
                         dashedHelper.paint( dashedIndexes.indexXys, dashedIndexes.indexRgbas, gl, viewport, dashedIndexes.indexLengthSoFar );
                         
                         // draw label
