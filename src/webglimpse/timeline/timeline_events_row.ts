@@ -1201,6 +1201,22 @@ module Webglimpse {
         };
     }
 
+    // MJC
+    function calculateTextWidth(textEnabled: boolean, labelText: string, fgColor: Color, textDefaultColor: Color,
+        textTextures: Cache<TextTexture2D>, viewport: Bounds) {
+        var wText = 0;
+        var textTexture;
+        if (textEnabled && labelText) {
+            var textColor = Webglimpse.hasval(fgColor) ? fgColor : textDefaultColor;
+            textTexture = textTextures.value(textColor.rgbaString, labelText);
+            wText = textTexture.w / viewport.w;
+        }
+        return {
+            wText: wText,
+            textTexture: textTexture
+        };
+    }
+
     export function newEventLabelsPainterFactory( labelOpts? : TimelineEventLabelOptions ) : TimelineEventsPainterFactory {
 
         // Painter Factory
