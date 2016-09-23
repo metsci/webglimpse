@@ -1043,13 +1043,9 @@ module Webglimpse {
                     }
     
                     // calculate Text width
-                    var wText = 0;
-                    var textTexture;
-                    if ( textEnabled && event.label ) {
-                        var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
-                        textTexture = textTextures.value( textColor.rgbaString, event.label );
-                        wText = ( textTexture.w / viewport.w );
-                    }
+                    const calculatedTextWidth = calculateTextWidth(textEnabled, event.label, event.fgColor, textDefaultColor, textTextures, viewport);
+                    var wText = calculatedTextWidth.wText;
+                    var textTexture = calculatedTextWidth.textTexture;
                     
                     // calculate Icon width (and start load if necessary)
                     var wIcon = 0;
