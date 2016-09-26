@@ -746,8 +746,10 @@ module Webglimpse {
 				'       if(wave>0.95){                                                      ',
 				'           gl_FragColor = v_Color;                                         ',	
 				'       }else if(wave>0.4) {                                                ',
-				'           gl_FragColor = wave*v_Color;                                    ',
-				'       }	                                                                ',
+				'           gl_FragColor = (wave + 0.3)*v_Color;                            ', // Add 0.3 to wave to reduce the dark outline of the stripes
+				'       } else {                                                            ',
+                '           gl_FragColor = vec4(1.);                                        ', // Make the background white
+                '       }	                                                                ',
 				'  }                                                                        ',
 				'                                                                           ' 
         );
