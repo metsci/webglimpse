@@ -964,7 +964,7 @@ module Webglimpse {
         var rightMargin     = ( hasval( labelOpts ) && hasval( labelOpts.rightMargin     ) ? labelOpts.rightMargin     : 4     );
         var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
         var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
-        var textMode        = ( hasval( labelOpts ) && hasval( labelOpts.textMode    ) ? labelOpts.textMode    : 'show' );
+        var textMode        = ( hasval( labelOpts ) && hasval( labelOpts.textMode    ) ? labelOpts.textMode    : 'force' );
 
         // Icon options
         var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
@@ -1016,33 +1016,28 @@ module Webglimpse {
                 if ( !( xEnd <= 0 || xStart > 1 ) ) {
                     var xLeft;
                     var xRight;
-                    switch (textMode) {
-                        case 'force':
-                            if (eventIndex + 1 < lane.length) {
-                                var nextEvent = lane.event(eventIndex + 1);
-                                var nextStart_PMILLIS = effectiveEdges_PMILLIS(ui, nextEvent)[0];
-                                xRight = timeAxis.tFrac(nextStart_PMILLIS);
-                            }
-                            else {
-                                xRight = xRightMax;
-                            }
+                    if (textMode === 'force') {
 
-                            if (eventIndex - 1 >= 0) {
-                                var previousEvent = lane.event(eventIndex - 1);
-                                var previousEnd_PMILLIS = effectiveEdges_PMILLIS(ui, previousEvent)[1];
-                                xLeft = timeAxis.tFrac(previousEnd_PMILLIS);
-                            }
-                            else {
-                                xLeft = xLeftMin;
-                            }
-                            break;
-                        case 'show':
-                        // Fall-through
-                        case 'truncate':
-                        // Fall-through
-                        default:
-                            xRight = xEnd;
-                            xLeft = xStart;
+                        if (eventIndex + 1 < lane.length) {
+                            var nextEvent = lane.event(eventIndex + 1);
+                            var nextStart_PMILLIS = effectiveEdges_PMILLIS(ui, nextEvent)[0];
+                            xRight = timeAxis.tFrac(nextStart_PMILLIS);
+                        }
+                        else {
+                            xRight = xRightMax;
+                        }
+
+                        if (eventIndex - 1 >= 0) {
+                            var previousEvent = lane.event(eventIndex - 1);
+                            var previousEnd_PMILLIS = effectiveEdges_PMILLIS(ui, previousEvent)[1];
+                            xLeft = timeAxis.tFrac(previousEnd_PMILLIS);
+                        }
+                        else {
+                            xLeft = xLeftMin;
+                        }
+                    } else {
+                        xRight = xEnd;
+                        xLeft = xStart;
                     }
     
                     // calculate Text width
