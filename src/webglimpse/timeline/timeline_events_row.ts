@@ -710,17 +710,17 @@ module Webglimpse {
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
-                '  attribute vec2 a_minQuadXy;                                   ',
+                '  attribute vec2 a_relativeXy;                                   ',
                 '  attribute float a_fillPattern;                                    ',     
                 '                                                                ',                
                 '  varying vec4 v_Color;                                         ',
-                '  varying vec2 v_minQuadXy;                                     ', 
+                '  varying vec2 v_relativeXy;                                     ', 
                 '  varying float v_fillPattern;                                     ',                                               
                 '                                                                ',
                 '  void main( ) {                                                ',
                 '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
                 '      v_Color = a_Color;                                        ',
-                '      v_minQuadXy = a_minQuadXy;                                ',
+                '      v_relativeXy = a_relativeXy;                                ',
                 '      v_fillPattern = a_fillPattern;                                ',                
                 '  }                                                             ',
                 '                                                                '
@@ -731,17 +731,15 @@ module Webglimpse {
                 '                                                                           ',
 				'  precision highp float;                                                   ',
 				'  varying vec4 v_Color;                                                    ',
-   				'  varying vec2 v_minQuadXy;                                                ',
+   				'  varying vec2 v_relativeXy;                                                ',
    				'  varying float v_fillPattern;                                              ',                   
-				'  uniform vec2 uResolution;                                                ',
 				'  void main( ) {                                                           ',
                 '       if(v_fillPattern==0.){                                               ', // If fillPattern is solid, set the color and return
-				'           gl_FragColor = v_Color;                                         ',	
+				'           gl_FragColor = v_Color;                                         ',
                 '           return;                                                         ',
-				'       }                                                                   ',
-				'       vec2 position = (gl_FragCoord.xy/uResolution.xy) - v_minQuadXy.xy;  ',
+                '       }                                                                   ',
 				'       float pi = 3.14159265359;                                           ',
-				'       float wave = sin(32.*2.*pi*(position.x+position.y*0.05));           ',
+				'       float wave = sin(32.*2.*pi*(v_relativeXy.x+v_relativeXy.y*0.05));           ',
 				'       wave = (wave+1.)/2.;                                                ',
 				'       if(wave>0.95){                                                      ',
 				'           gl_FragColor = v_Color;                                         ',	
@@ -757,9 +755,8 @@ module Webglimpse {
         var program = new Program( xyFrac_vColor_VERTSHADER, fillPattern_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var a_Color = new Attribute( program, 'a_Color' );
-        var a_minQuadXy = new Attribute( program, 'a_minQuadXy');
+        var a_relativeXy = new Attribute( program, 'a_relativeXy');
         var a_fillPattern = new Attribute( program, 'a_fillPattern');
-		var uResolution = new Webglimpse.Uniform2f(program, "uResolution");
 
         var xys = new Float32Array( 0 );
         var xysBuffer = newDynamicBuffer( );
@@ -767,14 +764,14 @@ module Webglimpse {
         var rgbas = new Float32Array( 0 );
         var rgbasBuffer = newDynamicBuffer( );
 
-        var minQuadXy = new Float32Array( 0 ); // Need to keep track of the min xy per quad to calculate relative position in the fragment shader
-        var minQuadXyBuffer = newDynamicBuffer( );
+        var relativeXys = new Float32Array( 0 ); // Need to keep track of the min xy per quad to calculate relative position in the fragment shader
+        var relativeXysBuffer = newDynamicBuffer( );
 
         var fillPattern = new Float32Array( 0 ); // Used to keep track of which fill pattern is being applied
         var fillPatternBuffer = newDynamicBuffer( );
 
         return {
-            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable, indexMinQuadXyBuffer : number, indexFillPattern: number ) {
+            paint( indexXys : number, indexRgbas : number, gl : WebGLRenderingContext, viewport : BoundsUnmodifiable, indexRelativeXys : number, indexFillPattern: number ) {
                 if ( indexXys == 0 || indexRgbas == 0 ) return;
                 
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
@@ -782,16 +779,14 @@ module Webglimpse {
                 
                 program.use( gl );
                 
-                uResolution.setData(gl, viewport.w, viewport.h);
-
                 xysBuffer.setData( xys.subarray( 0, indexXys ) );
                 a_XyFrac.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
 
                 rgbasBuffer.setData( rgbas.subarray( 0, indexRgbas ) );
                 a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
 
-                minQuadXyBuffer.setData( minQuadXy.subarray(0, indexMinQuadXyBuffer ) );
-                a_minQuadXy.setDataAndEnable( gl, minQuadXyBuffer, 2, GL.FLOAT );
+                relativeXysBuffer.setData( relativeXys.subarray(0, indexRelativeXys ) );
+                a_relativeXy.setDataAndEnable( gl, relativeXysBuffer, 2, GL.FLOAT );
 
                 fillPatternBuffer.setData( fillPattern.subarray(0, indexFillPattern) );
                 a_fillPattern.setDataAndEnable( gl, fillPatternBuffer, 1, GL.FLOAT );
@@ -816,10 +811,10 @@ module Webglimpse {
 
                 xys = ensureCapacityFloat32( xys, 2*numVertices );
                 rgbas = ensureCapacityFloat32( rgbas, 4*numVertices );
-                minQuadXy = Webglimpse.ensureCapacityFloat32(minQuadXy, 2 * numVertices);
+                relativeXys = Webglimpse.ensureCapacityFloat32(relativeXys, 2 * numVertices);
 				fillPattern = Webglimpse.ensureCapacityFloat32(fillPattern, numVertices);
             },
-            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable, indexMinQuadXy: number, indexFillPattern: number ) : { indexXys : number; indexRgbas : number; indexMinQuadXy: number; indexFillPattern: number; } {
+            fillEvent: function( laneIndex : number, eventIndex : number, indexXys : number, indexRgbas : number, viewport : BoundsUnmodifiable, indexRelativeXys: number, indexFillPattern: number ) : { indexXys : number; indexRgbas : number; indexRelativeXys: number; indexFillPattern: number; } {
                 var lane : TimelineLane = lanes.lane( laneIndex );
                 var event : TimelineEventModel = lane.event( eventIndex );
 
@@ -848,15 +843,10 @@ module Webglimpse {
                     }
                     indexXys = putQuadXys( xys, indexXys, xLeft+wBorder, xRight-wBorder, yTop-hBorder, yBottom+hBorder );
                     indexRgbas = putQuadRgbas( rgbas, indexRgbas, fillColor );
-                    var minX = xLeft+wBorder;
-                    var minY = yBottom+hBorder;
-                    // There are 12 vertices in a quad (2 triangles)
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
+                    
+                    // create a quad with relative coordinates
+                    indexRelativeXys = putQuadXys(relativeXys, indexRelativeXys, 0.0, xRight-wBorder -xLeft-wBorder, yTop-hBorder - yBottom-hBorder, 0.0);
+
                     // Set the fillPatternValue per vertex of the quad
                     var fillPatternValue = event.fillPattern;
                     fillPattern[indexFillPattern++] = fillPatternValue;  
@@ -867,7 +857,7 @@ module Webglimpse {
                     fillPattern[indexFillPattern++] = fillPatternValue; 
                 }
                 
-                return { indexXys : indexXys, indexRgbas : indexRgbas, indexMinQuadXy: indexMinQuadXy, indexFillPattern: indexFillPattern };
+                return { indexXys : indexXys, indexRgbas : indexRgbas, indexRelativeXys: indexRelativeXys, indexFillPattern: indexFillPattern };
             }
         };
     }
@@ -1089,22 +1079,22 @@ module Webglimpse {
 
                 var indexXys = 0;
                 var indexRgbas = 0;
-                var indexMinQuadXy = 0;
+                var indexRelativeXys = 0;
                 var indexFillPattern = 0;
                 
                 for ( var l = 0; l < lanes.length; l++ ) {
                     var lane = lanes.lane( l );
                     for ( var e = 0; e < lane.length; e++ ) {
                         var event = lane.event( e );
-                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexMinQuadXy,  indexFillPattern);
+                        var indexes = helper.fillEvent( l, e, indexXys, indexRgbas, viewport, indexRelativeXys,  indexFillPattern);
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
-                        indexMinQuadXy = indexes.indexMinQuadXy;
+                        indexRelativeXys = indexes.indexRelativeXys;
                         indexFillPattern = indexes.indexFillPattern;
                     }
                 }
 
-                helper.paint( indexXys, indexRgbas, gl, viewport, indexMinQuadXy, indexFillPattern);
+                helper.paint( indexXys, indexRgbas, gl, viewport, indexRelativeXys, indexFillPattern);
             };
         };
     }
@@ -1531,7 +1521,7 @@ module Webglimpse {
                         barHelper.ensureCapacity( 1 );
                         var indexes = barHelper.fillEvent( l, e, 0, 0, viewport, 0, 0 );
                         var dashedIndexes = dashedHelper.fillEvent( l, e, 0, 0, viewport, 0 );
-                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexMinQuadXy, indexes.indexFillPattern );
+                        barHelper.paint( indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexRelativeXys, indexes.indexFillPattern );
                         dashedHelper.paint( dashedIndexes.indexXys, dashedIndexes.indexRgbas, gl, viewport, dashedIndexes.indexLengthSoFar );
                         
                         // draw label
