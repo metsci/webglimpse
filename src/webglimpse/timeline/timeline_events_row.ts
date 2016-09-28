@@ -735,9 +735,9 @@ module Webglimpse {
    				'  varying float v_fillPattern;                                              ',                   
 				'  void main( ) {                                                           ',
                 '       if(v_fillPattern==0.){                                               ', // If fillPattern is solid, set the color and return
-				'           gl_FragColor = v_Color;                                         ',	
+				'           gl_FragColor = v_Color;                                         ',
                 '           return;                                                         ',
-				'       }                                                                   ',
+                '       }                                                                   ',
 				'       float pi = 3.14159265359;                                           ',
 				'       float wave = sin(32.*2.*pi*(v_relativeXy.x+v_relativeXy.y*0.05));           ',
 				'       wave = (wave+1.)/2.;                                                ',
