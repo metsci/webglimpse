@@ -710,11 +710,11 @@ module Webglimpse {
                 '                                                                ',
                 '  attribute vec2 a_XyFrac;                                      ',
                 '  attribute vec4 a_Color;                                       ',
-                '  attribute vec2 a_relativeXys;                                   ',
+                '  attribute vec2 a_relativeXy;                                   ',
                 '  attribute float a_fillPattern;                                    ',     
                 '                                                                ',                
                 '  varying vec4 v_Color;                                         ',
-                '  varying vec2 v_relativeXys;                                     ', 
+                '  varying vec2 v_relativeXy;                                     ', 
                 '  varying float v_fillPattern;                                     ',                                               
                 '                                                                ',
                 '  void main( ) {                                                ',
@@ -731,16 +731,15 @@ module Webglimpse {
                 '                                                                           ',
 				'  precision highp float;                                                   ',
 				'  varying vec4 v_Color;                                                    ',
-   				'  varying vec2 v_relativeXys;                                                ',
+   				'  varying vec2 v_relativeXy;                                                ',
    				'  varying float v_fillPattern;                                              ',                   
 				'  void main( ) {                                                           ',
                 '       if(v_fillPattern==0.){                                               ', // If fillPattern is solid, set the color and return
 				'           gl_FragColor = v_Color;                                         ',	
                 '           return;                                                         ',
 				'       }                                                                   ',
-				'       vec2 position = v_relativeXys.xy;  ',
 				'       float pi = 3.14159265359;                                           ',
-				'       float wave = sin(32.*2.*pi*(position.x+position.y*0.05));           ',
+				'       float wave = sin(32.*2.*pi*(v_relativeXy.x+v_relativeXy.y*0.05));           ',
 				'       wave = (wave+1.)/2.;                                                ',
 				'       if(wave>0.95){                                                      ',
 				'           gl_FragColor = v_Color;                                         ',	
@@ -756,7 +755,7 @@ module Webglimpse {
         var program = new Program( xyFrac_vColor_VERTSHADER, fillPattern_FRAGSHADER );
         var a_XyFrac = new Attribute( program, 'a_XyFrac' );
         var a_Color = new Attribute( program, 'a_Color' );
-        var a_relativeXys = new Attribute( program, 'a_relativeXys');
+        var a_relativeXy = new Attribute( program, 'a_relativeXy');
         var a_fillPattern = new Attribute( program, 'a_fillPattern');
 
         var xys = new Float32Array( 0 );
@@ -787,7 +786,7 @@ module Webglimpse {
                 a_Color.setDataAndEnable( gl, rgbasBuffer, 4, GL.FLOAT );
 
                 relativeXysBuffer.setData( relativeXys.subarray(0, indexRelativeXys ) );
-                a_relativeXys.setDataAndEnable( gl, relativeXysBuffer, 2, GL.FLOAT );
+                a_relativeXy.setDataAndEnable( gl, relativeXysBuffer, 2, GL.FLOAT );
 
                 fillPatternBuffer.setData( fillPattern.subarray(0, indexFillPattern) );
                 a_fillPattern.setDataAndEnable( gl, fillPatternBuffer, 1, GL.FLOAT );
@@ -847,15 +846,7 @@ module Webglimpse {
                     
                     // create a quad with relative coordinates
                     indexRelativeXys = putQuadXys(relativeXys, indexRelativeXys, 0.0, xRight-wBorder -xLeft-wBorder, yTop-hBorder - yBottom-hBorder, 0.0);
-                    /*var minX = xLeft+wBorder;
-                    var minY = yBottom+hBorder;
-                    // There are 12 vertices in a quad (2 triangles)
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; 
-                    minQuadXy[indexMinQuadXy++] = minX; minQuadXy[indexMinQuadXy++] = minY; */
+
                     // Set the fillPatternValue per vertex of the quad
                     var fillPatternValue = event.fillPattern;
                     fillPattern[indexFillPattern++] = fillPatternValue;  
