@@ -720,7 +720,7 @@ module Webglimpse {
                 '  void main( ) {                                                ',
                 '      gl_Position = vec4( ( -1.0 + 2.0*a_XyFrac ), 0.0, 1.0 );  ',
                 '      v_Color = a_Color;                                        ',
-                '      v_relativeXys = a_relativeXys;                                ',
+                '      v_relativeXy = a_relativeXy;                                ',
                 '      v_fillPattern = a_fillPattern;                                ',                
                 '  }                                                             ',
                 '                                                                '
