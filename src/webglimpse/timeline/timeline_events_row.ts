@@ -937,6 +937,7 @@ module Webglimpse {
         rightMargin? : number;
         vAlign? : number;
         spacing? : number;
+        extendBeyondBar?: boolean;
         // One of 'force', 'truncate', or 'show'
         textMode? : string; 
 
@@ -964,6 +965,7 @@ module Webglimpse {
         var rightMargin     = ( hasval( labelOpts ) && hasval( labelOpts.rightMargin     ) ? labelOpts.rightMargin     : 4     );
         var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
         var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
+        var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
         var textMode        = ( hasval( labelOpts ) && hasval( labelOpts.textMode    ) ? labelOpts.textMode    : 'force' );
 
         // Icon options

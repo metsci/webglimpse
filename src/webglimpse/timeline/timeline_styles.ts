@@ -101,6 +101,7 @@ module Webglimpse {
                 rightMargin: 2,
                 vAlign: 0.0,
                 spacing: 2,
+                extendBeyondBar: true,
                 textMode: 'force'
             } )
         ]
