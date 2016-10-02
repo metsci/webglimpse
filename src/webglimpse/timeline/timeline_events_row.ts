@@ -1018,7 +1018,7 @@ module Webglimpse {
                 if ( !( xEnd <= 0 || xStart > 1 ) ) {
                     var xLeft;
                     var xRight;
-                    if (textMode === 'force') {
+                    if ( extendBeyondBar ) {
 
                         if (eventIndex + 1 < lane.length) {
                             var nextEvent = lane.event(eventIndex + 1);
