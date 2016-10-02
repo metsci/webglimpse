@@ -101,8 +101,8 @@ module Webglimpse {
                 rightMargin: 2,
                 vAlign: 0.0,
                 spacing: 2,
-                forceVisible: false,
-                extendBeyondBar: true
+                extendBeyondBar: true,
+                textMode: 'force'
             } )
         ]
     } );
@@ -143,7 +143,7 @@ module Webglimpse {
                     rightMargin: 2,
                     vAlign: 0.0,
                     spacing: 2,
-                    forceVisible: true
+                    textMode: 'force'
                 },
                 {
                     bottomMargin: 0,

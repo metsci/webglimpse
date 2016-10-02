@@ -937,8 +937,9 @@ module Webglimpse {
         rightMargin? : number;
         vAlign? : number;
         spacing? : number;
-        extendBeyondBar? : boolean;
-        forceVisible? : boolean;
+        extendBeyondBar?: boolean;
+        // One of 'force', 'truncate', or 'show'
+        textMode? : string; 
 
         iconsEnabled? : boolean;
         // Can be a number, or 'imageSize', or 'auto'
@@ -965,7 +966,7 @@ module Webglimpse {
         var vAlign          = ( hasval( labelOpts ) && hasval( labelOpts.vAlign          ) ? labelOpts.vAlign          : 0.5   );
         var spacing         = ( hasval( labelOpts ) && hasval( labelOpts.spacing         ) ? labelOpts.spacing         : 3     );
         var extendBeyondBar = ( hasval( labelOpts ) && hasval( labelOpts.extendBeyondBar ) ? labelOpts.extendBeyondBar : false );
-        var forceVisible    = ( hasval( labelOpts ) && hasval( labelOpts.forceVisible    ) ? labelOpts.forceVisible    : false );
+        var textMode        = ( hasval( labelOpts ) && hasval( labelOpts.textMode    ) ? labelOpts.textMode    : 'force' );
 
         // Icon options
         var iconsEnabled     = ( hasval( labelOpts ) && hasval( labelOpts.iconsEnabled     ) ? labelOpts.iconsEnabled     : true   );
@@ -1015,41 +1016,36 @@ module Webglimpse {
                 var wSpacing = ( spacing / viewport.w );
 
                 if ( !( xEnd <= 0 || xStart > 1 ) ) {
-    
                     var xLeft;
                     var xRight;
-                    if ( extendBeyondBar ) {
-                        if ( eventIndex+1 < lane.length ) {
-                            var nextEvent = lane.event( eventIndex+1 );
-                            var nextStart_PMILLIS = effectiveEdges_PMILLIS( ui, nextEvent )[ 0 ];
-                            xRight = timeAxis.tFrac( nextStart_PMILLIS );
+                    if (textMode === 'force') {
+
+                        if (eventIndex + 1 < lane.length) {
+                            var nextEvent = lane.event(eventIndex + 1);
+                            var nextStart_PMILLIS = effectiveEdges_PMILLIS(ui, nextEvent)[0];
+                            xRight = timeAxis.tFrac(nextStart_PMILLIS);
                         }
                         else {
                             xRight = xRightMax;
                         }
-                        
-                        if ( eventIndex-1 >= 0 ) {
-                            var previousEvent = lane.event( eventIndex-1 );
-                            var previousEnd_PMILLIS = effectiveEdges_PMILLIS( ui, previousEvent )[ 1 ];
-                            xLeft = timeAxis.tFrac( previousEnd_PMILLIS );
+
+                        if (eventIndex - 1 >= 0) {
+                            var previousEvent = lane.event(eventIndex - 1);
+                            var previousEnd_PMILLIS = effectiveEdges_PMILLIS(ui, previousEvent)[1];
+                            xLeft = timeAxis.tFrac(previousEnd_PMILLIS);
                         }
                         else {
                             xLeft = xLeftMin;
                         }
-                    }
-                    else {
+                    } else {
                         xRight = xEnd;
-                        xLeft  = xStart;
+                        xLeft = xStart;
                     }
     
                     // calculate Text width
-                    var wText = 0;
-                    var textTexture;
-                    if ( textEnabled && event.label ) {
-                        var textColor = ( hasval( event.fgColor ) ? event.fgColor : textDefaultColor );
-                        textTexture = textTextures.value( textColor.rgbaString, event.label );
-                        wText = ( textTexture.w / viewport.w );
-                    }
+                    var calculatedTextWidth = calculateTextWidth(textEnabled, event.label, event.fgColor, textDefaultColor, textTextures, viewport);
+                    var wText = calculatedTextWidth.wText;
+                    var textTexture = calculatedTextWidth.textTexture;
                     
                     // calculate Icon width (and start load if necessary)
                     var wIcon = 0;
@@ -1128,7 +1124,36 @@ module Webglimpse {
                         xStartLabel = xEndLabel - ( wSpacing + wIcon + wText );
                     }
                     
-                    if ( !forceVisible ) {
+                    if (textMode === 'truncate') {
+                        var labelText = event.label;
+                        while (!!labelText && labelText !== "...") {
+                            if (xEndLabel > xRight || xStartLabel < xLeft) {
+                                // there is not enough room for the text, begin truncating the text
+                                labelText = labelText.substring(0, labelText.length - 4).concat("...");
+                                var calculatedTextWidth = calculateTextWidth(textEnabled, labelText, event.fgColor, textDefaultColor, textTextures, viewport);
+                                wText = calculatedTextWidth.wText;
+                                textTexture = calculatedTextWidth.textTexture;
+
+                                xStartLabel = xStart + wLeftIndent - (wSpacing + wIcon + wText) * labelHPos + wTotal * labelHAlign;
+                                // coordinates of the end edge of the icon + label
+                                xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
+                                // adjust xStartLabel and xEndLabel if they fall off the screen
+                                if (xStartLabel < xLeftMin) {
+                                    xStartLabel = xLeftMin;
+                                    xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
+                                } else if (xEndLabel > xRightMax) {
+                                    xEndLabel = xRightMax;
+                                    xStartLabel = xEndLabel - (wSpacing + wIcon + wText);
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        if (!labelText || labelText === "...") {
+                            wText = 0;
+                            textTexture = null;
+                        }
+                    } else if (textMode === 'show') {
                         if ( xEndLabel > xRight || xStartLabel < xLeft ) {
                             // there is not enough room for the text, try with just the icon
                             wText = 0;
@@ -1198,6 +1223,21 @@ module Webglimpse {
                     }
                 }
             }
+        };
+    }
+
+    function calculateTextWidth(textEnabled: boolean, labelText: string, fgColor: Color, textDefaultColor: Color,
+        textTextures: TwoKeyCache<TextTexture2D>, viewport: BoundsUnmodifiable) {
+        var wText = 0;
+        var textTexture;
+        if (textEnabled && labelText) {
+            var textColor = Webglimpse.hasval(fgColor) ? fgColor : textDefaultColor;
+            textTexture = textTextures.value(textColor.rgbaString, labelText);
+            wText = textTexture.w / viewport.w;
+        }
+        return {
+            wText: wText,
+            textTexture: textTexture
         };
     }
 
