@@ -201,6 +201,26 @@ module Webglimpse {
         '  }                            ',
         '                               '
     );
+    
+    export var varyingBorder_FRAGSHADER = concatLines(
+        '                               ',
+        '  precision lowp float;        ',
+        '  varying vec4 v_Color;        ',
+        '  varying float f_LengthSoFar; ',
+        '  const float DashLength_PX = 5.0; // 10 dashes for every 1 unit in f_LengthSoFar ',
+        '                               ',
+        '  void main( ) {               ',
+        '      gl_FragColor = v_Color;  ',
+        '                               ',
+        '      if (f_LengthSoFar > 0.0) { ',
+        '         float mod = mod(f_LengthSoFar, DashLength_PX * 2.0);  ',
+        '         float alpha = 1.0;       ',
+        '         if ( mod < DashLength_PX ) alpha = 0.0;  ',
+        '         gl_FragColor.a = alpha;  ',
+        '      }                        ',
+        '  }                            ',
+        '                               '
+    );
 
 
     export var modelview_VERTSHADER = concatLines(
