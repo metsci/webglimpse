@@ -1,15 +1,4 @@
 {
-    "cursors": [ {
-        "cursorGuid" : "metsci.timelineExample.cursor01",
-        "labeledTimeseriesGuids" : [ "metsci.timelineExample.timeseries01",
-        	"metsci.timelineExample.timeseries03",
-            "metsci.timelineExample.timeseries04" ],
-        "lineColor" : "white",
-        "textColor" : "white",
-        "showCursorText" : true,
-        "showVerticalLine" : true,
-        "showHorizontalLine" : true
-    } ],
     "annotations": [ {
         "annotationGuid": "metsci.timelineExample.annotation01",
         "time_ISO8601": "2014-01-01T01:00:00Z",
@@ -67,6 +56,9 @@
         "userEditable": true,
         "fgColor": "white",
         "bgColor": "#FFB403",
+        "bgSecondaryColor": "white",
+        "borderColor": "red",
+        "borderSecondaryColor": "#FF736C",
         "order": 3,
         "topMargin": 0,
         "bottomMargin": 0,
@@ -74,7 +66,9 @@
         "labelBottomMargin": 0,
         "labelVAlign": 0.5,
         "labelHAlign": 1,
-        "labelIcon": "images/fugue/weather.png"
+        "labelIcon": "images/fugue/weather.png",
+        "isBorderDashed": true,
+        "fillPattern": "gradient"
     }, {
         "eventGuid": "metsci.timelineExample.event03",
         "start_ISO8601": "2014-01-01T03:00:00Z",
@@ -178,7 +172,6 @@
         "label": "Row #3A",
         "yMin": -22,
         "yMax": 20,
-        "cursorGuid" : "metsci.timelineExample.cursor01",
         "timeseriesGuids": [
         	"metsci.timelineExample.timeseries01",
         	"metsci.timelineExample.timeseries02",
@@ -201,7 +194,6 @@
         "label": "Row #3C",
         "yMin": -15,
         "yMax": 15,
-        "cursorGuid" : "metsci.timelineExample.cursor01",
         "timeseriesGuids": [
             "metsci.timelineExample.timeseries03"
         ],

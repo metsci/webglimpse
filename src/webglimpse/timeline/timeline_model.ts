@@ -29,17 +29,6 @@
  */
 module Webglimpse {
     
-    
-    export interface TimelineCursor {
-        cursorGuid : string;
-        labeledTimeseriesGuids : string[];
-        lineColor : string;
-        textColor : string;
-        showVerticalLine : boolean;
-        showHorizontalLine : boolean;
-        showCursorText : boolean;
-    }
-    
     export interface TimelineAnnotation {
         annotationGuid : string;
         // time (x axis position) of annotation
@@ -78,19 +67,19 @@ module Webglimpse {
         userEditMode? : string;
     }
 
-
     export interface TimelineEvent {
         eventGuid : string;
-        // the minimum allowed value of start_ISO8601
-        startLimit_ISO8601? : string;
-        // the maximum allowed value of end_ISO8601
-        endLimit_ISO8601? : string;
         // the left side (earliest) time bound of the event box
         start_ISO8601 : string;
         // the right side (latest) time bound of the event box
         end_ISO8601 : string;
         // text to be displayed with the event
         label : string;
+        // the minimum allowed value of start_ISO8601
+        startLimit_ISO8601? : string;
+        // the maximum allowed value of end_ISO8601
+        endLimit_ISO8601? : string;
+        // guid for icon shown to the left of the label text
         labelIcon? : string;
         // whether or not the event can be dragged / resized by user clicks
         userEditable? : boolean;
@@ -106,8 +95,12 @@ module Webglimpse {
         fgColor? : string;
         // event box color
         bgColor? : string;
+        // event box secondary color used when displaying stiped background
+        bgSecondaryColor? : string;
         // event box border color
         borderColor? : string;
+        // secondary event box border color used when displaying stippled event borders
+        borderSecondaryColor? : string;
         // portion at the top of the timeline row not considered by labelVAlign when placing text
         labelTopMargin? : number;
         // portion at the bottom of the timeline row not considered by labelVAlign when placing text
@@ -122,6 +115,10 @@ module Webglimpse {
         // relative position within the text label of the point considered the start of the label text (0 = left side, 1 = right side) this is the point positioned by labelHAlign
         // if labelHPos is not set, it defaults to labelHAlign's value, which is usually what is intended anyway
         labelHPos? : number;
+        // determines if the borders are dashed or not
+        isBorderDashed? : boolean;
+        // determines the fill pattern of the event ('solid', 'stripes')
+        fillPattern? : string;
     }
 
 
@@ -136,7 +133,6 @@ module Webglimpse {
         eventGuids? : string[];
         timeseriesGuids? : string[];
         annotationGuids? : string[];
-        cursorGuid? : string;
         bgColor? : string;
         fgLabelColor? : string;
         bgLabelColor? : string;
@@ -163,7 +159,6 @@ module Webglimpse {
 
 
     export interface Timeline {
-        cursors : TimelineCursor[];
         annotations : TimelineAnnotation[];
         timeseriesFragments : TimelineTimeseriesFragment[];
         timeseries : TimelineTimeseries[];
@@ -171,78 +166,6 @@ module Webglimpse {
         rows : TimelineRow[];
         groups : TimelineGroup[];
         root : TimelineRoot;
-    }
-    
-    export class TimelineCursorModel {
-        private _cursorGuid : string;
-        // guids of timeseries to display values for at the selected time
-        private _labeledTimeseriesGuids : OrderedStringSet;
-        private _lineColor : Color;
-        private _textColor : Color;
-        private _showCursorText : boolean;
-        private _showVerticalLine : boolean;
-        private _showHorizontalLine : boolean;
-        private _attrsChanged : Notification;
-        
-        constructor( cursor : TimelineCursor ) {
-            this._cursorGuid = cursor.cursorGuid;
-            this._attrsChanged = new Notification( );
-            this.setAttrs( cursor );
-        }
-        
-        get labeledTimeseriesGuids( ) : OrderedStringSet {
-            return this._labeledTimeseriesGuids;
-        }
-        
-        get cursorGuid( ) : string {
-            return this._cursorGuid;
-        }
-        
-        get attrsChanged( ) : Notification {
-            return this._attrsChanged;
-        }
-        
-        get lineColor( ) : Color {
-            return this._lineColor;
-        }
-
-        get textColor( ) : Color {
-            return this._textColor;
-        }
-        
-        get showVerticalLine( ) : boolean {
-            return this._showVerticalLine;
-        }
-        
-        get showHorizontalLine( ) : boolean {
-            return this._showHorizontalLine;
-        }
-                
-        get showCursorText( ) : boolean {
-            return this._showCursorText;
-        }
-
-        setAttrs( cursor : TimelineCursor ) {
-            this._labeledTimeseriesGuids = new OrderedStringSet( cursor.labeledTimeseriesGuids || [] );
-            this._lineColor = ( hasval( cursor.lineColor ) ? parseCssColor( cursor.lineColor ) : null );
-            this._textColor = ( hasval( cursor.textColor ) ? parseCssColor( cursor.textColor ) : null );
-            this._showVerticalLine = cursor.showVerticalLine;
-            this._showHorizontalLine = cursor.showHorizontalLine;
-            this._showCursorText = cursor.showCursorText;
-            this._attrsChanged.fire( );
-        }
-        
-        snapshot( ) : TimelineCursor {
-            return {
-                cursorGuid: this._cursorGuid,
-                labeledTimeseriesGuids: this._labeledTimeseriesGuids.toArray( ),
-                lineColor: ( hasval( this._lineColor ) ? this._lineColor.cssString : null ),
-                textColor: ( hasval( this._textColor ) ? this._textColor.cssString : null ),
-                showVerticalLine: this._showVerticalLine,
-                showHorizontalLine: this._showHorizontalLine,
-                showCursorText: this._showCursorText
-            };
-        }
     }
 
     
@@ -621,13 +544,17 @@ module Webglimpse {
         private _bottomMargin : number;
         private _fgColor : Color;
         private _bgColor : Color;
+        private _bgSecondaryColor : Color;
         private _borderColor : Color;
+        private _borderSecondaryColor : Color;
         private _labelTopMargin : number;
         private _labelBottomMargin : number;
         private _labelVAlign : number;
         private _labelVPos : number;
         private _labelHAlign : number;
         private _labelHPos : number;
+        private _isBorderDashed : boolean;
+        private _fillPattern: FillPattern;
 
         constructor( event : TimelineEvent ) {
             this._eventGuid = event.eventGuid;
@@ -658,13 +585,17 @@ module Webglimpse {
             this._bottomMargin = event.bottomMargin;
             this._fgColor = ( hasval( event.fgColor ) ? parseCssColor( event.fgColor ) : null );
             this._bgColor = ( hasval( event.bgColor ) ? parseCssColor( event.bgColor ) : null );
+            this._bgSecondaryColor = ( hasval( event.bgSecondaryColor ) ? parseCssColor( event.bgSecondaryColor ) : null );
             this._borderColor = ( hasval( event.borderColor ) ? parseCssColor( event.borderColor ) : null );
+            this._borderSecondaryColor = ( hasval( event.borderSecondaryColor ) ? parseCssColor( event.borderSecondaryColor ) : null );
             this._labelTopMargin = event.labelTopMargin;
             this._labelBottomMargin = event.labelBottomMargin;
             this._labelVAlign = event.labelVAlign;
             this._labelVPos = event.labelVPos;
             this._labelHAlign = event.labelHAlign;
             this._labelHPos = event.labelHPos;
+            this._isBorderDashed = ( hasval( event.isBorderDashed ) ? event.isBorderDashed : false );
+            this._fillPattern = ( hasval( event.fillPattern ) ? FillPattern[ event.fillPattern ] : FillPattern.solid );
             this._attrsChanged.fire( );
         }
 
@@ -861,6 +792,17 @@ module Webglimpse {
             }
         }
 
+        get bgSecondaryColor( ) : Color {
+            return this._bgSecondaryColor;
+        }
+
+        set bgSecondaryColor( bgSecondaryColor : Color ) {
+            if ( bgSecondaryColor !== this._bgSecondaryColor ) {
+                this._bgSecondaryColor = bgSecondaryColor;
+                this._attrsChanged.fire( );
+            }
+        }
+
         get borderColor( ) : Color {
             return this._borderColor;
         }
@@ -868,6 +810,17 @@ module Webglimpse {
         set borderColor( borderColor : Color ) {
             if ( borderColor !== this._borderColor ) {
                 this._borderColor = borderColor;
+                this._attrsChanged.fire( );
+            }
+        }
+
+        get borderSecondaryColor( ) : Color {
+            return this._borderSecondaryColor;
+        }
+
+        set borderSecondaryColor( borderSecondaryColor : Color ) {
+            if ( borderSecondaryColor !== this._borderSecondaryColor ) {
+                this._borderSecondaryColor = borderSecondaryColor;
                 this._attrsChanged.fire( );
             }
         }
@@ -938,7 +891,29 @@ module Webglimpse {
             }
         }
 
-        snapshot( ) : TimelineEvent {
+        get isBorderDashed( ) : boolean {
+            return this._isBorderDashed;
+        }
+
+        set isBorderDashed( isBorderDashed : boolean ) {
+            if ( isBorderDashed !== this._isBorderDashed ) {
+                this._isBorderDashed = isBorderDashed;
+                this._attrsChanged.fire( );
+            }
+        }
+
+        get fillPattern( ) : FillPattern {
+            return this._fillPattern;
+        }
+
+        set fillPattern( fillPattern : FillPattern ) {
+            if ( fillPattern !== this._fillPattern ) {
+                this._fillPattern = fillPattern;
+                this._attrsChanged.fire( );
+            }
+        }
+
+       snapshot( ) : TimelineEvent {
             return {
                 eventGuid: this._eventGuid,
                 startLimit_ISO8601: ( hasval( this._startLimit_PMILLIS ) ? formatTime_ISO8601( this._startLimit_PMILLIS ) : null ),
@@ -953,14 +928,18 @@ module Webglimpse {
                 topMargin: this._topMargin,
                 bottomMargin: this._bottomMargin,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
+                bgSecondaryColor: ( hasval( this._bgSecondaryColor ) ? this._bgSecondaryColor.cssString : null ),
                 fgColor: ( hasval( this._fgColor ) ? this._fgColor.cssString : null ),
                 borderColor: ( hasval( this._borderColor ) ? this._borderColor.cssString : null ),
+                borderSecondaryColor: ( hasval( this._borderSecondaryColor ) ? this.borderSecondaryColor.cssString : null ),
                 labelTopMargin: this._labelTopMargin,
                 labelBottomMargin: this._labelBottomMargin,
                 labelVAlign: this._labelVAlign,
                 labelVPos: this._labelVPos,
                 labelHAlign: this._labelHAlign,
-                labelHPos: this._labelHPos
+                labelHPos: this._labelHPos,
+                isBorderDashed: this._isBorderDashed,
+                fillPattern: FillPattern[ this._fillPattern ]
             };
         }
     }
@@ -976,7 +955,6 @@ module Webglimpse {
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
-        private _cursorGuid : string;
         private _bgColor : Color;
         private _fgLabelColor : Color;
         private _bgLabelColor : Color;
@@ -1011,20 +989,10 @@ module Webglimpse {
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
             this._rowHeight = row.rowHeight;
-            this._cursorGuid = row.cursorGuid;
             this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
             this._fgLabelColor = ( hasval( row.fgLabelColor ) ? parseCssColor( row.fgLabelColor ) : null );
             this._bgLabelColor = ( hasval( row.bgLabelColor ) ? parseCssColor( row.bgLabelColor ) : null );
             this._labelFont = row.labelFont;
-            this._attrsChanged.fire( );
-        }
-        
-        get cursorGuid( ) : string {
-            return this._cursorGuid;
-        }
-        
-        set cursorGuid( cursorGuid : string ) {
-            this._cursorGuid = cursorGuid;
             this._attrsChanged.fire( );
         }
         
@@ -1143,7 +1111,6 @@ module Webglimpse {
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
-                cursorGuid: this._cursorGuid,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 bgLabelColor: ( hasval( this._bgLabelColor ) ? this._bgLabelColor.cssString : null ),
                 fgLabelColor: ( hasval( this._fgLabelColor ) ? this._fgLabelColor.cssString : null ),
@@ -1297,7 +1264,6 @@ module Webglimpse {
 
 
     export interface TimelineMergeStrategy {
-        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor );
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation );
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment );
         updateTimeseriesModel( timeseriesModel : TimelineTimeseriesModel, newTimeseries : TimelineTimeseries );
@@ -1309,7 +1275,6 @@ module Webglimpse {
 
 
     export class TimelineModel {
-        private _cursors : OrderedSet<TimelineCursorModel>;
         private _annotations : OrderedSet<TimelineAnnotationModel>;
         private _timeseriesFragments : OrderedSet<TimelineTimeseriesFragmentModel>;
         private _timeseries : OrderedSet<TimelineTimeseriesModel>;
@@ -1320,12 +1285,6 @@ module Webglimpse {
 
         constructor( timeline? : Timeline ) {
         
-            var cursors = ( hasval( timeline ) && hasval( timeline.cursors ) ? timeline.cursors : [] );
-            this._cursors = new OrderedSet<TimelineCursorModel>( [], (g)=>g.cursorGuid );
-            for ( var n = 0; n < cursors.length; n++ ) {
-                this._cursors.add( new TimelineCursorModel( cursors[ n ] ) );
-            }
-            
             var annotations = ( hasval( timeline ) && hasval( timeline.annotations ) ? timeline.annotations : [] );
             this._annotations = new OrderedSet<TimelineAnnotationModel>( [], (g)=>g.annotationGuid );
             for ( var n = 0; n < annotations.length; n++ ) {
@@ -1366,7 +1325,6 @@ module Webglimpse {
             this._root = new TimelineRootModel( root );
         }
         
-        get cursors( ) : OrderedSet<TimelineCursorModel> { return this._cursors; }
         get annotations( ) : OrderedSet<TimelineAnnotationModel> { return this._annotations; }
         get timeseriesFragments( ) : OrderedSet<TimelineTimeseriesFragmentModel> { return this._timeseriesFragments; }
         get timeseriesSets( ) : OrderedSet<TimelineTimeseriesModel> { return this._timeseries; }
@@ -1375,7 +1333,6 @@ module Webglimpse {
         get groups( ) : OrderedSet<TimelineGroupModel> { return this._groups; }
         get root( ) : TimelineRootModel { return this._root; }
 
-        cursor( cursorGuid : string ) : TimelineCursorModel { return this._cursors.valueFor( cursorGuid ); }
         annotation( annotationGuid : string ) : TimelineAnnotationModel { return this._annotations.valueFor( annotationGuid ); }
         timeseriesFragment( fragmentGuid : string ) : TimelineTimeseriesFragmentModel { return this._timeseriesFragments.valueFor( fragmentGuid ); }
         timeseries( timeseriesGuid : string ) : TimelineTimeseriesModel { return this._timeseries.valueFor( timeseriesGuid ); }
@@ -1469,31 +1426,8 @@ module Webglimpse {
             }
             this._annotations.retainIds( retainedAnnotationGuids );
             
-            var freshCursors = newTimeline.cursors;
-            var retainedCursorGuids : string[] = [];
-            for ( var n = 0; n < freshCursors.length; n++ ) {
-                var freshCursor = freshCursors[ n ];
-                var cursorGuid = freshCursor.cursorGuid;
-                var oldCursor = this._cursors.valueFor( cursorGuid );
-                if ( hasval( oldCursor ) ) {
-                    retainedCursorGuids.push( cursorGuid );
-                }
-            }
-            this._cursors.retainIds( retainedCursorGuids );
-            
             // Add new items
             //
-                        
-            for ( var n = 0; n < freshCursors.length; n++ ) {
-                var freshCursor = freshCursors[ n ];
-                var oldCursor = this._cursors.valueFor( freshCursor.cursorGuid );
-                if ( hasval( oldCursor ) ) {
-                    oldCursor.setAttrs( freshCursor );
-                }
-                else {
-                    this._cursors.add( new TimelineCursorModel( freshCursor ) );
-                }
-            }
             
             for ( var n = 0; n < freshAnnotations.length; n++ ) {
                 var freshAnnotation = freshAnnotations[ n ];
@@ -1572,18 +1506,6 @@ module Webglimpse {
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
         
-            var newCursors = hasval( newData.cursors ) ? newData.cursors : [];
-            for ( var n = 0; n < newCursors.length; n++ ) {
-                var newCursor = newCursors[ n ];
-                var cursorModel = this._cursors.valueFor( newCursor.cursorGuid );
-                if ( hasval( cursorModel ) ) {
-                    strategy.updateCursorModel( cursorModel, newCursor );
-                }
-                else {
-                    this._cursors.add( new TimelineCursorModel( newCursor ) );
-                }
-            }
-
             var newAnnotations = hasval( newData.annotations ) ? newData.annotations : [];
             for ( var n = 0; n < newAnnotations.length; n++ ) {
                 var newAnnotation = newAnnotations[ n ];
@@ -1662,7 +1584,6 @@ module Webglimpse {
 
         snapshot( ) : Timeline {
             return {
-                cursors : this._cursors.map( (e)=>e.snapshot() ),
                 annotations : this._annotations.map( (e)=>e.snapshot() ),
                 timeseriesFragments : this._timeseriesFragments.map( (e)=>e.snapshot() ),
                 timeseries : this._timeseries.map( (e)=>e.snapshot() ),
@@ -1686,10 +1607,6 @@ module Webglimpse {
 
 
     export var timelineMergeNewBeforeOld : TimelineMergeStrategy = {
-        
-        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
-            cursorModel.setAttrs( newCursor );
-        },
         
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
@@ -1729,10 +1646,6 @@ module Webglimpse {
 
 
     export var timelineMergeNewAfterOld : TimelineMergeStrategy = {
-        
-        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
-            cursorModel.setAttrs( newCursor );
-        },
         
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );

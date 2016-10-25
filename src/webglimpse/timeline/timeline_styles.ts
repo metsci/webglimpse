@@ -35,15 +35,12 @@ module Webglimpse {
 
     export var timeseriesRowPainterFactories_DEFAULT = [
         newTimeseriesPainterFactory( ),
-        newTimeseriesAnnotationPainterFactory( ),
-        newTimeseriesCursorPainterFactory( {
-            font: '16px verdana,sans-serif',
-            buffer_px: 6
-        } )
+        newTimeseriesAnnotationPainterFactory( )
+        
     ];
     
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {
-        laneHeight: 135,
+        laneHeight: 40,
         painterFactories: [
             newEventLimitsPainterFactory( ),
             newEventBarsPainterFactory( ),
@@ -86,11 +83,20 @@ module Webglimpse {
                 lineColor: new Color( 1, 0, 0, 1 ),
                 lineThickness: 2
             } ),
-            newEventBarsPainterFactory( {
+            newEventStripedBarsPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
                 minimumVisibleWidth: 0,
-                cornerType: JointType.MITER
+                stripeSlant: -1,
+                stripeSecondaryWidth: 5,
+                stripeWidth: 15
+            } ),
+            newEventDashedBordersPainterFactory( {
+                bottomMargin: 0,
+                topMargin: 13,
+                minimumVisibleWidth: 0,
+                cornerType: JointType.BEVEL,
+                dashLength: 10
             } ),
             newEventIconsPainterFactory( {
                 bottomMargin: 0,
@@ -104,8 +110,8 @@ module Webglimpse {
                 rightMargin: 2,
                 vAlign: 0.0,
                 spacing: 2,
-                extendBeyondBar: false,
-                textMode: 'show'
+                forceVisible: false,
+                extendBeyondBar: true
             } )
         ]
     } );
@@ -146,8 +152,7 @@ module Webglimpse {
                     rightMargin: 2,
                     vAlign: 0.0,
                     spacing: 2,
-                    extendBeyondBar: false,
-                    textMode: 'show'
+                    forceVisible: true
                 },
                 {
                     bottomMargin: 0,
