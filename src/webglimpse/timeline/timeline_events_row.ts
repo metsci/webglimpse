@@ -938,7 +938,11 @@ module Webglimpse {
         vAlign? : number;
         spacing? : number;
         extendBeyondBar?: boolean;
-        // One of 'force', 'truncate', or 'show'
+        
+        // Options:
+        // 'force'        always show text regardless of available space
+        // 'truncate'     truncate text with '...' when space is insufficient
+        // 'show'         show text if space exits, hide all the text if it cannot be displayed in its entirity
         textMode? : string; 
 
         iconsEnabled? : boolean;

@@ -74,7 +74,11 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, tickTimeZone, referenceDate_PMILLIS );
+        
+            var sizePixels = isVerticalAxis ? viewport.h : viewport.w;
+            if ( sizePixels === 0 ) return;
+ 
+            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, sizePixels, tickSpacing, tickTimeZone, referenceDate_PMILLIS );
             var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
             var tickCount = tickTimes_PMILLIS.length;
 
