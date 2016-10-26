@@ -33,6 +33,7 @@
 /// <reference path="webglimpse/layout/row_layout.ts" />
 /// <reference path="webglimpse/layout/column_layout.ts" />
 /// <reference path="webglimpse/layout/overlay_layout.ts" />
+/// <reference path="webglimpse/layout/card_layout.ts" />
 /// <reference path="webglimpse/painter/border_painter.ts" />
 /// <reference path="webglimpse/plot/axis.ts" />
 /// <reference path="webglimpse/plot/plot_layout.ts" />
@@ -51,6 +52,7 @@
 /// <reference path="webglimpse/timeline/time_grid_painter.ts" />
 /// <reference path="webglimpse/timeline/timeline_model.ts" />
 /// <reference path="webglimpse/timeline/timeline_layout.ts" />
+/// <reference path="webglimpse/timeline/timeline_cursor_painter.ts" />
 /// <reference path="webglimpse/timeline/timeline_annotation_painter.ts" />
 /// <reference path="webglimpse/timeline/timeline_annotation_style.ts" />
 /// <reference path="webglimpse/timeline/timeline_event_style.ts" />
@@ -64,12 +66,6 @@
 
 
 
-//grunt-start
-/// <reference path="webglimpse/layout/card_layout.ts" />
-//grunt-end
-
-
-
 // Examples
 
 /// <reference path="examples/defs/jquery.d.ts" />
@@ -77,3 +73,6 @@
 /// <reference path="examples/plot/plot.ts" />
 /// <reference path="examples/scroll/scroll.ts" />
 /// <reference path="examples/timeline/timeline.ts" />
+
+//grunt-start
+//grunt-end

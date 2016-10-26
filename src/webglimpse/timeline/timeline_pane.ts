@@ -75,6 +75,7 @@ module Webglimpse {
         bottomTimeZone? : string;
         tickSpacing? : number;
         axisLabelAlign? : number;
+        isFuturePositive? : boolean;
 
         // date in time_ISO8601 format (see util.ts:parseTime_PMILLIS)
         // that time labels on the timeline should be referenced from
@@ -181,7 +182,21 @@ module Webglimpse {
         selection.hoveredEvent.changed.on( redraw );
         selection.selectedEvents.valueAdded.on( redraw );
         selection.selectedEvents.valueRemoved.on( redraw );
-        
+
+        // even if the model defines cursors, we may need to redraw when the mouse position changes
+        // (we might not actually need to if: none of the rows actually use the cursor, or if the 
+        //  cursor doesn't show a vertical or horizontal line)
+        // this check just avoids redrawing unncessarily in the easy-to-verify common case where
+        // no cursors are defined
+        var redrawCursor = function( ) {
+            if ( !model.cursors.isEmpty ) {
+                drawable.redraw( );
+            }
+        }
+
+        selection.hoveredY.changed.on( redrawCursor );
+        selection.hoveredTime_PMILLIS.changed.on( redrawCursor );
+
         // Scroll Pane and Maximized Row Pane
         //
         
@@ -261,7 +276,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
         
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive : options.isFuturePositive };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );
@@ -351,6 +366,8 @@ module Webglimpse {
             if ( !outsideManagedUi ) ui.dispose.fire( );
             selection.selectedInterval.changed.off( redraw );
             selection.hoveredEvent.changed.off( redraw );
+            selection.hoveredY.changed.off( redrawCursor );
+            selection.hoveredTime_PMILLIS.changed.off( redrawCursor );
             selection.selectedEvents.valueAdded.off( redraw );
             selection.selectedEvents.valueRemoved.off( redraw );
             underlayPane.viewportChanged.off( updateMillisPerPx );

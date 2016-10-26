@@ -157,7 +157,10 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var approxNumTicks = ( isVerticalAxis ? viewport.h : viewport.w ) / tickSpacing;
+        
+            var sizePixels = isVerticalAxis ? viewport.h : viewport.w;
+            if ( sizePixels === 0 ) return;
+            var approxNumTicks = sizePixels / tickSpacing;
             var tickInterval = getTickInterval( axis, approxNumTicks );
             var tickCount = getTickCount( axis, tickInterval );
             tickPositions = ensureCapacityFloat32( tickPositions, tickCount );
