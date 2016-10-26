@@ -29,6 +29,19 @@
  */
 module Webglimpse {
     
+
+    export interface TimelineCursor {
+         cursorGuid : string;
+         labeledTimeseriesGuids : string[];
+         lineColor : string;
+         textColor : string;
+         showVerticalLine : boolean;
+         showHorizontalLine : boolean;
+         showCursorText : boolean;
+    }
+     
+
+
     export interface TimelineAnnotation {
         annotationGuid : string;
         // time (x axis position) of annotation
@@ -133,6 +146,7 @@ module Webglimpse {
         eventGuids? : string[];
         timeseriesGuids? : string[];
         annotationGuids? : string[];
+        cursorGuid? : string;
         bgColor? : string;
         fgLabelColor? : string;
         bgLabelColor? : string;
@@ -159,6 +173,7 @@ module Webglimpse {
 
 
     export interface Timeline {
+        cursors : TimelineCursor[];
         annotations : TimelineAnnotation[];
         timeseriesFragments : TimelineTimeseriesFragment[];
         timeseries : TimelineTimeseries[];
@@ -166,6 +181,80 @@ module Webglimpse {
         rows : TimelineRow[];
         groups : TimelineGroup[];
         root : TimelineRoot;
+    }
+
+
+
+    export class TimelineCursorModel {
+        private _cursorGuid : string;
+        // guids of timeseries to display values for at the selected time
+        private _labeledTimeseriesGuids : OrderedStringSet;
+        private _lineColor : Color;
+        private _textColor : Color;
+        private _showCursorText : boolean;
+        private _showVerticalLine : boolean;
+        private _showHorizontalLine : boolean;
+        private _attrsChanged : Notification;
+        
+        constructor( cursor : TimelineCursor ) {
+            this._cursorGuid = cursor.cursorGuid;
+            this._attrsChanged = new Notification( );
+            this.setAttrs( cursor );
+        }
+        
+        get labeledTimeseriesGuids( ) : OrderedStringSet {
+            return this._labeledTimeseriesGuids;
+        }
+        
+        get cursorGuid( ) : string {
+            return this._cursorGuid;
+        }
+        
+        get attrsChanged( ) : Notification {
+            return this._attrsChanged;
+        }
+        
+        get lineColor( ) : Color {
+            return this._lineColor;
+        }
+
+        get textColor( ) : Color {
+            return this._textColor;
+        }
+        
+        get showVerticalLine( ) : boolean {
+            return this._showVerticalLine;
+        }
+        
+        get showHorizontalLine( ) : boolean {
+            return this._showHorizontalLine;
+        }
+                
+        get showCursorText( ) : boolean {
+            return this._showCursorText;
+        }
+
+        setAttrs( cursor : TimelineCursor ) {
+            this._labeledTimeseriesGuids = new OrderedStringSet( cursor.labeledTimeseriesGuids || [] );
+            this._lineColor = ( hasval( cursor.lineColor ) ? parseCssColor( cursor.lineColor ) : null );
+            this._textColor = ( hasval( cursor.textColor ) ? parseCssColor( cursor.textColor ) : null );
+            this._showVerticalLine = cursor.showVerticalLine;
+            this._showHorizontalLine = cursor.showHorizontalLine;
+            this._showCursorText = cursor.showCursorText;
+            this._attrsChanged.fire( );
+        }
+        
+        snapshot( ) : TimelineCursor {
+            return {
+                cursorGuid: this._cursorGuid,
+                labeledTimeseriesGuids: this._labeledTimeseriesGuids.toArray( ),
+                lineColor: ( hasval( this._lineColor ) ? this._lineColor.cssString : null ),
+                textColor: ( hasval( this._textColor ) ? this._textColor.cssString : null ),
+                showVerticalLine: this._showVerticalLine,
+                showHorizontalLine: this._showHorizontalLine,
+                showCursorText: this._showCursorText
+            };
+        }
     }
 
     
@@ -955,6 +1044,7 @@ module Webglimpse {
         private _eventGuids : OrderedStringSet;
         private _timeseriesGuids : OrderedStringSet;
         private _annotationGuids : OrderedStringSet;
+        private _cursorGuid : string;
         private _bgColor : Color;
         private _fgLabelColor : Color;
         private _bgLabelColor : Color;
@@ -989,6 +1079,7 @@ module Webglimpse {
             this._uiHint = row.uiHint;
             this._hidden = row.hidden;
             this._rowHeight = row.rowHeight;
+            this._cursorGuid = row.cursorGuid;
             this._bgColor = ( hasval( row.bgColor ) ? parseCssColor( row.bgColor ) : null );
             this._fgLabelColor = ( hasval( row.fgLabelColor ) ? parseCssColor( row.fgLabelColor ) : null );
             this._bgLabelColor = ( hasval( row.bgLabelColor ) ? parseCssColor( row.bgLabelColor ) : null );
@@ -996,6 +1087,15 @@ module Webglimpse {
             this._attrsChanged.fire( );
         }
         
+        get cursorGuid( ) : string {
+            return this._cursorGuid;
+        }
+        
+        set cursorGuid( cursorGuid : string ) {
+            this._cursorGuid = cursorGuid;
+            this._attrsChanged.fire( );
+        }
+
         get rowHeight( ) : number {
             return this._rowHeight;
         }
@@ -1111,6 +1211,7 @@ module Webglimpse {
                 eventGuids: this._eventGuids.toArray( ),
                 timeseriesGuids: this._timeseriesGuids.toArray( ),
                 annotationGuids: this._annotationGuids.toArray( ),
+                cursorGuid: this._cursorGuid,
                 bgColor: ( hasval( this._bgColor ) ? this._bgColor.cssString : null ),
                 bgLabelColor: ( hasval( this._bgLabelColor ) ? this._bgLabelColor.cssString : null ),
                 fgLabelColor: ( hasval( this._fgLabelColor ) ? this._fgLabelColor.cssString : null ),
@@ -1264,6 +1365,7 @@ module Webglimpse {
 
 
     export interface TimelineMergeStrategy {
+        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor );
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation );
         updateTimeseriesFragmentModel( timeseriesFragmentModel : TimelineTimeseriesFragmentModel, newTimeseriesFragment : TimelineTimeseriesFragment );
         updateTimeseriesModel( timeseriesModel : TimelineTimeseriesModel, newTimeseries : TimelineTimeseries );
@@ -1275,6 +1377,7 @@ module Webglimpse {
 
 
     export class TimelineModel {
+        private _cursors : OrderedSet<TimelineCursorModel>;
         private _annotations : OrderedSet<TimelineAnnotationModel>;
         private _timeseriesFragments : OrderedSet<TimelineTimeseriesFragmentModel>;
         private _timeseries : OrderedSet<TimelineTimeseriesModel>;
@@ -1285,6 +1388,12 @@ module Webglimpse {
 
         constructor( timeline? : Timeline ) {
         
+            var cursors = ( hasval( timeline ) && hasval( timeline.cursors ) ? timeline.cursors : [] );
+            this._cursors = new OrderedSet<TimelineCursorModel>( [], (g)=>g.cursorGuid );
+            for ( var n = 0; n < cursors.length; n++ ) {
+                this._cursors.add( new TimelineCursorModel( cursors[ n ] ) );
+            }
+            
             var annotations = ( hasval( timeline ) && hasval( timeline.annotations ) ? timeline.annotations : [] );
             this._annotations = new OrderedSet<TimelineAnnotationModel>( [], (g)=>g.annotationGuid );
             for ( var n = 0; n < annotations.length; n++ ) {
@@ -1325,6 +1434,7 @@ module Webglimpse {
             this._root = new TimelineRootModel( root );
         }
         
+        get cursors( ) : OrderedSet<TimelineCursorModel> { return this._cursors; }
         get annotations( ) : OrderedSet<TimelineAnnotationModel> { return this._annotations; }
         get timeseriesFragments( ) : OrderedSet<TimelineTimeseriesFragmentModel> { return this._timeseriesFragments; }
         get timeseriesSets( ) : OrderedSet<TimelineTimeseriesModel> { return this._timeseries; }
@@ -1333,6 +1443,7 @@ module Webglimpse {
         get groups( ) : OrderedSet<TimelineGroupModel> { return this._groups; }
         get root( ) : TimelineRootModel { return this._root; }
 
+        cursor( cursorGuid : string ) : TimelineCursorModel { return this._cursors.valueFor( cursorGuid ); }
         annotation( annotationGuid : string ) : TimelineAnnotationModel { return this._annotations.valueFor( annotationGuid ); }
         timeseriesFragment( fragmentGuid : string ) : TimelineTimeseriesFragmentModel { return this._timeseriesFragments.valueFor( fragmentGuid ); }
         timeseries( timeseriesGuid : string ) : TimelineTimeseriesModel { return this._timeseries.valueFor( timeseriesGuid ); }
@@ -1426,8 +1537,31 @@ module Webglimpse {
             }
             this._annotations.retainIds( retainedAnnotationGuids );
             
+            var freshCursors = newTimeline.cursors;
+            var retainedCursorGuids : string[] = [];
+            for ( var n = 0; n < freshCursors.length; n++ ) {
+                var freshCursor = freshCursors[ n ];
+                var cursorGuid = freshCursor.cursorGuid;
+                var oldCursor = this._cursors.valueFor( cursorGuid );
+                if ( hasval( oldCursor ) ) {
+                    retainedCursorGuids.push( cursorGuid );
+                }
+            }
+            this._cursors.retainIds( retainedCursorGuids );
+            
             // Add new items
             //
+                        
+            for ( var n = 0; n < freshCursors.length; n++ ) {
+                var freshCursor = freshCursors[ n ];
+                var oldCursor = this._cursors.valueFor( freshCursor.cursorGuid );
+                if ( hasval( oldCursor ) ) {
+                    oldCursor.setAttrs( freshCursor );
+                }
+                else {
+                    this._cursors.add( new TimelineCursorModel( freshCursor ) );
+                }
+            }
             
             for ( var n = 0; n < freshAnnotations.length; n++ ) {
                 var freshAnnotation = freshAnnotations[ n ];
@@ -1506,6 +1640,18 @@ module Webglimpse {
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
         
+            var newCursors = hasval( newData.cursors ) ? newData.cursors : [];
+            for ( var n = 0; n < newCursors.length; n++ ) {
+                var newCursor = newCursors[ n ];
+                var cursorModel = this._cursors.valueFor( newCursor.cursorGuid );
+                if ( hasval( cursorModel ) ) {
+                    strategy.updateCursorModel( cursorModel, newCursor );
+                }
+                else {
+                    this._cursors.add( new TimelineCursorModel( newCursor ) );
+                }
+            }
+
             var newAnnotations = hasval( newData.annotations ) ? newData.annotations : [];
             for ( var n = 0; n < newAnnotations.length; n++ ) {
                 var newAnnotation = newAnnotations[ n ];
@@ -1584,6 +1730,7 @@ module Webglimpse {
 
         snapshot( ) : Timeline {
             return {
+                cursors : this._cursors.map( (e)=>e.snapshot() ),
                 annotations : this._annotations.map( (e)=>e.snapshot() ),
                 timeseriesFragments : this._timeseriesFragments.map( (e)=>e.snapshot() ),
                 timeseries : this._timeseries.map( (e)=>e.snapshot() ),
@@ -1607,6 +1754,10 @@ module Webglimpse {
 
 
     export var timelineMergeNewBeforeOld : TimelineMergeStrategy = {
+        
+        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
+            cursorModel.setAttrs( newCursor );
+        },
         
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
@@ -1647,6 +1798,10 @@ module Webglimpse {
 
     export var timelineMergeNewAfterOld : TimelineMergeStrategy = {
         
+        updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
+            cursorModel.setAttrs( newCursor );
+        },
+        
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
         },
@@ -1684,6 +1839,4 @@ module Webglimpse {
             rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids || [] );
         }
     };
-
-
 }
