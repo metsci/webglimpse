@@ -1,3 +1,8 @@
+Webglimpse 1.9.0 (released 2016-10-26)
+
+* Add stippled event borders and striped event fill.
+* Fix bug when attempting to paint axes contained in 0 size Panes.
+
 Webglimpse 1.9.0-pre2 (released 2016-9-12)
 
 * Fixes to relative time labeling.
