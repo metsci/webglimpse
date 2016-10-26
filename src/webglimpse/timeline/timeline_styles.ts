@@ -91,15 +91,15 @@ module Webglimpse {
                 topMargin: 13,
                 minimumVisibleWidth: 0,
                 stripeSlant: -1,
-                stripeSecondaryWidth: 5,
-                stripeWidth: 15
+                stripeSecondaryWidth: 10,
+                stripeWidth: 10
             } ),
             newEventDashedBordersPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
                 minimumVisibleWidth: 0,
-                cornerType: JointType.BEVEL,
-                dashLength: 10
+                cornerType: JointType.MITER,
+                dashLength: 5
             } ),
             newEventIconsPainterFactory( {
                 bottomMargin: 0,
