@@ -1,3 +1,7 @@
+Webglimpse 1.9.1 (released 2016-11-22)
+
+* Allow truncation of event text (feature intended for 1.9.0 but inadvertently left out)
+
 Webglimpse 1.9.0 (released 2016-10-26)
 
 * Add stippled event borders and striped event fill.
