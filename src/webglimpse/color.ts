@@ -112,19 +112,18 @@ module Webglimpse {
             g.clearRect( 0, 0, 1, 1 );
             g.fillStyle = cssColorString;
             g.fillRect( 0, 0, 1, 1 );
-
-                var rgbaData;
-                if(!rgbCache[cssColorString]) {
-                    rgbaData = g.getImageData(0, 0, 1, 1).data;
-                    rgbCache[cssColorString] = rgbaData;
-                } else {
-                    rgbaData = rgbCache[cssColorString];
-                }
-                var R = rgbaData[ 0 ] / 255;
-                var G = rgbaData[ 1 ] / 255;
-                var B = rgbaData[ 2 ] / 255;
-                var A = rgbaData[ 3 ] / 255;
-                return rgba( R, G, B, A );
+            var rgbaData;
+            if(!rgbCache.hasOwnProperty(cssColorString)) {
+                rgbaData = g.getImageData(0, 0, 1, 1).data;
+                rgbCache[cssColorString] = rgbaData;
+            } else {
+                rgbaData = rgbCache[cssColorString];
+            }
+            var R = rgbaData[ 0 ] / 255;
+            var G = rgbaData[ 1 ] / 255;
+            var B = rgbaData[ 2 ] / 255;
+            var A = rgbaData[ 3 ] / 255;
+            return rgba( R, G, B, A );
         }
     } )( );
 
