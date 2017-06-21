@@ -77,6 +77,7 @@ module Webglimpse {
         tickSpacing? : number;
         axisLabelAlign? : number;
         isFuturePositive? : boolean;
+        timeAxisFormat? : TimeAxisFormatOptions;
 
         // date in time_ISO8601 format (see util.ts:parseTime_PMILLIS)
         // that time labels on the timeline should be referenced from
@@ -278,7 +279,7 @@ module Webglimpse {
         var axisInsets = newInsets( 0, scrollbarWidth, 0, rowLabelPaneWidth );
 
         // top time axis pane
-        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive : options.isFuturePositive };
+        var axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive : options.isFuturePositive, timeAxisFormat: options.timeAxisFormat };
         if ( showTopAxis ) {
             var topAxisPane = newTimeAxisPane( contentPaneArgs, null );
             ui.addPane( 'top-axis-pane', topAxisPane );
