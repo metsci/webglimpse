@@ -32,18 +32,34 @@ module Webglimpse {
 
     // XXX: Much of this is duplicated from edge_axis_painter
 
+    export class FormatOptions {
+        tickFormat   : string;
+        prefixFormat : string;
+        constructor(tick: string, prefix: string) {
+            this.tickFormat = tick;
+            this.prefixFormat = prefix;
+        }
+    }
+
+    export interface TimeAxisFormatOptions {
+        hour?   : FormatOptions;
+        day?    : FormatOptions;
+        month?  : FormatOptions;
+        year?   : FormatOptions;
+    }
 
     export interface TimeAxisPainterOptions {
-        tickSpacing?      : number;
-        font?             : string;
-        textColor?        : Color;
-        tickColor?        : Color;
-        tickSize?         : number;
-        labelAlign?       : number;
-        referenceDate?    : string;
+        tickSpacing?       : number;
+        font?              : string;
+        textColor?         : Color;
+        tickColor?         : Color;
+        tickSize?          : number;
+        labelAlign?        : number;
+        referenceDate?     : string;
+        timeAxisFormat?    : TimeAxisFormatOptions;
         // if true, relative date labels in the future are positive (Day 1)
         // if false, relative date labels in the future are negative (Day -1)
-        isFuturePositive? : boolean;
+        isFuturePositive?  : boolean;
     }
 
 
@@ -56,6 +72,7 @@ module Webglimpse {
         var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.labelAlign  : 0.5         );
         var referenceDate_PMILLIS = ( hasval( options ) && hasval( options.referenceDate  ) ? parseTime_PMILLIS( options.referenceDate )  : undefined );
         var isFuturePositive  = ( hasval( options ) && hasval( options.isFuturePositive  ) ? options.isFuturePositive  : true        );
+        var timeAxisFormat = ( hasval( options ) && hasval(options.timeAxisFormat) ? options.timeAxisFormat : undefined );
 
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
@@ -118,7 +135,7 @@ module Webglimpse {
             // Tick labels
             //
 
-            var ticks : TickDisplayData = getTickDisplayData( tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone, isFuturePositive );
+            var ticks : TickDisplayData = getTickDisplayData( tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone, isFuturePositive, timeAxisFormat );
 
             textTextures.resetTouches( );
             textureRenderer.begin( gl, viewport );
@@ -212,12 +229,12 @@ module Webglimpse {
         }
     }
 
-    function getTickDisplayData( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, displayTimeZone : string, isFuturePositive : boolean ) : TickDisplayData {
+    function getTickDisplayData( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, displayTimeZone : string, isFuturePositive : boolean, timeAxisFormat : TimeAxisFormatOptions ) : TickDisplayData {
         if ( hasval( referenceDate_PMILLIS ) ) {
             return getTickDisplayDataRelative( tickInterval_MILLIS, referenceDate_PMILLIS, isFuturePositive );
         }
         else {
-            return getTickDisplayDataAbsolute( tickInterval_MILLIS, displayTimeZone );
+            return getTickDisplayDataAbsolute( tickInterval_MILLIS, displayTimeZone, timeAxisFormat );
         }
     }
 
@@ -325,29 +342,37 @@ module Webglimpse {
         return { prefixFormat: prefixFormat, tickFormat: tickFormat, timeStructFactory:timeStructFactory };
     }
 
-    function getTickDisplayDataAbsolute( tickInterval_MILLIS : number, displayTimeZone : string ) : TickDisplayData {
+    function getTickDisplayDataAbsolute( tickInterval_MILLIS : number, displayTimeZone : string, timeAxisFormat : TimeAxisFormatOptions ) : TickDisplayData {
 
         var defaultTickFormat = function( format : string ) : TickFormat { return function( tickTime_PMILLIS : number ) : string { return moment( tickTime_PMILLIS ).zone( displayTimeZone ).format( format ) } };
-        var defaultPrefixFormat = function( format : string ) : PrefixFormat { return function( timeStruct : TimeStruct ) : string { return moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( format ) } };
+        var defaultPrefixFormat = function( format : string ) : PrefixFormat { return function( timeStruct : TimeStruct ) : string { return moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( format ) } }; 
 
         if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
-            var tickFormat = defaultTickFormat( 'mm:ss' );
-            var prefixFormat = defaultPrefixFormat( 'D MMM HH:00' );
+            var formatOptions = new FormatOptions('mm:ss', 'D MMM HH:00');
+            var hour = ( hasval( timeAxisFormat ) && hasval(timeAxisFormat.hour) ? timeAxisFormat.hour : formatOptions );
+            var tickFormat = defaultTickFormat( ( hasval(hour.tickFormat) && hour.tickFormat !== '' ? hour.tickFormat : formatOptions.tickFormat ) );
+            var prefixFormat = defaultPrefixFormat( ( hasval(hour.prefixFormat) && hour.prefixFormat !== '' ? hour.prefixFormat : formatOptions.prefixFormat ) );
             var timeStructFactory = function( ) : TimeStruct { return new HourStruct( ) };
         }
         else if ( tickInterval_MILLIS <= hoursToMillis( 12 ) ) {
-            var tickFormat = defaultTickFormat( 'HH:mm' );
-            var prefixFormat = defaultPrefixFormat( 'D MMM YYYY' );
+            var formatOptions = new FormatOptions('HH:mm', 'D MMM YYYY');
+            var day = ( hasval( timeAxisFormat ) && hasval(timeAxisFormat.day) ? timeAxisFormat.day : formatOptions );
+            var tickFormat = defaultTickFormat( ( hasval(day.tickFormat) && day.tickFormat !== '' ? day.tickFormat : formatOptions.tickFormat ) );
+            var prefixFormat = defaultPrefixFormat( ( hasval(day.prefixFormat) && day.prefixFormat !== '' ? day.prefixFormat : formatOptions.prefixFormat ) );
             var timeStructFactory = function( ) : TimeStruct { return new DayStruct( ) };
         }
         else if ( tickInterval_MILLIS <= daysToMillis( 10 ) ) {
-            var tickFormat = defaultTickFormat( 'D' );
-            var prefixFormat = defaultPrefixFormat( 'MMM YYYY' );
+            var formatOptions = new FormatOptions('D', 'MMM YYYY');
+            var month = ( hasval( timeAxisFormat ) && hasval(timeAxisFormat.month) ? timeAxisFormat.month : formatOptions );
+            var tickFormat = defaultTickFormat( ( hasval(month.tickFormat) && month.tickFormat !== '' ? month.tickFormat : formatOptions.tickFormat ) );
+            var prefixFormat = defaultPrefixFormat( ( hasval(month.prefixFormat) && month.prefixFormat !== '' ? month.prefixFormat : formatOptions.prefixFormat ) );
             var timeStructFactory = function( ) : TimeStruct { return new MonthStruct( ) };
         }
         else if ( tickInterval_MILLIS <= daysToMillis( 60 ) ) {
-            var tickFormat = defaultTickFormat( 'MMM' );
-            var prefixFormat = defaultPrefixFormat( 'YYYY' );
+            var formatOptions = new FormatOptions('MMM', 'YYYY');
+            var year = ( hasval( timeAxisFormat ) && hasval(timeAxisFormat.year) ? timeAxisFormat.year : formatOptions );
+            var tickFormat = defaultTickFormat( ( hasval(year.tickFormat) && year.tickFormat !== '' ? year.tickFormat : formatOptions.tickFormat ) );
+            var prefixFormat = defaultPrefixFormat( ( hasval(year.prefixFormat) && year.prefixFormat !== '' ? year.prefixFormat : formatOptions.prefixFormat ) );
             var timeStructFactory = function( ) : TimeStruct { return new YearStruct( ) };
         }
         else {
