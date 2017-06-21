@@ -35,12 +35,15 @@ module Webglimpse {
 
     export var timeseriesRowPainterFactories_DEFAULT = [
         newTimeseriesPainterFactory( ),
-        newTimeseriesAnnotationPainterFactory( )
-        
+        newTimeseriesAnnotationPainterFactory( ),
+        newTimeseriesCursorPainterFactory( {
+            font: '16px verdana,sans-serif',
+            buffer_px: 6
+        } )
     ];
     
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {
-        laneHeight: 135,
+        laneHeight: 40,
         painterFactories: [
             newEventLimitsPainterFactory( ),
             newEventBarsPainterFactory( ),
@@ -83,11 +86,20 @@ module Webglimpse {
                 lineColor: new Color( 1, 0, 0, 1 ),
                 lineThickness: 2
             } ),
-            newEventBarsPainterFactory( {
+            newEventStripedBarsPainterFactory( {
                 bottomMargin: 0,
                 topMargin: 13,
                 minimumVisibleWidth: 0,
-                cornerType: JointType.MITER
+                stripeSlant: -1,
+                stripeSecondaryWidth: 10,
+                stripeWidth: 10
+            } ),
+            newEventDashedBordersPainterFactory( {
+                bottomMargin: 0,
+                topMargin: 13,
+                minimumVisibleWidth: 0,
+                cornerType: JointType.MITER,
+                dashLength: 5
             } ),
             newEventIconsPainterFactory( {
                 bottomMargin: 0,
@@ -101,8 +113,8 @@ module Webglimpse {
                 rightMargin: 2,
                 vAlign: 0.0,
                 spacing: 2,
-                forceVisible: false,
-                extendBeyondBar: true
+                extendBeyondBar: false,
+                textMode: 'truncate'
             } )
         ]
     } );
@@ -143,7 +155,8 @@ module Webglimpse {
                     rightMargin: 2,
                     vAlign: 0.0,
                     spacing: 2,
-                    forceVisible: true
+                    extendBeyondBar: false,
+                    textMode: 'show'
                 },
                 {
                     bottomMargin: 0,

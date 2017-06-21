@@ -97,7 +97,8 @@ module Webglimpse {
 
 
     export function ensureCapacityFloat32( buffer : Float32Array, minNewCapacity : number ) : Float32Array {
-        if ( buffer.length >= minNewCapacity ) {
+        // if minNewCapacity is NaN, null, or undefined, don't try to resize the buffer
+        if ( !minNewCapacity || buffer.length >= minNewCapacity ) {
             return buffer;
         }
         else {
@@ -108,7 +109,8 @@ module Webglimpse {
 
 
     export function ensureCapacityUint32( buffer : Uint32Array, minNewCapacity : number ) : Uint32Array {
-        if ( buffer.length >= minNewCapacity ) {
+        // if minNewCapacity is NaN, null, or undefined, don't try to resize the buffer
+        if ( !minNewCapacity || buffer.length >= minNewCapacity ) {
             return buffer;
         }
         else {
@@ -119,7 +121,8 @@ module Webglimpse {
 
 
     export function ensureCapacityUint16( buffer : Uint16Array, minNewCapacity : number ) : Uint16Array {
-        if ( buffer.length >= minNewCapacity ) {
+        // if minNewCapacity is NaN, null, or undefined, don't try to resize the buffer
+        if ( !minNewCapacity || buffer.length >= minNewCapacity ) {
             return buffer;
         }
         else {

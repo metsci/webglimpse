@@ -34,13 +34,16 @@ module Webglimpse {
 
 
     export interface TimeAxisPainterOptions {
-        tickSpacing? : number;
-        font?        : string;
-        textColor?   : Color;
-        tickColor?   : Color;
-        tickSize?    : number;
-        labelAlign?  : number;
-        referenceDate? : string;
+        tickSpacing?      : number;
+        font?             : string;
+        textColor?        : Color;
+        tickColor?        : Color;
+        tickSize?         : number;
+        labelAlign?       : number;
+        referenceDate?    : string;
+        // if true, relative date labels in the future are positive (Day 1)
+        // if false, relative date labels in the future are negative (Day -1)
+        isFuturePositive? : boolean;
     }
 
 
@@ -52,6 +55,7 @@ module Webglimpse {
         var tickSize    = ( hasval( options ) && hasval( options.tickSize    ) ? options.tickSize    : 6           );
         var labelAlign  = ( hasval( options ) && hasval( options.labelAlign  ) ? options.labelAlign  : 0.5         );
         var referenceDate_PMILLIS = ( hasval( options ) && hasval( options.referenceDate  ) ? parseTime_PMILLIS( options.referenceDate )  : undefined );
+        var isFuturePositive  = ( hasval( options ) && hasval( options.isFuturePositive  ) ? options.isFuturePositive  : true        );
 
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
@@ -70,7 +74,11 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, tickTimeZone, referenceDate_PMILLIS );
+        
+            var sizePixels = isVerticalAxis ? viewport.h : viewport.w;
+            if ( sizePixels === 0 ) return;
+ 
+            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, sizePixels, tickSpacing, tickTimeZone, referenceDate_PMILLIS );
             var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
             var tickCount = tickTimes_PMILLIS.length;
 
@@ -110,7 +118,7 @@ module Webglimpse {
             // Tick labels
             //
 
-            var ticks : TickDisplayData = getTickDisplayData( tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone );
+            var ticks : TickDisplayData = getTickDisplayData( tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone, isFuturePositive );
 
             textTextures.resetTouches( );
             textureRenderer.begin( gl, viewport );
@@ -159,10 +167,10 @@ module Webglimpse {
             //
 
             if ( ticks.timeStructFactory ) {
-                var timeStructs = createTimeStructs( timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
+                var timeStructs = createTimeStructs( timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign );
                 for ( var n = 0 ; n < timeStructs.length ; n++ ) {
                     var timeStruct = timeStructs[ n ];
-                    var text = ticks.prefixFormat( timeStruct );;
+                    var text = ticks.prefixFormat( timeStruct );
                     var textTexture = textTextures.value( text );
 
                     var halfTextFrac = 0.5 * textTexture.w / viewport.w;
@@ -204,19 +212,19 @@ module Webglimpse {
         }
     }
 
-    function getTickDisplayData( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, displayTimeZone : string ) : TickDisplayData {
+    function getTickDisplayData( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, displayTimeZone : string, isFuturePositive : boolean ) : TickDisplayData {
         if ( hasval( referenceDate_PMILLIS ) ) {
-            return getTickDisplayDataRelative( tickInterval_MILLIS, referenceDate_PMILLIS );
+            return getTickDisplayDataRelative( tickInterval_MILLIS, referenceDate_PMILLIS, isFuturePositive );
         }
         else {
             return getTickDisplayDataAbsolute( tickInterval_MILLIS, displayTimeZone );
         }
     }
 
-    function getTickDisplayDataRelative( tickInterval_MILLIS : number, referenceDate_PMILLIS : number ) : TickDisplayData {
+    function getTickDisplayDataRelative( tickInterval_MILLIS : number, referenceDate_PMILLIS : number, isFuturePositive : boolean ) : TickDisplayData {
         if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
             var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
-                var elapsedTime_MILLIS     = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_MILLIS      = Math.abs( tickTime_PMILLIS - referenceDate_PMILLIS );
                 var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
                 var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
                 var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
@@ -234,6 +242,10 @@ module Webglimpse {
                     elapsedTime_SEC_WHOLE -= 60;
                     elapsedTime_MIN_WHOLE += 1;
                 }
+                if ( elapsedTime_MIN_WHOLE >= 60 )
+                {
+                    elapsedTime_MIN_WHOLE = 0;
+                }
 
                 var min : string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
                 var sec : string = elapsedTime_SEC_WHOLE < 10 ? '0' + elapsedTime_SEC_WHOLE : '' + elapsedTime_SEC_WHOLE;
@@ -242,20 +254,25 @@ module Webglimpse {
             };
 
             var prefixFormat = function( timeStruct : TimeStruct ) : string {
-                var elapsedTime_MILLIS      = timeStruct.start_PMILLIS - referenceDate_PMILLIS;
+                var center_PMILLIS          = ( timeStruct.end_PMILLIS - timeStruct.start_PMILLIS ) / 2 + timeStruct.start_PMILLIS;
+                var elapsedTime_MILLIS      = center_PMILLIS - referenceDate_PMILLIS;
+                var negative                = ( elapsedTime_MILLIS < 0 );
+                var signString              = ( negative && isFuturePositive ) || ( !negative && !isFuturePositive) ? "-" : "";
+                elapsedTime_MILLIS          = Math.abs( elapsedTime_MILLIS );
+
                 var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
                 var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
                 var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
                 var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
 
-                return 'Day ' + elapsedTime_DAYS_WHOLE + ' Hour ' + elapsedTime_HOURS_WHOLE;
+                return 'Day ' + signString +  elapsedTime_DAYS_WHOLE + ' Hour ' + signString + elapsedTime_HOURS_WHOLE;
             };
 
             var timeStructFactory = function( ) : TimeStruct { return new TimeStruct( ) };
         }
         else if ( tickInterval_MILLIS <= hoursToMillis( 12 ) ) {
             var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
-                var elapsedTime_MILLIS     = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var elapsedTime_MILLIS      = Math.abs( tickTime_PMILLIS - referenceDate_PMILLIS );
                 var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
                 var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
                 var elapsedTime_HOURS       = ( elapsedTime_DAYS - elapsedTime_DAYS_WHOLE ) * 24;
@@ -271,6 +288,10 @@ module Webglimpse {
                     elapsedTime_MIN_WHOLE -= 60;
                     elapsedTime_HOURS_WHOLE += 1;
                 }
+                if ( elapsedTime_HOURS_WHOLE >= 24 )
+                {
+                    elapsedTime_HOURS_WHOLE = 0;
+                }
 
                 var hour : string = elapsedTime_HOURS_WHOLE < 10 ? '0' + elapsedTime_HOURS_WHOLE : '' + elapsedTime_HOURS_WHOLE;
                 var min : string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
@@ -279,9 +300,13 @@ module Webglimpse {
             };
 
             var prefixFormat = function( timeStruct : TimeStruct ) : string {
-                var elapsedTime_MILLIS = timeStruct.start_PMILLIS - referenceDate_PMILLIS;
-                var elapsedTime_DAYS = Math.floor( millisToDays( elapsedTime_MILLIS ) );
-                return 'Day ' + elapsedTime_DAYS;
+                var center_PMILLIS           = ( timeStruct.end_PMILLIS - timeStruct.start_PMILLIS ) / 2 + timeStruct.start_PMILLIS;
+                var elapsedTime_MILLIS       = center_PMILLIS - referenceDate_PMILLIS;
+                var negative                 = ( elapsedTime_MILLIS < 0 );
+                var signString               = ( negative && isFuturePositive ) || ( !negative && !isFuturePositive) ? "-" : "";
+                elapsedTime_MILLIS           = Math.abs( elapsedTime_MILLIS );
+                var elapsedTime_DAYS         = Math.floor( millisToDays( elapsedTime_MILLIS ) );
+                return 'Day ' + signString + elapsedTime_DAYS;
             };
 
             var timeStructFactory = function( ) : TimeStruct { return new TimeStruct( ) };
@@ -289,8 +314,11 @@ module Webglimpse {
         else {
             var tickFormat : TickFormat = function( tickTime_PMILLIS : number ) : string {
                 var elapsedTime_MILLIS = tickTime_PMILLIS - referenceDate_PMILLIS;
+                var negative = ( elapsedTime_MILLIS < 0 );
+                var signString = ( negative && isFuturePositive ) || ( !negative && !isFuturePositive) ? "-" : "";
+                elapsedTime_MILLIS = Math.abs( elapsedTime_MILLIS );
                 var elapsedTime_DAYS = Math.floor( millisToDays( elapsedTime_MILLIS ) );
-                return '' + elapsedTime_DAYS;
+                return elapsedTime_DAYS === 0 ? '' + elapsedTime_DAYS : signString + elapsedTime_DAYS;
             };
         }
 
@@ -362,7 +390,6 @@ module Webglimpse {
         }
     }
 
-
     class YearStruct extends TimeStruct {
         setTime( time_PMILLIS : number, timeZone : string ) : Moment {
             var m = moment( time_PMILLIS ).zone( timeZone );
@@ -424,15 +451,15 @@ module Webglimpse {
         }
     }
 
-    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+    function createTimeStructs( timeAxis : TimeAxis1D, factory : TimeStructFactory, timeZone : string, referenceDate_PMILLIS : number, isFuturePositive : boolean, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
         if ( hasval( referenceDate_PMILLIS ) ) {
             var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
 
             if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
-                return createTimeStructsRelativeHours( timeAxis, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
+                return createTimeStructsRelativeHours( timeAxis, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign );
             }
             else {
-                return createTimeStructsRelativeDays( timeAxis, referenceDate_PMILLIS, tickTimes_PMILLIS, labelAlign );
+                return createTimeStructsRelativeDays( timeAxis, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign );
             }
         }
         else {
@@ -441,7 +468,7 @@ module Webglimpse {
     }
 
 
-    function createTimeStructsRelativeHours( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+    function createTimeStructsRelativeHours( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, isFuturePositive : boolean, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
 
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
@@ -450,20 +477,32 @@ module Webglimpse {
         var maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
 
         var previous_HOURS = null;
+        var previous_SIGN = null;
 
         for ( var n = 0; n < tickTimes_PMILLIS.length; n++ ) {
 
             var elapsedTime_MILLIS      = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
+            var negative                = ( elapsedTime_MILLIS < 0 );
+            var signString              = ( negative && isFuturePositive ) || ( !negative && !isFuturePositive) ? "-" : "";
+            elapsedTime_MILLIS          = Math.abs( elapsedTime_MILLIS );
             var elapsedTime_HOURS       = millisToHours( elapsedTime_MILLIS );
             var elapsedTime_HOURS_WHOLE = Math.floor( elapsedTime_HOURS );
 
-            if ( hasval( previous_HOURS ) && elapsedTime_HOURS_WHOLE === previous_HOURS ) continue;
+            if ( hasval( previous_HOURS ) && elapsedTime_HOURS_WHOLE === previous_HOURS &&  negative === previous_SIGN )  continue;
             previous_HOURS = elapsedTime_HOURS_WHOLE;
+            previous_SIGN = negative;
 
             var timeStruct = new TimeStruct( );
 
-            timeStruct.start_PMILLIS = hoursToMillis( elapsedTime_HOURS_WHOLE ) + referenceDate_PMILLIS;
-            timeStruct.end_PMILLIS = hoursToMillis( 1 ) + timeStruct.start_PMILLIS;
+            if ( negative ) {
+                timeStruct.end_PMILLIS = hoursToMillis( -elapsedTime_HOURS_WHOLE ) + referenceDate_PMILLIS;
+                timeStruct.start_PMILLIS = timeStruct.end_PMILLIS - hoursToMillis( 1 );
+            }
+            else {
+                timeStruct.start_PMILLIS = hoursToMillis( elapsedTime_HOURS_WHOLE ) + referenceDate_PMILLIS;
+                timeStruct.end_PMILLIS = timeStruct.start_PMILLIS + hoursToMillis( 1 );
+            }
+
             timeStruct.viewStart_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMin_PMILLIS );
             timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
 
@@ -477,7 +516,7 @@ module Webglimpse {
         return timeStructs;
     }
 
-    function createTimeStructsRelativeDays( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
+    function createTimeStructsRelativeDays( timeAxis : TimeAxis1D, referenceDate_PMILLIS : number, isFuturePositive : boolean, tickTimes_PMILLIS : number[], labelAlign : number ) : TimeStruct[] {
 
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
@@ -486,20 +525,32 @@ module Webglimpse {
         var maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
 
         var previous_DAYS = null;
+        var previous_SIGN = null;
 
         for ( var n = 0; n < tickTimes_PMILLIS.length; n++ ) {
 
             var elapsedTime_MILLIS      = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
+            var negative                = ( elapsedTime_MILLIS < 0 );
+            var signString              = ( negative && isFuturePositive ) || ( !negative && !isFuturePositive) ? "-" : "";
+            elapsedTime_MILLIS          = Math.abs( elapsedTime_MILLIS );
             var elapsedTime_DAYS        = millisToDays( elapsedTime_MILLIS );
             var elapsedTime_DAYS_WHOLE  = Math.floor( elapsedTime_DAYS );
 
-            if ( hasval( previous_DAYS ) && elapsedTime_DAYS_WHOLE === previous_DAYS ) continue;
+            if ( hasval( previous_DAYS ) && elapsedTime_DAYS_WHOLE === previous_DAYS &&  negative === previous_SIGN ) continue;
             previous_DAYS = elapsedTime_DAYS_WHOLE;
+            previous_SIGN = negative;
 
             var timeStruct = new TimeStruct( );
 
-            timeStruct.start_PMILLIS = daysToMillis( elapsedTime_DAYS_WHOLE ) + referenceDate_PMILLIS;
-            timeStruct.end_PMILLIS = daysToMillis( 1 ) + timeStruct.start_PMILLIS;
+            if ( negative ) {
+                timeStruct.end_PMILLIS = daysToMillis( -elapsedTime_DAYS_WHOLE ) + referenceDate_PMILLIS;
+                timeStruct.start_PMILLIS = timeStruct.end_PMILLIS - daysToMillis( 1 );
+            }
+            else {
+                timeStruct.start_PMILLIS = daysToMillis( elapsedTime_DAYS_WHOLE ) + referenceDate_PMILLIS;
+                timeStruct.end_PMILLIS = timeStruct.start_PMILLIS + daysToMillis( 1 );
+            }
+
             timeStruct.viewStart_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMin_PMILLIS );
             timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
 
