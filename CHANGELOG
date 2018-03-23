@@ -1,3 +1,9 @@
+Webglimpse 1.9.2 (released 2018-3-22)
+
+* Made release package installable from npm.
+* Add ability to modify the formats of absolute time display with `timeAxisFormat`.
+* Added ability to highlight a group with `highlighted` and `groupHighlightColor`.
+
 Webglimpse 1.9.1 (released 2016-11-22)
 
 * Allow truncation of event text (feature intended for 1.9.0 but inadvertently left out)

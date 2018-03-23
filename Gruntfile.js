@@ -8,7 +8,7 @@ module.exports = function ( grunt ) {
     var sourceHeader = '/*\n' + licenseText.replace( /^/mg, ' * ' ).replace( / *$/mg, '' ) + '\n */';
     var mungedSourceHeader = '\n' + licenseText.replace( /^/mg, '* ' ).replace( / *$/mg, '' ) + '\n';
 
-    var releaseVersion = '1.9.1';
+    var releaseVersion = '1.9.2';
     var releaseDate = grunt.template.today( 'UTC:yyyy-mm-dd HH:MM:ss Z' );
     var releaseText = [
         'Web Glimpse v' + releaseVersion,
@@ -106,6 +106,10 @@ module.exports = function ( grunt ) {
                 expand: true,
                 cwd: 'src/',
                 src: [ '**' ],
+                dest: 'build/grunt/release/'
+            },
+            release_package: {
+                src: './package.json',
                 dest: 'build/grunt/release/'
             },
             release_license: {
@@ -297,6 +301,7 @@ module.exports = function ( grunt ) {
             'clean:release',
             // Copy all, and modify copies
             'copy:release_sources',
+            'copy:release_package',
             'copy:release_license',
             'copy:release_changelog',
             'replace:release_reference',

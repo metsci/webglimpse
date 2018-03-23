@@ -1,6 +1,20 @@
 {
   "name": "webglimpse",
-  "private": true,
+  "version": "1.9.2",
+  "description": "Webglimpse is a data visualization library for the web.",
+  "repository":{
+    "type": "git",
+    "url": "https://github.com/skaughtx0r/webglimpse"
+  },
+  "keywords": [
+    "webglimpse",
+    "data",
+    "visualization",
+    "timeline",
+    "webgl"
+  ],
+  "main": "webglimpse.js",
+  "typings": "webglimpse.d.ts",
   "devDependencies": {
     "typescript": "1.0.1",
     "grunt": "~0.4.2",
