@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export class TimelineLaneArray {
@@ -35,15 +35,15 @@ module Webglimpse {
         private _row : TimelineRowModel;
         private _lanes : TimelineLane[];
         private _laneNums : StringMap<number>;
-        
+
         private _rebuildLanesMouseWheel;
         private _rebuildLanes;
         private _newEvent;
         private _addEvent;
         private _removeEvent;
-        
+
         private _model : TimelineModel;
-        
+
         // Keep references to listeners, so that we can remove them later
         private _eventAttrsListeners : StringMap<Listener>;
 
@@ -51,7 +51,7 @@ module Webglimpse {
             this._model = model;
             this._row = row;
             this._ui = ui;
-            
+
             this._lanes = [];
             this._laneNums = {};
             this._eventAttrsListeners = {};
@@ -119,7 +119,7 @@ module Webglimpse {
 
             row.eventGuids.forEach( this._addEvent );
             row.eventGuids.valueAdded.on( this._addEvent );
-            
+
             // attaches listeners to event, should be called only once
             // when an event is first added to the row model
             this._newEvent = function( eventGuid : string ) {
@@ -155,9 +155,9 @@ module Webglimpse {
                         oldEdges_PMILLIS = newEdges_PMILLIS;
                     }
                 };
-                
+
                 event.attrsChanged.on( updateLaneAssignment );
-                self._eventAttrsListeners[ eventGuid ] = updateLaneAssignment;  
+                self._eventAttrsListeners[ eventGuid ] = updateLaneAssignment;
             };
             row.eventGuids.forEach( this._newEvent );
             row.eventGuids.valueAdded.on( this._newEvent );
@@ -190,7 +190,7 @@ module Webglimpse {
                     }
                 }
             };
-            
+
             var hasIcons = function( ) {
                 var oldLanes = self._lanes;
                 for ( var l = 0; l < oldLanes.length; l++ ) {
@@ -203,13 +203,13 @@ module Webglimpse {
                 }
                 return false;
             }
-            
+
             self._rebuildLanesMouseWheel = function( ) {
                 if ( hasIcons( ) ) {
                     self._rebuildLanes( );
                 }
             }
-            
+
             ui.millisPerPx.changed.on( self._rebuildLanesMouseWheel );
             ui.eventStyles.valueAdded.on( self._rebuildLanes );
             ui.eventStyles.valueRemoved.on( self._rebuildLanes );
@@ -231,7 +231,7 @@ module Webglimpse {
             var lane = this._lanes[ laneNum ];
             return ( lane && lane.eventAtTime( time_PMILLIS ) );
         }
-        
+
         dispose( ) : void {
             this._row.eventGuids.valueAdded.off( this._addEvent );
             this._row.eventGuids.valueRemoved.off( this._removeEvent );
@@ -240,7 +240,7 @@ module Webglimpse {
             this._ui.millisPerPx.changed.off( this._rebuildLanesMouseWheel );
             this._ui.eventStyles.valueAdded.off( this._rebuildLanes );
             this._ui.eventStyles.valueRemoved.off( this._rebuildLanes );
-            
+
             for ( var eventGuid in this._eventAttrsListeners ) {
                 if ( this._eventAttrsListeners.hasOwnProperty( eventGuid ) ) {
                     var listener = this._eventAttrsListeners[ eventGuid ];
@@ -436,7 +436,7 @@ module Webglimpse {
             return true;
         }
     }
-    
+
     // a TimelineLane where events are allowed to overlap arbitrarily
     // because of this assumptions like the index for an event in the _starts_PMILLIS
     // and _ends_PMILLIS arrays being the same no longer hold
@@ -445,57 +445,57 @@ module Webglimpse {
     // an inefficient O(n) brute force search to find events (an interval tree
     // would be needed for efficient search in the general case)
     export class TimelineLaneSimple implements TimelineLane {
-        
+
         private _events : TimelineEventModel[];
         private _orders : number[];
         private _ids : StringMap<any>;
         private _ui : TimelineUi;
-        
+
         constructor( ui : TimelineUi ) {
             this._events = [];
             this._orders = [];
             this._ids = {};
             this._ui = ui;
         }
-        
+
         get length( ) : number {
             return this._events.length;
         }
-        
+
         event( index : number ) : TimelineEventModel {
             return this._events[ index ];
         }
-        
+
         isEmpty( ) : boolean {
             return ( this._events.length === 0 );
         }
-        
+
         eventAtTime( time_PMILLIS : number ) : TimelineEventModel {
-            
+
             var bestEvent : TimelineEventModel;
-            
+
             // start at end of events list so that eventAtTime result
             // favors events drawn on top (in cases where events are unordered
             // those that happen to be at end end of the list are drawn last
             for ( var n = this._events.length-1; n >= 0; n-- ) {
                 var event : TimelineEventModel = this._events[n];
-                
+
                 var eventEdges_PMILLIS = effectiveEdges_PMILLIS( this._ui, event );
-                
+
                 if ( time_PMILLIS > eventEdges_PMILLIS[0] &&
                      time_PMILLIS < eventEdges_PMILLIS[1] &&
                      ( bestEvent === undefined || bestEvent.order < event.order ) ) {
                     bestEvent = event;
                 }
             }
-            
+
             return bestEvent;
         }
-        
+
         add( event : TimelineEventModel ) {
             var eventGuid = event.eventGuid;
             if ( hasval( this._ids[ eventGuid ] ) ) throw new Error( 'Lane already contains this event: event = ' + formatEvent( event ) );
-            
+
             // for events with undefined order, replace with largest possible negative order so sort is correct
             var order = hasval( event.order ) ? event.order : Number.NEGATIVE_INFINITY;
 
@@ -505,47 +505,47 @@ module Webglimpse {
             this._orders.splice( i, 0, order );
             this._events.splice( i, 0, event );
         }
-        
+
         remove( event : TimelineEventModel ) {
             var eventGuid = event.eventGuid;
             if ( !hasval( this._ids[ eventGuid ] ) ) throw new Error( 'Event not found in this lane: event = ' + formatEvent( event ) );
-            
+
             delete this._ids[ eventGuid ];
             var i : number = this._getIndex( event );
             this._orders.splice( i, 1 );
             this._events.splice( i, 1 );
         }
-        
+
         update( event : TimelineEventModel ) {
             this.remove( event );
             this.add( event );
         }
-        
+
         collisionsWithInterval( start_PMILLIS : number, end_PMILLIS : number ) : TimelineEventModel[] {
-            
+
             var results = [];
-            
+
             for ( var n = 0; n < this._events.length; n++ ) {
                 var event : TimelineEventModel = this._events[n];
-                
+
                 if ( !(start_PMILLIS > event.end_PMILLIS || end_PMILLIS < event.start_PMILLIS) ) {
                     results.push( event );
                 }
             }
-            
+
             return results;
         }
-   
+
         // we can always fit more events because overlaps are allowed
         eventStillFits( event : TimelineEventModel ) : boolean {
             return true;
         }
-        
+
         // we can always fit more events because overlaps are allowed
         couldFitEvent( event : TimelineEventModel ) : boolean {
             return true;
         }
-    
+
         _getIndex( queryEvent : TimelineEventModel ) : number {
             for ( var n = 0; n < this._events.length; n++ ) {
                 var event : TimelineEventModel = this._events[n];
@@ -565,4 +565,3 @@ module Webglimpse {
             return ( event.label + ' [ ' + formatTime_ISO8601( event.start_PMILLIS ) + ' ... ' + formatTime_ISO8601( event.end_PMILLIS ) + ' ]' );
         }
     }
-}

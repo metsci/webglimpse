@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     // see: http://www.cs.rit.edu/usr/local/pub/wrc/graphics/doc/opengl/books/blue/glOrtho.html
@@ -46,12 +46,11 @@ module Webglimpse {
             -tx, -ty, -tz, 1
         ] );
     }
-    
+
     export function glOrthoViewport( viewport : BoundsUnmodifiable ) : Float32Array {
         return glOrtho( -0.5, viewport.w-0.5, -0.5, viewport.h-0.5, -1, 1 );
     }
-    
+
     export function glOrthoAxis( axis : Axis2D ) : Float32Array {
         return glOrtho( axis.xAxis.vMin, axis.xAxis.vMax, axis.yAxis.vMin, axis.yAxis.vMax, -1, 1 );
     }
-}

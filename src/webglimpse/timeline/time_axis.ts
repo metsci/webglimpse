@@ -27,13 +27,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export class TimeAxis1D extends Axis1D {
-        
+
         private _epoch_PMILLIS : number;
-        
+
         constructor( tMin_PMILLIS : number, tMax_PMILLIS : number ) {
             this._epoch_PMILLIS = 0.5*( tMin_PMILLIS + tMax_PMILLIS );
             super( tMin_PMILLIS - this._epoch_PMILLIS, tMax_PMILLIS - this._epoch_PMILLIS );
@@ -86,4 +86,3 @@ module Webglimpse {
     }
 
 
-}

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
     // Alias for more readable access to static constants
     export var GL = WebGLRenderingContext;
@@ -135,7 +135,7 @@ module Webglimpse {
     export interface StringMap<V> {
         [ key : string ] : V;
     }
-    
+
     export interface IdFunction<V> {
         ( value : V ) : string;
     }
@@ -215,4 +215,4 @@ module Webglimpse {
     }
 
 
-}
+

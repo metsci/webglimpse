@@ -27,13 +27,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export interface TimelineUiOptions {
         allowEventMultiSelection? : boolean;
     }
-    
+
     export class TimelineUi {
         private _input : TimelineInput;
         private _selection : TimelineSelectionModel;
@@ -47,7 +47,7 @@ module Webglimpse {
 
         private _imageStatus : StringMap<boolean>;
         private _imageCache : StringMap<Texture2D>;
-        
+
         private _dispose : Notification;
 
         private _panes : OrderedSet<Pane>;
@@ -55,12 +55,12 @@ module Webglimpse {
         constructor( model : TimelineModel, options : TimelineUiOptions = { } ) {
             this._dispose = new Notification( );
             this._input = new TimelineInput( );
-            
+
             var getPaneId = function( pane ) {
                 var paneId = pane['webglimpse_PaneId']
                 return hasval( paneId ) ? paneId : getObjectId( pane );
             }
-            
+
             this._panes = new OrderedSet<Pane>( [], getPaneId );
 
             this._selection = new TimelineSelectionModel( );
@@ -84,12 +84,12 @@ module Webglimpse {
 
             this._eventStyles = new OrderedSet<TimelineEventStyleUi>( [], (s)=>s.styleGuid );
             this._annotationStyles = new OrderedSet<TimelineAnnotationStyleUi>( [], (s)=>s.styleGuid );
-            
+
             this._millisPerPx = new SimpleModel<number>( 1000 );
 
             this._imageStatus = {};
             this._imageCache = {};
-            
+
             this._dispose.on( function( ) {
                 model.groups.valueAdded.off( addGroupUi );
                 model.groups.valueRemoved.off( removeGroupUi );
@@ -129,7 +129,7 @@ module Webglimpse {
         eventStyle( styleGuid : string ) : TimelineEventStyleUi {
             return ( ( hasval( styleGuid ) && this._eventStyles.valueFor( styleGuid ) ) || timelineEventStyle_DEFAULT );
         }
-        
+
         get annotationStyles( ) : OrderedSet<TimelineAnnotationStyleUi> {
             return this._annotationStyles;
         }
@@ -158,25 +158,25 @@ module Webglimpse {
             }
             return this._imageCache[ url ];
         }
-        
+
         get panes( ) : OrderedSet<Pane> {
             return this._panes;
         }
-        
+
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
             this._panes.removeId( paneId );
             this._panes.add( pane );
         }
-        
+
         removePane( paneId : string ) {
             this._panes.removeId( paneId );
         }
-        
+
         getPane( paneId : string ) : Pane {
             return this._panes.valueFor( paneId );
         }
-        
+
         get dispose( ) { return this._dispose; }
     }
 
@@ -206,12 +206,12 @@ module Webglimpse {
             this._rowGuid = rowGuid;
             this._paneFactoryChanged = new Notification( );
             this._paneFactory = null;
-            
+
             var getPaneId = function( pane ) {
                 var paneId = pane['webglimpse_PaneId']
                 return hasval( paneId ) ? paneId : getObjectId( pane );
             }
-            
+
             this._panes = new OrderedSet<Pane>( [], getPaneId );
         }
 
@@ -233,21 +233,21 @@ module Webglimpse {
                 this._paneFactoryChanged.fire( );
             }
         }
-        
+
         get panes( ) : OrderedSet<Pane> {
             return this._panes;
         }
-        
+
         addPane( paneId : string, pane : Pane ) {
             pane['webglimpse_PaneId'] = paneId;
             this._panes.removeId( paneId );
             this._panes.add( pane );
         }
-        
+
         removePane( paneId : string ) {
             this._panes.removeId( paneId );
         }
-        
+
         getPane( paneId : string ) : Pane {
             return this._panes.valueFor( paneId );
         }
@@ -292,33 +292,33 @@ module Webglimpse {
 
     export class TimelineSelectionModel {
         private _mousePos = new XyModel( );
-        
+
         private _hoveredY = new SimpleModel<number>( );
         private _hoveredTime_PMILLIS = new SimpleModel<number>( );
         private _selectedInterval = new TimeIntervalModel( 0, 0 );
-        
+
         private _hoveredRow = new SimpleModel<TimelineRowModel>( );
-        
+
         private _hoveredEvent = new SimpleModel<TimelineEventModel>( );
         private _selectedEvents = new OrderedSet<TimelineEventModel>( [], (e)=>e.eventGuid );
 
         private _hoveredTimeseries = new TimelineTimeseriesFragmentSelectionModel( );
-        
+
         private _hoveredAnnotation = new SimpleModel<TimelineAnnotationModel>( );
-        
+
         get mousePos( ) : XyModel { return this._mousePos; }
-        
+
         get hoveredY( ) : SimpleModel<number> { return this._hoveredY; }
         get hoveredTime_PMILLIS( ) : SimpleModel<number> { return this._hoveredTime_PMILLIS; }
         get selectedInterval( ) : TimeIntervalModel { return this._selectedInterval; }
-        
+
         get hoveredRow( ) : SimpleModel<TimelineRowModel> { return this._hoveredRow; }
-        
+
         get hoveredEvent( ) : SimpleModel<TimelineEventModel> { return this._hoveredEvent; }
         get selectedEvents( ) : OrderedSet<TimelineEventModel> { return this._selectedEvents; }
-        
+
         get hoveredTimeseries( ) : TimelineTimeseriesFragmentSelectionModel { return this._hoveredTimeseries; }
-        
+
         get hoveredAnnotation( ) : SimpleModel<TimelineAnnotationModel> { return this._hoveredAnnotation; }
     }
 
@@ -327,13 +327,13 @@ module Webglimpse {
         private _fragment : TimelineTimeseriesFragmentModel;
         private _index : number;
         private _changed : Notification;
-        
+
         constructor( fragment : TimelineTimeseriesFragmentModel = null, index : number = -1 ) {
             this._fragment = fragment;
             this._index = index;
             this._changed = new Notification( );
         }
-        
+
         setValue( fragment : TimelineTimeseriesFragmentModel, index : number ) {
             if ( fragment !== this._fragment || index !== this._index  ) {
                 this._fragment = fragment;
@@ -341,15 +341,15 @@ module Webglimpse {
                 this._changed.fire( );
             }
         }
-                
+
         clearValue( ) {
             this.setValue( null, -1 );
         }
-        
+
         get fragment( ) : TimelineTimeseriesFragmentModel { return this._fragment; }
         get index( ) : number { return this._index; }
         get changed( ) : Notification { return this._changed; }
-        
+
         get times_PMILLIS( ) : number {
             if ( this._fragment ) {
                 return this._fragment.times_PMILLIS[ this._index ];
@@ -400,7 +400,7 @@ module Webglimpse {
                 this._changed.fire( );
             }
         }
-        
+
         set cursor_PMILLIS( cursor_PMILLIS : number ) {
             if ( cursor_PMILLIS !== this._cursor_PMILLIS ) {
                 this._cursor_PMILLIS = cursor_PMILLIS;
@@ -412,7 +412,7 @@ module Webglimpse {
             if ( start_PMILLIS !== this._start_PMILLIS ||
                      end_PMILLIS !== this._end_PMILLIS ||
                      ( cursor_PMILLIS && cursor_PMILLIS != this._cursor_PMILLIS ) ) {
-                
+
                 this._start_PMILLIS = start_PMILLIS;
                 this._end_PMILLIS = end_PMILLIS;
                 this._cursor_PMILLIS = cursor_PMILLIS ? cursor_PMILLIS : end_PMILLIS;
@@ -423,7 +423,7 @@ module Webglimpse {
         overlaps( start_PMILLIS : number, end_PMILLIS : number ) : boolean {
             return ( this._start_PMILLIS <= end_PMILLIS && start_PMILLIS <= this._end_PMILLIS );
         }
-        
+
         contains( time_PMILLIS : number ) : boolean {
             return ( this._start_PMILLIS <= time_PMILLIS && time_PMILLIS <= this._end_PMILLIS );
         }
@@ -450,9 +450,9 @@ module Webglimpse {
 
 
     function attachTimelineInputToSelection( input : TimelineInput, selection : TimelineSelectionModel, options : TimelineUiOptions ) {
-        
+
         var allowEventMultiSelection   = ( hasval( options ) && hasval( options.allowEventMultiSelection ) ? options.allowEventMultiSelection : true );
-        
+
         // Mouse-pos & Time
         //
         input.mouseMove.on( function( ev : PointerEvent ) {
@@ -473,7 +473,7 @@ module Webglimpse {
         input.eventHover.on( function( event : TimelineEventModel ) {
             selection.hoveredEvent.value = event;
         } );
-        
+
         if ( options.allowEventMultiSelection ) {
             input.mouseDown.on( function( ev : PointerEvent ) {
                 if ( isLeftMouseDown( ev.mouseEvent ) ) {
@@ -514,4 +514,3 @@ module Webglimpse {
             } );
         }
     }
-}

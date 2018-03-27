@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export interface XyLinePainterOptions {
@@ -71,7 +71,7 @@ module Webglimpse {
 
             // set color and projection matrix variables
             u_Color.setData( gl, color );
-            
+
             // set the projection matrix based on the axis bounds
             u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
 
@@ -83,7 +83,7 @@ module Webglimpse {
 
             // bind buffer data to vertex attribute array
             coordBuffer.bind( gl, GL.ARRAY_BUFFER );
-            
+
             // first argument corresponds to the 0 attrib array set above
             // second argument indicates two coordinates per vertex
             gl.vertexAttribPointer( 0, dim, GL.FLOAT, false, 0, 0 );
@@ -97,4 +97,4 @@ module Webglimpse {
     }
 
 
-}
+

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export class Label {
@@ -75,7 +75,7 @@ module Webglimpse {
                 }
             }
         }
-        
+
         get fgColor( ) : Color {
             return this._fgColor;
         }
@@ -89,7 +89,7 @@ module Webglimpse {
                 }
             }
         }
-        
+
         get bgColor( ) : Color {
             return this._bgColor;
         }
@@ -138,12 +138,12 @@ module Webglimpse {
     export function newLabelPainter( label : Label, xFrac : number, yFrac : number, xAnchor? : number, yAnchor? : number, rotation_CCWRAD? : number ) {
         var textureRenderer = new TextureRenderer( );
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            
+
             if ( hasval( label.bgColor ) ) {
                 gl.clearColor( label.bgColor.r, label.bgColor.g, label.bgColor.b, label.bgColor.a );
                 gl.clear( GL.COLOR_BUFFER_BIT );
             }
-            
+
             var texture = label.texture;
             if ( texture ) {
                 textureRenderer.begin( gl, viewport );
@@ -154,4 +154,3 @@ module Webglimpse {
     }
 
 
-}

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export interface Painter {
@@ -117,7 +117,7 @@ module Webglimpse {
         private _viewport : Bounds;
         private _scissor : Bounds;
         private _viewportChanged : Notification;
-        
+
         private _dispose : Notification;
 
         constructor( layout : Layout, consumesInputEvents : boolean = true, isInside : Mask2D = alwaysTrue ) {
@@ -134,9 +134,9 @@ module Webglimpse {
             this._viewport = newBoundsFromRect( 0, 0, 0, 0 );
             this._scissor = newBoundsFromRect( 0, 0, 0, 0 );
             this._viewportChanged = new Notification( );
-            
+
             this._dispose = new Notification( );
-            
+
             this._dispose.on( ( ) => {
                 this._mouseUp.dispose( );
                 this._mouseDown.dispose( );
@@ -145,18 +145,18 @@ module Webglimpse {
                 this._mouseEnter.dispose( );
                 this._mouseExit.dispose( );
                 this._contextMenu.dispose( );
-            
+
                 // recursively dispose all child panes
                 for ( var i = 0 ; i < this.children.length ; i++ ) {
                     this.children.valueAt( i ).pane.dispose.fire( );
                 }
             } );
         }
-        
+
         get layout( ) : Layout {
             return this.layout;
         }
-        
+
         set layout( layout : Layout ) {
             this._layout = layout;
         }
@@ -354,10 +354,10 @@ module Webglimpse {
         fireContextMenu( i : number, j : number, mouseEvent : MouseEvent ) : any {
             return this._contextMenu.fire( { paneViewport: this._viewport.unmod, i: i, j: j, mouseEvent: mouseEvent } );
         }
-        
+
         // Disposal
         //
-                
+
         get dispose( ) : Notification {
             return this._dispose;
         }
@@ -442,7 +442,7 @@ module Webglimpse {
             return ev.which === 1;
         }
     }
-    
+
     // detects whether any mouse button is down
     export function isMouseDown( ev : MouseEvent ) {
         return ev.buttons !== 0;
@@ -601,11 +601,11 @@ module Webglimpse {
         var endDrag = function( ev : MouseEvent ) {
             var i = iMouse( element, ev );
             var j = jMouse( element, ev );
-            
+
             for ( var n = 0; n < currentPanes.length; n++ ) {
                 currentPanes[ n ].fireMouseUp( i, j, clickCount, ev );
             }
-            
+
             dragging = false;
 
             if ( pendingExit ) {
@@ -635,7 +635,7 @@ module Webglimpse {
         // We don't receive mouse events that happen over another iframe -- even during a drag. If we miss a mouseup that
         // should terminate a drag, we end up stuck in dragging mode, which makes for a really lousy user experience. To
         // avoid that, whenever the mouse moves, check whether the button is down. If we're still in dragging mode, but
-        // the button is now up, end the drag. 
+        // the button is now up, end the drag.
 
         // If we're dragging, and we see a mousemove with no buttons down, end the drag
         var recentDrag : MouseEvent = null;
@@ -730,7 +730,7 @@ module Webglimpse {
     export interface Drawable {
         setContentPane( pane : Pane );
         redraw( );
-        
+
         getPrefSize( ) : Size;
         prefSizeChanged( ) : Notification1<Size>;
     }
@@ -755,18 +755,18 @@ module Webglimpse {
                 if ( !hasval( pendingRequestId ) ) {
                     pendingRequestId = window.requestAnimationFrame( function( ) {
                         if ( hasval( contentPane ) ) {
-                            
+
                             var oldPrefSize = { w: contentPrefSize.w, h: contentPrefSize.h };
-                            
+
                             contentPane.updatePrefSizes( contentPrefSize );
                             contentViewport.setRect( 0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight );
                             contentPane.updateBounds( contentViewport.unmod, contentViewport.unmod );
                             contentPane.paint( gl );
-                            
+
                             // XXX: Trigger an enter/exit check somehow (fake a mouse-event?)
                         }
                         pendingRequestId = null;
-                        
+
                         if ( oldPrefSize.w !== contentPrefSize.w || oldPrefSize.h !== contentPrefSize.h ) {
                             contentPrefSizeNotification.fire ( { w: contentPrefSize.w, h: contentPrefSize.h } );
                         }
@@ -783,4 +783,4 @@ module Webglimpse {
     }
 
 
-}
+

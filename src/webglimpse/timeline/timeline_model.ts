@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
-    
+
+
 
     export interface TimelineCursor {
          cursorGuid : string;
@@ -39,7 +39,7 @@ module Webglimpse {
          showHorizontalLine : boolean;
          showCursorText : boolean;
     }
-     
+
 
 
     export interface TimelineAnnotation {
@@ -197,25 +197,25 @@ module Webglimpse {
         private _showVerticalLine : boolean;
         private _showHorizontalLine : boolean;
         private _attrsChanged : Notification;
-        
+
         constructor( cursor : TimelineCursor ) {
             this._cursorGuid = cursor.cursorGuid;
             this._attrsChanged = new Notification( );
             this.setAttrs( cursor );
         }
-        
+
         get labeledTimeseriesGuids( ) : OrderedStringSet {
             return this._labeledTimeseriesGuids;
         }
-        
+
         get cursorGuid( ) : string {
             return this._cursorGuid;
         }
-        
+
         get attrsChanged( ) : Notification {
             return this._attrsChanged;
         }
-        
+
         get lineColor( ) : Color {
             return this._lineColor;
         }
@@ -223,15 +223,15 @@ module Webglimpse {
         get textColor( ) : Color {
             return this._textColor;
         }
-        
+
         get showVerticalLine( ) : boolean {
             return this._showVerticalLine;
         }
-        
+
         get showHorizontalLine( ) : boolean {
             return this._showHorizontalLine;
         }
-                
+
         get showCursorText( ) : boolean {
             return this._showCursorText;
         }
@@ -245,7 +245,7 @@ module Webglimpse {
             this._showCursorText = cursor.showCursorText;
             this._attrsChanged.fire( );
         }
-        
+
         snapshot( ) : TimelineCursor {
             return {
                 cursorGuid: this._cursorGuid,
@@ -259,7 +259,7 @@ module Webglimpse {
         }
     }
 
-    
+
     export class TimelineAnnotationModel {
         private _annotationGuid : string;
         private _attrsChanged : Notification;
@@ -929,7 +929,7 @@ module Webglimpse {
                 this._attrsChanged.fire( );
             }
         }
-        
+
         get labelTopMargin( ) : number {
             return this._labelTopMargin;
         }
@@ -1102,11 +1102,11 @@ module Webglimpse {
             this._labelFont = row.labelFont;
             this._attrsChanged.fire( );
         }
-        
+
         get cursorGuid( ) : string {
             return this._cursorGuid;
         }
-        
+
         set cursorGuid( cursorGuid : string ) {
             this._cursorGuid = cursorGuid;
             this._attrsChanged.fire( );
@@ -1417,13 +1417,13 @@ module Webglimpse {
         private _root : TimelineRootModel;
 
         constructor( timeline? : Timeline ) {
-        
+
             var cursors = ( hasval( timeline ) && hasval( timeline.cursors ) ? timeline.cursors : [] );
             this._cursors = new OrderedSet<TimelineCursorModel>( [], (g)=>g.cursorGuid );
             for ( var n = 0; n < cursors.length; n++ ) {
                 this._cursors.add( new TimelineCursorModel( cursors[ n ] ) );
             }
-            
+
             var annotations = ( hasval( timeline ) && hasval( timeline.annotations ) ? timeline.annotations : [] );
             this._annotations = new OrderedSet<TimelineAnnotationModel>( [], (g)=>g.annotationGuid );
             for ( var n = 0; n < annotations.length; n++ ) {
@@ -1463,7 +1463,7 @@ module Webglimpse {
             var root = ( hasval( timeline ) && hasval( timeline.root ) ? timeline.root : newEmptyTimelineRoot( ) );
             this._root = new TimelineRootModel( root );
         }
-        
+
         get cursors( ) : OrderedSet<TimelineCursorModel> { return this._cursors; }
         get annotations( ) : OrderedSet<TimelineAnnotationModel> { return this._annotations; }
         get timeseriesFragments( ) : OrderedSet<TimelineTimeseriesFragmentModel> { return this._timeseriesFragments; }
@@ -1566,7 +1566,7 @@ module Webglimpse {
                 }
             }
             this._annotations.retainIds( retainedAnnotationGuids );
-            
+
             var freshCursors = newTimeline.cursors;
             var retainedCursorGuids : string[] = [];
             for ( var n = 0; n < freshCursors.length; n++ ) {
@@ -1578,10 +1578,10 @@ module Webglimpse {
                 }
             }
             this._cursors.retainIds( retainedCursorGuids );
-            
+
             // Add new items
             //
-                        
+
             for ( var n = 0; n < freshCursors.length; n++ ) {
                 var freshCursor = freshCursors[ n ];
                 var oldCursor = this._cursors.valueFor( freshCursor.cursorGuid );
@@ -1592,7 +1592,7 @@ module Webglimpse {
                     this._cursors.add( new TimelineCursorModel( freshCursor ) );
                 }
             }
-            
+
             for ( var n = 0; n < freshAnnotations.length; n++ ) {
                 var freshAnnotation = freshAnnotations[ n ];
                 var oldAnnotation = this._annotations.valueFor( freshAnnotation.annotationGuid );
@@ -1669,7 +1669,7 @@ module Webglimpse {
 
 
         merge( newData : Timeline, strategy : TimelineMergeStrategy ) {
-        
+
             var newCursors = hasval( newData.cursors ) ? newData.cursors : [];
             for ( var n = 0; n < newCursors.length; n++ ) {
                 var newCursor = newCursors[ n ];
@@ -1784,11 +1784,11 @@ module Webglimpse {
 
 
     export var timelineMergeNewBeforeOld : TimelineMergeStrategy = {
-        
+
         updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
             cursorModel.setAttrs( newCursor );
         },
-        
+
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
         },
@@ -1827,11 +1827,11 @@ module Webglimpse {
 
 
     export var timelineMergeNewAfterOld : TimelineMergeStrategy = {
-        
+
         updateCursorModel( cursorModel : TimelineCursorModel, newCursor : TimelineCursor ) {
             cursorModel.setAttrs( newCursor );
         },
-        
+
         updateAnnotationModel( annotationModel : TimelineAnnotationModel, newAnnotation : TimelineAnnotation ) {
             annotationModel.setAttrs( newAnnotation );
         },
@@ -1869,4 +1869,3 @@ module Webglimpse {
             rootModel.maximizedRowGuids.addAll( newRoot.maximizedRowGuids || [] );
         }
     };
-}

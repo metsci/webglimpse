@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export class Color {
@@ -143,4 +143,3 @@ module Webglimpse {
     export var periwinkle  = rgb( 0.561, 0.561, 0.961 );
 
 
-}

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export function newGroupPainter( ...painters : Painter[] ) : Painter {
@@ -38,17 +38,17 @@ module Webglimpse {
         };
     }
 
-    
+
     export function newBlendingBackgroundPainter( color : Color ) : Painter {
-        
+
         var program = new Program( xyNdc_VERTSHADER, solid_FRAGSHADER );
         var u_Color = new UniformColor( program, 'u_Color' );
         var a_XyNdc = new Attribute( program, 'a_XyNdc' );
-        
+
         var numVertices = 4;
         var xy_NDC = new Float32Array( 2*numVertices );
         var xyBuffer_NDC = newDynamicBuffer( );
-        
+
         return function( gl : WebGLRenderingContext ) {
             if ( color.a >= 1 ) {
                 gl.disable( GL.BLEND );
@@ -57,10 +57,10 @@ module Webglimpse {
                 gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
                 gl.enable( GL.BLEND );
             }
-            
+
             program.use( gl );
             u_Color.setData( gl, color );
-        
+
             xy_NDC[0] = -1;
             xy_NDC[1] =  1;
             xy_NDC[2] = -1;
@@ -69,7 +69,7 @@ module Webglimpse {
             xy_NDC[5] =  1;
             xy_NDC[6] =  1;
             xy_NDC[7] = -1;
-            
+
             xyBuffer_NDC.setData( xy_NDC );
             a_XyNdc.setDataAndEnable( gl, xyBuffer_NDC, 2, GL.FLOAT );
 
@@ -79,15 +79,15 @@ module Webglimpse {
             program.endUse( gl );
         };
     }
-    
+
     export class Background {
-        
+
         private _color : Color;
 
         constructor( color? : Color ) {
             this._color = color;
         }
-        
+
         get color( ) : Color {
             return this._color;
         }
@@ -97,7 +97,7 @@ module Webglimpse {
                 this._color = color;
             }
         }
-        
+
         newPainter( ) {
             var background : Background = this;
             return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
@@ -108,7 +108,7 @@ module Webglimpse {
             };
         }
     }
-    
+
 
     export function newBackgroundPainter( color : Color ) : Painter {
         return function( gl : WebGLRenderingContext ) {
@@ -189,8 +189,8 @@ module Webglimpse {
         '  }                            ',
         '                               '
     );
-	
-	
+
+
 	export var dash_FRAGSHADER = concatLines(
 		'  precision highp float;                                   ',
 		'  uniform mat4 u_modelViewMatrix;                          ',
@@ -391,4 +391,4 @@ module Webglimpse {
     }
 
 
-}
+

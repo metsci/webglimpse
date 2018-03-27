@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     interface ExampleTooltip {
@@ -181,7 +181,7 @@ module Webglimpse {
             selectedInterval.start_PMILLIS = selectedInterval.end_PMILLIS - newDuration_MILLIS;
             drawable.redraw( );
         };
-        
+
         var a = document.getElementById( 'selected-time-calendar' );
         a.onclick = function() {
 
@@ -193,7 +193,7 @@ module Webglimpse {
                 calendardiv = document.createElement( 'div' );
 
                 calendardiv.style.fontSize = '12';
-                
+
                 var rect = a.getBoundingClientRect();
                 var position: number[] = [rect.left, rect.bottom - 4];
 
@@ -203,14 +203,14 @@ module Webglimpse {
 
                     var selectionDiff = selectedInterval.end_PMILLIS - selectedInterval.start_PMILLIS;
                     var axisDiff = timeAxis.tMax_PMILLIS - timeAxis.tMin_PMILLIS;
-                    
+
                     // jump the selected and axis times
                     selectedInterval.start_PMILLIS = newTime - selectionDiff;
                     selectedInterval.end_PMILLIS = newTime;
 
                     timeAxis.tMin_PMILLIS = newTime - axisDiff;
                     timeAxis.tMax_PMILLIS = newTime;
-                    
+
                     drawable.redraw( );
                 }
 
@@ -219,9 +219,9 @@ module Webglimpse {
                 $( calendardiv ).datepicker( 'dialog', date, callback, options, position );
             }
         };
-        
+
         // Link a button to maximize / unmaximize two specific rows
-        
+
         var a = document.getElementById( 'maximize-button' );
         a.onclick = function() {
             if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
@@ -230,7 +230,7 @@ module Webglimpse {
             else {
                 model.root.maximizedRowGuids.add( 'metsci.timelineExample.row03a' );
             }
-                
+
             if ( model.root.maximizedRowGuids.hasValue( 'metsci.timelineExample.dynamicRow02' ) ) {
                 model.root.maximizedRowGuids.removeValue( 'metsci.timelineExample.dynamicRow02' );
             }
@@ -238,9 +238,9 @@ module Webglimpse {
                 model.root.maximizedRowGuids.add( 'metsci.timelineExample.dynamicRow02' );
             }
         };
-        
+
         // Toggle row maximize by double clicking on row label
-        
+
         //add listener for new TimelineRowUi
         ui.rowUis.valueAdded.on( function ( rowUi : TimelineRowUi ) {
             // add listener for new Panes
@@ -268,9 +268,9 @@ module Webglimpse {
                 }
             } );
         } );
-        
+
         // Link a button to pin / unpin some rows to the top/bottom of the timeline
-        
+
         var a = document.getElementById( 'pin-button' );
         a.onclick = function() {
             if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01a' ) ) {
@@ -279,14 +279,14 @@ module Webglimpse {
             else {
                 model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01a' );
             }
-            
+
             if ( model.root.topPinnedRowGuids.hasValue( 'metsci.timelineExample.row01b' ) ) {
                 model.root.topPinnedRowGuids.removeValue( 'metsci.timelineExample.row01b' );
             }
             else {
                 model.root.topPinnedRowGuids.add( 'metsci.timelineExample.row01b' );
             }
-            
+
             if ( model.root.bottomPinnedRowGuids.hasValue( 'metsci.timelineExample.row03a' ) ) {
                 model.root.bottomPinnedRowGuids.removeValue( 'metsci.timelineExample.row03a' );
             }
@@ -294,25 +294,25 @@ module Webglimpse {
                 model.root.bottomPinnedRowGuids.add( 'metsci.timelineExample.row03a' );
             }
         };
-        
+
         // Link a button change the size of a particular row
-        
+
         var customRowHeight = 135;
         var a = document.getElementById( 'flag-button' );
         a.onclick = function() {
             customRowHeight = customRowHeight + 10;
             if ( customRowHeight > 200 ) customRowHeight = 135;
-            
+
             model.row( 'metsci.timelineExample.row03a' ).rowHeight = customRowHeight;
-            
+
             // make sure no-one references the event
             model.rows.forEach( function( row : TimelineRowModel ) {
                 row.eventGuids.removeValue( 'metsci.timelineExample.event01' );
             } );
-            
+
             // remove the event
             model.events.removeId( 'metsci.timelineExample.event01' );
-            
+
             drawable.redraw( );
         };
 
@@ -361,23 +361,23 @@ module Webglimpse {
         //
         // Shows overlay div, containing arbitrary html content, when a timeseries point is hovered
         //
-        
+
         var hoveredFragment : TimelineTimeseriesFragmentModel;
 
         var updateTimeseriesTooltip = function( ) {
-            
+
             // unattach any old data change listener
             if ( hasval( hoveredFragment ) ) {
                 hoveredFragment.dataChanged.off( updateTimeseriesTooltip );
             }
-            
+
             hoveredFragment = selection.hoveredTimeseries.fragment;
-            
+
             if ( hasval( hoveredFragment ) ) {
-                
+
                 // attach listener to newly selected fragment to update toolip when fragment data changes
                 hoveredFragment.dataChanged.on( updateTimeseriesTooltip );
-                
+
                 var iMouse = selection.mousePos.x;
                 var jMouse = selection.mousePos.y;
                 if ( isNumber( iMouse ) && isNumber( jMouse ) ) {
@@ -395,7 +395,7 @@ module Webglimpse {
                 tooltip.hide( );
             }
         };
-        
+
         selection.hoveredTimeseries.changed.on( updateTimeseriesTooltip );
 
 
@@ -403,18 +403,18 @@ module Webglimpse {
         //
         // Fill these in with application-specific input-handling code
         //
-        
+
         selection.hoveredAnnotation.changed.on( function( ) {
             if ( hasval( selection.hoveredAnnotation.value ) )
             {
                 // Do something with the hovered annotation
             }
         });
-        
+
         selection.hoveredTimeseries.changed.on( function( ) {
             if ( hasval( selection.hoveredTimeseries.fragment ) )
             {
-                // Do something with the time and data value of the selected timeseries point 
+                // Do something with the time and data value of the selected timeseries point
                 var dataValue = selection.hoveredTimeseries.data;
                 var time_PMILLIS = selection.hoveredTimeseries.times_PMILLIS;
             }
@@ -454,8 +454,8 @@ module Webglimpse {
         selection.selectedEvents.valueRemoved.on( function( event : TimelineEventModel ) {
             // Handle event de-selected
         } );
-        
-        
+
+
         // Example Dynamic Data
         //
         // Populate the timeline model with a dynamically generated group, row, and custom painters
@@ -484,13 +484,13 @@ module Webglimpse {
         };
         model.rows.add( new TimelineRowModel( row ) );
         model.group( group4.groupGuid ).rowGuids.add( row.rowGuid );
-        
+
         // create an empty timeseries fragment and listen for changes to its data
         // the fragment will be filled later with data loaded from timeline.json
-        
+
         var fragment3 = new TimelineTimeseriesFragmentModel( { fragmentGuid: 'metsci.timelineExample.fragment03' } );
         model.timeseriesFragments.add( fragment3 );
-        
+
         // print the new data value when fragment3 changes
         // also, ensure that fragment1 data values never exceed 20
         fragment3.dataChanged.on( function( startIndex : number, endIndex : number ) {
@@ -500,14 +500,14 @@ module Webglimpse {
                 }
             }
         } );
-        
+
         // Example Custom Row
         //
         // Create a heatmap row with data loaded form a json file
         //
-        
+
         $.getJSON( 'heatmapData.json', function( json : any ) {
-            
+
             // pull heat map data fields out of the returned json object
             var angleMin = json.minY;
             var angleMax = json.maxY;
@@ -515,36 +515,36 @@ module Webglimpse {
             var timeMax = timeAxis.vAtTime( parseTime_PMILLIS( json.maxX ) );
             var ySize = json.sizeY;
             var xSize = json.sizeX;
-            
+
             var array = new Float32Array( xSize * ySize );
             for ( var x = 0 ; x < xSize ; x++ ) {
                 for ( var y = 0 ; y < ySize ; y++ ) {
                     array[ y * xSize + x ] =  json.data[y][x];
                 }
             }
-           
+
             var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
                 var axisColor = options.timelineFgColor;
 
                 var height = options.isMaximized ? null : 270;
-                
+
                 // setup axes
                 var colorAxis = new Axis1D( -0.7, 0.3 );
                 colorAxis.limitsChanged.on( drawable.redraw );
-                
+
                 yAxis.setVRange( 0, 180 );
                 yAxis.limitsChanged.on( drawable.redraw );
-                
+
                 var rowAxis = new Axis2D( timeAxis, yAxis );
-                
+
                 var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
-                
+
                 var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( yAxisPane, yAxis, true );
-                
+
                 var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
                 attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
-                
+
                 var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
                 colorInsetPane.addPainter( newBlendingBackgroundPainter( rgba( 0, 0, 0, 0.6 ) ) );
 
@@ -552,7 +552,7 @@ module Webglimpse {
                 var data = { array : array, xSize : xSize, ySize : ySize, xMin : timeMin, xMax : timeMax, yMin : angleMin, yMax : angleMax };
                 var colorGradient = reverseBone;
                 var colorScale = getGradientTexture( colorGradient );
-                
+
                 // construct Pane and Painters
                 var plotPane = new Pane( newColumnLayout( ), false );
                 plotPane.addPainter( newHeatmapPainter( rowAxis, colorAxis, data, colorScale, { blend: true } ) );
@@ -561,51 +561,51 @@ module Webglimpse {
                 plotPane.addPane( yAxisPane, 0 );
                 plotPane.addPane( spacerPane, 1 );
                 plotPane.addPane( colorInsetPane, 2 );
-                
+
                 return plotPane;
             }
 
             // Override content of an existing row
             ui.rowUi( 'metsci.timelineExample.dynamicRow01' ).paneFactory = createHeatmapPlotPane;
         });
-        
+
         // Another Example Custom Row
         //
         // Create a heatmap row with programmatically generated data
         //
-        
+
         var createHeatmapPlotPane = function( drawable : Drawable, timeAxis : TimeAxis1D, yAxis : Axis1D, model : TimelineModel, row : TimelineRowModel, ui : TimelineUi, options : TimelineRowPaneOptions ) : Pane {
             var axisColor = options.timelineFgColor;
 
             var height = options.isMaximized ? null : 270;
-            
+
             // setup axes
             var colorAxis = new Axis1D( 0, 30 );
             colorAxis.limitsChanged.on( drawable.redraw );
-            
+
             yAxis.setVRange( -400, 400 );
             yAxis.limitsChanged.on( drawable.redraw );
-            
+
             var rowAxis = new Axis2D( timeAxis, yAxis );
-            
+
             var spacerPane = new Pane( { updatePrefSize: fixedSize( null, height ) }, false );
-            
+
             var yAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( yAxisPane, yAxis, true );
-            
+
             var colorAxisPane = new Pane( { updatePrefSize: fixedSize( 40, height ) } );
             attachAxisMouseListeners1D( colorAxisPane, colorAxis, true );
-            
+
             var colorInsetPane = newInsetPane( colorAxisPane, newInsets( 10, 10, 10, 10 ), null, false );
             colorInsetPane.addPainter( newBlendingBackgroundPainter( rgba( 0, 0, 0, 0.6 ) ) );
 
             // set heat map min/max bounds (in time and y axis value)
-              
+
             var yMin = -1000;
             var yMax = 1000;
             var timeMin = timeAxis.vAtTime( parseTime_PMILLIS( '2013-12-31T21:00:00Z' ) );
             var timeMax = timeAxis.vAtTime( parseTime_PMILLIS( '2014-01-02T06:19:00Z' ) );
-            
+
             // fill heat map data array
             var xSize = 1000;
             var ySize = 300;
@@ -620,12 +620,12 @@ module Webglimpse {
                     array[ y * xSize + x ] =  value;
                 }
             }
-            
+
             // build arguments to newHeatmapPainter( )
             var data = { array : array, xSize : xSize, ySize : ySize, xMin : timeMin, xMax : timeMax, yMin : yMin, yMax : yMax };
             var colorGradient = jet;
             var colorScale = getGradientTexture( colorGradient );
-            
+
             // construct Pane and Painters
             var plotPane = new Pane( newColumnLayout( ), false );
             plotPane.addPainter( newHeatmapPainter( rowAxis, colorAxis, data, colorScale, { blend: true } ) );
@@ -636,7 +636,7 @@ module Webglimpse {
             plotPane.addPane( colorInsetPane, 2 );
 
             return plotPane;
-            
+
         }
 
         // Override content of an existing row
@@ -648,7 +648,7 @@ module Webglimpse {
         //
         $.getJSON( 'timelineData.json', function( newTimeline : Timeline ) {
             model.merge( newTimeline, timelineMergeNewBeforeOld );
-            
+
             // once the timeline has been loaded, add listeners to some of the Panes
             var pane = ui.rowUi( 'metsci.timelineExample.row03a' ).getPane( 'y-axis' );
             var clickListener = function( ev : PointerEvent ) {
@@ -656,7 +656,7 @@ module Webglimpse {
             };
             pane.mouseDown.on( clickListener );
         } );
-        
+
         // Example function for reloading TimelinePane with new TimelinePaneOptions. Takes care of
         // removing the TimelinePane from its parent pane, disposing of its listeners/resources,
         // creating a new TimelinePane, and reattaching it to the parent Pane. The new TimelinePane
@@ -676,9 +676,9 @@ module Webglimpse {
 
             // update the drawable
             drawable.redraw( );
-        
+
             // return the newly created Pane
             return reloadedTimelinePane;
         }
     }
-}
+

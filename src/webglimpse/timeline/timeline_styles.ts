@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     // Default
@@ -41,7 +41,7 @@ module Webglimpse {
             buffer_px: 6
         } )
     ];
-    
+
     export var eventsRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newEventsRowPaneFactory( {
         laneHeight: 40,
         painterFactories: [
@@ -53,7 +53,7 @@ module Webglimpse {
             } )
         ]
     } );
-    
+
     export var timeseriesRowPaneFactory_DEFAULT : TimelineRowPaneFactory = newTimeseriesRowPaneFactory( {
         painterFactories: timeseriesRowPainterFactories_DEFAULT,
         axisOptions: { tickSpacing: 34 }
@@ -130,7 +130,7 @@ module Webglimpse {
             return null;
         }
     }
-    
+
     export var eventsRowPaneFactory_SINGLE : TimelineRowPaneFactory = newEventsRowPaneFactory( {
         rowTopPadding: 0,
         rowBottomPadding: 0,
@@ -141,7 +141,7 @@ module Webglimpse {
                 lineColor: new Color( 1, 0, 0, 1 ),
                 lineThickness: 2
             } ),
-            newCombinedEventPainterFactory( 
+            newCombinedEventPainterFactory(
                 {
                     bottomMargin: 0,
                     topMargin: 13,
@@ -166,7 +166,7 @@ module Webglimpse {
             )
         ]
     } );
-    
+
     export function rowPaneFactoryChooser_SINGLE( row : TimelineRowModel ) : TimelineRowPaneFactory {
         if ( !row.eventGuids.isEmpty ) {
             return eventsRowPaneFactory_SINGLE;
@@ -179,4 +179,3 @@ module Webglimpse {
         }
     }
 
-}

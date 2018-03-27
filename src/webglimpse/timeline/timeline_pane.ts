@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
     export class TimelinePane extends Pane {
         private _model : TimelineModel;
@@ -187,7 +187,7 @@ module Webglimpse {
         selection.selectedEvents.valueRemoved.on( redraw );
 
         // even if the model defines cursors, we may need to redraw when the mouse position changes
-        // (we might not actually need to if: none of the rows actually use the cursor, or if the 
+        // (we might not actually need to if: none of the rows actually use the cursor, or if the
         //  cursor doesn't show a vertical or horizontal line)
         // this check just avoids redrawing unncessarily in the easy-to-verify common case where
         // no cursors are defined
@@ -1405,4 +1405,4 @@ module Webglimpse {
     }
 
 
-}
+

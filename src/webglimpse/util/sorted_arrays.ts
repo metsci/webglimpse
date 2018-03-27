@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
     // XXX: These probably belong in their own namespace
 
@@ -48,7 +48,7 @@ module Webglimpse {
                 b = pivot - 1;
             }
             else {
-                // This is a little sloppy if either value is NaN, or if one is +0.0 and the other is -0.0 
+                // This is a little sloppy if either value is NaN, or if one is +0.0 and the other is -0.0
                 return pivot;
             }
         }
@@ -81,10 +81,10 @@ module Webglimpse {
 
     export function indexAfter( vs : number[], x : number ) : number {
         var i = indexOf( vs, x );
-        
+
         // Exact value not found
         if ( i < 0 ) return ( -i - 1 );
-        
+
         // If the exact value was found, find the value's last occurrence
         var n = vs.length;
         for ( var j = i + 1; j < n; j++ ) {
@@ -97,10 +97,10 @@ module Webglimpse {
 
     export function indexAtOrAfter( vs : number[], x : number ) : number {
         var i = indexOf( vs, x );
-        
+
         // Exact value not found
         if ( i < 0 ) return ( -i - 1 );
-        
+
         // If the exact value was found, find the value's first occurrence
         var n = vs.length;
         for ( var j = i; j > 0; j-- ) {
@@ -122,4 +122,3 @@ module Webglimpse {
     }
 
 
-}

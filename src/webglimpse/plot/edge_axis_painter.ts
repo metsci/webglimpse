@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export function edgeMarks_VERTSHADER( labelSide : Side ) {
@@ -58,7 +58,7 @@ module Webglimpse {
             '                                                                                               '
         );
     }
-    
+
     export var gradient_FRAGSHADER = concatLines(
         '                                 ',
         '  precision highp float;         ',
@@ -84,7 +84,7 @@ module Webglimpse {
     export interface TickLabeler {
         ( value : number, axis : Axis1D, tickInterval : number ): string;
     }
-    
+
 
     export interface EdgeAxisPainterOptions {
         tickSpacing? : number;
@@ -115,7 +115,7 @@ module Webglimpse {
         var showBorder    = ( hasval( options ) && hasval( options.showBorder    ) ? options.showBorder    : false );
         var gradientFill  = ( hasval( options ) && hasval( options.gradientFill  ) ? options.gradientFill  : undefined );
         var tickLabeler   = ( hasval( options ) && hasval( options.tickLabeler   ) ? options.tickLabeler   : undefined );
-        
+
         var tickPositions = new Float32Array( 0 );
 
         var gradientProgram = new Program( heatmap_VERTSHADER, gradient_FRAGSHADER );
@@ -123,23 +123,23 @@ module Webglimpse {
         var gradientProgram_u_colorTexture = new UniformSampler2D( gradientProgram, 'u_colorTex' );
         var gradientProgram_a_vertCoord = new Attribute( gradientProgram, 'a_vertCoord' );
         var gradientProgram_a_texCoord = new Attribute( gradientProgram, 'a_texCoord' );
-        
+
         if ( gradientFill ) var gradientColorTexture = getGradientTexture( gradientFill );
-        
+
         var gradientVertCoords = new Float32Array( 0 );
         var gradientVertCoordsBuffer = newDynamicBuffer( );
-        
+
         var gradientTexCoords = new Float32Array( 0 );
         var gradientTexCoordsBuffer = newDynamicBuffer( );
-        
+
         var borderProgram = new Program( modelview_VERTSHADER, solid_FRAGSHADER );
         var borderProgram_a_Position = new Attribute( borderProgram, 'a_Position' );
         var borderProgram_u_modelViewMatrix = new UniformMatrix4f( borderProgram, 'u_modelViewMatrix' );
         var borderProgram_u_Color = new UniformColor( borderProgram, 'u_Color' );
-        
+
         var borderCoords = new Float32Array( 0 );
         var borderCoordsBuffer = newDynamicBuffer( );
-        
+
         var marksProgram = new Program( edgeMarks_VERTSHADER( labelSide ), solid_FRAGSHADER );
         var marksProgram_u_VMin = new Uniform1f( marksProgram, 'u_VMin' );
         var marksProgram_u_VSize = new Uniform1f( marksProgram, 'u_VSize' );
@@ -157,7 +157,7 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-        
+
             var sizePixels = isVerticalAxis ? viewport.h : viewport.w;
             if ( sizePixels === 0 ) return;
             var approxNumTicks = sizePixels / tickSpacing;
@@ -166,42 +166,42 @@ module Webglimpse {
             tickPositions = ensureCapacityFloat32( tickPositions, tickCount );
             getTickPositions( axis, tickInterval, tickCount, tickPositions );
 
-            
+
             // Border Box and Gradient Fill
             //
-            
+
             //XXX border vertices are fixed in normalized 0-1 viewport coordinates
             //XXX they could be calculated ahead of time -- however I had trouble with 'fuzzy' lines when using 0-1 coordinates
             if ( showBorder || gradientFill ) {
                 borderCoords = ensureCapacityFloat32( borderCoords, 10 );
-                
+
                 var horizontal = ( labelSide === Side.TOP || labelSide === Side.BOTTOM );
                 var bFlip = ( labelSide === Side.LEFT || labelSide === Side.BOTTOM );
                 var width = viewport.w - 1;
                 var height = viewport.h - 1;
-                
+
                 borderCoords[0] = horizontal  ? 0 : ( bFlip ? width - tickSize : 0 );
                 borderCoords[1] = !horizontal ? 0 : ( bFlip ? height - tickSize : 0 );
-                
+
                 borderCoords[2] = horizontal  ? 0 : ( bFlip ? width : tickSize );
                 borderCoords[3] = !horizontal ? 0 : ( bFlip ? height : tickSize );
-                
+
                 borderCoords[4] = horizontal  ? width : ( bFlip ? width : tickSize );
                 borderCoords[5] = !horizontal ? height : ( bFlip ? height : tickSize );
-                
+
                 borderCoords[6] = horizontal  ? width : ( bFlip ? width - tickSize : 0 );
                 borderCoords[7] = !horizontal ? height : ( bFlip ? height - tickSize : 0 );
-                
+
                 // finish off the box (same as 0, 1 coordinates)
                 borderCoords[8] = horizontal  ? 0 : ( bFlip ? width - tickSize : 0 );
                 borderCoords[9] = !horizontal ? 0 : ( bFlip ? height - tickSize : 0 );
             }
-            
+
             if ( gradientFill ) {
                 gradientProgram.use( gl );
                 gradientProgram_u_modelViewMatrix.setData( gl, glOrthoViewport( viewport ) );
                 gradientProgram_u_colorTexture.setDataAndBind( gl, 0, gradientColorTexture );
-                
+
                 gradientVertCoords = ensureCapacityFloat32( gradientVertCoords, 8 );
                 gradientVertCoords[0] = borderCoords[2];
                 gradientVertCoords[1] = borderCoords[3];
@@ -213,9 +213,9 @@ module Webglimpse {
                 gradientVertCoords[7] = borderCoords[7];
                 gradientVertCoordsBuffer.setData( gradientVertCoords );
                 gradientProgram_a_vertCoord.setDataAndEnable( gl, gradientVertCoordsBuffer, 2, GL.FLOAT );
-                
+
                 // y texture coordinates don't really matter ( we're simulating a 1d texture )
-                // using a 1-by-n 2d texture because 1d textures aren't available 
+                // using a 1-by-n 2d texture because 1d textures aren't available
                 gradientTexCoords = ensureCapacityFloat32( gradientTexCoords, 8 );
                 gradientTexCoords[0] = 0;
                 gradientTexCoords[1] = 0;
@@ -227,27 +227,27 @@ module Webglimpse {
                 gradientTexCoords[7] = 1;
                 gradientTexCoordsBuffer.setData( gradientTexCoords );
                 gradientProgram_a_texCoord.setDataAndEnable( gl, gradientTexCoordsBuffer, 2, GL.FLOAT );
-                
+
                 gl.drawArrays( GL.TRIANGLE_STRIP, 0, 4 );
-                
+
                 gradientProgram_u_colorTexture.unbind( gl );
                 gradientProgram_a_vertCoord.disable( gl );
                 gradientProgram_a_texCoord.disable( gl );
                 gradientProgram.endUse( gl );
             }
-            
+
             if ( showBorder ) {
                 borderProgram.use( gl );
                 borderProgram_u_Color.setData( gl, tickColor );
                 borderProgram_u_modelViewMatrix.setData( gl, glOrthoViewport( viewport ) );
-                
+
                 borderCoordsBuffer.setData( borderCoords.subarray( 0, 10 ) );
                 borderProgram_a_Position.setDataAndEnable( gl, borderCoordsBuffer, 2, GL.FLOAT );
-                
+
                 // IE does not support lineWidths other than 1, so make sure all browsers use lineWidth of 1
                 gl.lineWidth( 1 );
                 gl.drawArrays( GL.LINE_STRIP, 0, 5 );
-    
+
                 borderProgram_a_Position.disable( gl );
                 borderProgram.endUse( gl );
             }
@@ -375,10 +375,10 @@ module Webglimpse {
             if ( showLabel ) {
                 var unitsString = units + ( !shortenLabels || orderAxis === 0 ? '' : ' x 10^' + orderAxis.toFixed( 0 ) );
                 var axisLabel = label + ( unitsString ? ' (' + unitsString + ')' : '' );
-                
+
                 if ( axisLabel !== '' ) {
                     var textTexture = textTextures.value( axisLabel );
-    
+
                     var xFrac : number;
                     var yFrac : number;
                     var textOpts : TextureDrawOptions;
@@ -412,4 +412,4 @@ module Webglimpse {
         };
     }
 
-}
+

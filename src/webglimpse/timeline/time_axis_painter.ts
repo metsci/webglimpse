@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     // XXX: Much of this is duplicated from edge_axis_painter
@@ -91,10 +91,10 @@ module Webglimpse {
         var isVerticalAxis = ( labelSide === Side.LEFT || labelSide === Side.RIGHT );
 
         return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-        
+
             var sizePixels = isVerticalAxis ? viewport.h : viewport.w;
             if ( sizePixels === 0 ) return;
- 
+
             var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, sizePixels, tickSpacing, tickTimeZone, referenceDate_PMILLIS );
             var tickInterval_MILLIS = getTickInterval_MILLIS( tickTimes_PMILLIS );
             var tickCount = tickTimes_PMILLIS.length;
@@ -345,7 +345,7 @@ module Webglimpse {
     function getTickDisplayDataAbsolute( tickInterval_MILLIS : number, displayTimeZone : string, timeAxisFormat : TimeAxisFormatOptions ) : TickDisplayData {
 
         var defaultTickFormat = function( format : string ) : TickFormat { return function( tickTime_PMILLIS : number ) : string { return moment( tickTime_PMILLIS ).zone( displayTimeZone ).format( format ) } };
-        var defaultPrefixFormat = function( format : string ) : PrefixFormat { return function( timeStruct : TimeStruct ) : string { return moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( format ) } }; 
+        var defaultPrefixFormat = function( format : string ) : PrefixFormat { return function( timeStruct : TimeStruct ) : string { return moment( timeStruct.textCenter_PMILLIS ).zone( displayTimeZone ).format( format ) } };
 
         if ( tickInterval_MILLIS <= minutesToMillis( 1 ) ) {
             var formatOptions = new FormatOptions('mm:ss', 'D MMM HH:00');
@@ -532,7 +532,7 @@ module Webglimpse {
             timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
 
             maxViewDuration_MILLIS = Math.max( maxViewDuration_MILLIS, timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS );
-            
+
             timeStructs.push( timeStruct );
         }
 
@@ -580,7 +580,7 @@ module Webglimpse {
             timeStruct.viewEnd_PMILLIS = clamp( timeStruct.start_PMILLIS, timeStruct.end_PMILLIS, dMax_PMILLIS );
 
             maxViewDuration_MILLIS = Math.max( maxViewDuration_MILLIS, timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS );
-            
+
             timeStructs.push( timeStruct );
         }
 
@@ -646,7 +646,7 @@ module Webglimpse {
     }
 
     function getTickTimesRelative_PMILLIS( timeAxis : TimeAxis1D, sizePixels : number, tickSpacing : number, referenceDate_PMILLIS : number ) : number[] {
-        
+
         var dMin_PMILLIS = timeAxis.tMin_PMILLIS;
         var dMax_PMILLIS = timeAxis.tMax_PMILLIS;
         var approxTickInterval_MILLIS = tickSpacing * ( dMax_PMILLIS - dMin_PMILLIS ) / sizePixels;
@@ -661,7 +661,7 @@ module Webglimpse {
 
     function getHourTickTimesRelative_PMILLIS( dMin_PMILLIS : number, dMax_PMILLIS : number, approxTickInterval_MILLIS : number, referenceDate_PMILLIS : number ) : number[] {
         var tickTimes = getHourTickTimes_PMILLIS( dMin_PMILLIS - referenceDate_PMILLIS, dMax_PMILLIS - referenceDate_PMILLIS, approxTickInterval_MILLIS, 0 );
-    
+
         for ( var n = 0; n < tickTimes.length; n++ ) {
             tickTimes[n] = tickTimes[n] + referenceDate_PMILLIS;
         }
@@ -860,4 +860,4 @@ module Webglimpse {
     }
 
 
-}
+

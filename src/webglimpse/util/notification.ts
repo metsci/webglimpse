@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export interface Listener {
@@ -91,7 +91,7 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
-        
+
         dispose( ) {
             this._listeners.removeAll( );
         }
@@ -142,7 +142,7 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
-        
+
         dispose( ) {
             this._listeners.removeAll( );
         }
@@ -193,7 +193,7 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
-        
+
         dispose( ) {
             this._listeners.removeAll( );
         }
@@ -244,7 +244,7 @@ module Webglimpse {
                 this._listeners.removeValue( listener );
             }
         }
-        
+
         dispose( ) {
             this._listeners.removeAll( );
         }
@@ -271,4 +271,3 @@ module Webglimpse {
     }
 
 
-}

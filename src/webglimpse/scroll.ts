@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     export interface VerticalScrollLayout extends Layout {
@@ -183,18 +183,18 @@ module Webglimpse {
 
     // mouse listener for scrolling while panning on the timeline itself
     export function attachTimelineVerticalScrollMouseListeners( pane : Pane, scrollLayout : VerticalScrollLayout, drawable : Drawable ) {
-        
+
         // Used when dragging inside pane
         var grab : number = null;
         var jOffset : number = null;
-        
+
         pane.mouseDown.on( function( ev : PointerEvent ) {
             if ( isLeftMouseDown( ev.mouseEvent ) ) {
                 grab = ev.j;
                 jOffset = scrollLayout.jOffset;
             }
         } );
-            
+
         pane.mouseMove.on( function( ev : PointerEvent ) {
             if ( hasval( grab ) ) {
                 scrollLayout.jOffset = jOffset - ( grab - ev.j );
@@ -287,4 +287,3 @@ module Webglimpse {
     }
 
 
-}

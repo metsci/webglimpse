@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     class TextureEntry {
@@ -126,16 +126,16 @@ module Webglimpse {
                     return GL.TEXTURE_2D;
                 },
                 init: function( gl : WebGLRenderingContext, target : number ) {
-                
+
                     if ( !gl.getExtension( 'OES_texture_float' ) ) {
                        throw new Error( 'OES_texture_float extension is required' );
                     }
-                    
+
                     gl.texParameteri( target, GL.TEXTURE_MAG_FILTER, GL.NEAREST );
                     gl.texParameteri( target, GL.TEXTURE_MIN_FILTER, GL.NEAREST );
                     gl.texParameteri( target, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE );
                     gl.texParameteri( target, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE );
-                    
+
                     // GL.LUMINANCE isn't supported with GL.FLOAT
                     gl.texImage2D( target, 0, GL.RGBA, w, h, 0, GL.RGBA, GL.FLOAT, array );
                 }
@@ -296,4 +296,3 @@ module Webglimpse {
     }
 
 
-}

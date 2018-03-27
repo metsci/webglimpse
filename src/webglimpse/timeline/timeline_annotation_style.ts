@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
     export interface TimelineAnnotationIcon {
         url : string;
@@ -52,7 +52,7 @@ module Webglimpse {
         uiHint? : string; // one of: point, horizontal-line, vertical-line
         icons? : TimelineAnnotationIcon[];
     }
-    
+
     export class TimelineAnnotationIconUi {
         private _url : string;
         private _displayWidth : number;
@@ -83,7 +83,7 @@ module Webglimpse {
         get vAlign( ) : number { return this._vAlign; }
         get hOffset( ) : number { return this._hOffset; }
         get vOffset( ) : number { return this._vOffset; }
-        
+
         snapshot( ) : TimelineAnnotationIcon {
             return {
                 url: this._url,
@@ -115,7 +115,7 @@ module Webglimpse {
             this._styleGuid = style.styleGuid;
             this._setAttrs( style );
         }
-        
+
         get styleGuid( ) : string {
             return this._styleGuid;
         }
@@ -139,7 +139,7 @@ module Webglimpse {
         icon( index : number ) : TimelineAnnotationIconUi {
             return this._icons[ index ];
         }
-        
+
         get color( ) : Color {
             return this._color;
         }
@@ -147,27 +147,27 @@ module Webglimpse {
         get font( ) : string {
             return this._font;
         }
-        
+
         get hTextOffset( ) : number {
             return this._hTextOffset;
         }
-        
+
         get vTextOffset( ) : number {
             return this._vTextOffset;
         }
-        
+
         get hTextAlign( ) : number {
             return this._hTextAlign;
         }
-        
+
         get vTextAlign( ) : number {
             return this._vTextAlign;
         }
-        
+
         get align( ) : number {
             return this._align;
         }
-        
+
         get uiHint( ) : string {
             return this._uiHint;
         }
@@ -188,4 +188,3 @@ module Webglimpse {
         }
     }
 
-}

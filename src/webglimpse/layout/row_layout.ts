@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+
 
 
     // 'pref'     indicates the child's height should be its preferred height
@@ -41,11 +41,11 @@ module Webglimpse {
         var usePrefHeight = ( !hasval( child.layoutOptions ) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' || child.layoutOptions.height === 'pref-max' );
         return ( usePrefHeight ? child.prefSize.h : child.layoutOptions.height );
     }
-    
+
     // see above, like childHeight( ) but don't count 'pref-max'
     function childHeightOverfull( child : LayoutEntry ) : number {
         var usePrefHeight = ( !hasval( child.layoutOptions ) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' );
-        
+
         if ( usePrefHeight ) {
             return child.prefSize.h;
         }
@@ -64,7 +64,7 @@ module Webglimpse {
         flexHeight : number;
         childHeight : ( child : LayoutEntry ) => number;
     }
-    
+
     function calculateFlexData( childrenToPlace : LayoutEntry[], parentViewport : BoundsUnmodifiable, childHeight : ( child : LayoutEntry ) => number ) : FlexData {
         var numFlexible = 0;
         var totalHeight = 0;
@@ -81,7 +81,7 @@ module Webglimpse {
         var flexHeight = totalFlexHeight / numFlexible;
         return { numFlexible : numFlexible, totalHeight : totalHeight, flexHeight : flexHeight, totalFlexHeight : totalFlexHeight, childHeight : childHeight };
     }
-    
+
     export function newRowLayout( topToBottom : boolean = true ) : Layout {
 
         return {
@@ -152,12 +152,12 @@ module Webglimpse {
 
                 // calculate assuming sufficient space
                 var flexData = calculateFlexData( children, parentViewport, childHeight );
-                
+
                 // recalculate allowing 'pref-max' children to shrink if insufficient space
                 if ( flexData.totalHeight > parentViewport.h ) {
                     flexData = calculateFlexData( children, parentViewport, childHeightOverfull );
                 }
-                
+
                 if ( topToBottom ) {
                     var iStart = parentViewport.iStart;
                     var iEnd = parentViewport.iEnd;
@@ -211,4 +211,3 @@ module Webglimpse {
             }
         };
     }
-}
