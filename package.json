@@ -2,7 +2,7 @@
   "name": "webglimpse",
   "version": "1.9.2",
   "description": "Webglimpse is a data visualization library for the web.",
-  "repository":{
+  "repository": {
     "type": "git",
     "url": "https://github.com/skaughtx0r/webglimpse"
   },
@@ -14,18 +14,66 @@
     "webgl"
   ],
   "main": "webglimpse.js",
-  "typings": "webglimpse.d.ts",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "build": "ng-packagr -p ng-package.json",
+    "docs": "node_modules/.bin/compodoc -p tsconfig.json -d docs --theme readthedocs",
+    "serve-docs": "node_modules/.bin/compodoc -s -d docs"
+  },
+  "peerDependencies": {
+    "@angular/core": "^5.2.0",
+    "@angular/animations": "^5.2.0",
+    "@angular/common": "^5.2.0",
+    "@angular/compiler": "^5.2.0",
+    "@angular/forms": "^5.2.0",
+    "@angular/http": "^5.2.0",
+    "@angular/platform-browser": "^5.2.0",
+    "@angular/platform-browser-dynamic": "^5.2.0",
+    "@angular/router": "^5.2.0",
+    "core-js": "^2.4.1",
+    "rxjs": "^5.5.6",
+    "zone.js": "^0.8.14"
+  },
+  "dependencies": {
+    "moment": "^2.21.0"
+  },
   "devDependencies": {
-    "typescript": "1.0.1",
-    "grunt": "~0.4.2",
-    "grunt-ts": "~1.7.2",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-contrib-connect": "~0.6.0",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-copy": "~0.5.0",
-    "grunt-contrib-uglify": "~0.6.0",
-    "grunt-text-replace": "~0.3.10",
-    "load-grunt-tasks": "~0.3.0",
-    "lodash": "~2.4.1"
+    "@angular/animations": "^5.2.0",
+    "@angular/cli": "^1.7.0",
+    "@angular/common": "^5.2.0",
+    "@angular/compiler": "^5.2.0",
+    "@angular/compiler-cli": "^5.2.0",
+    "@angular/core": "^5.2.0",
+    "@angular/forms": "^5.2.0",
+    "@angular/http": "^5.2.0",
+    "@angular/language-service": "^5.2.0",
+    "@angular/platform-browser": "^5.2.0",
+    "@angular/platform-browser-dynamic": "^5.2.0",
+    "@angular/router": "^5.2.0",
+    "@compodoc/compodoc": "^1.0.8",
+    "@types/jasmine": "~2.5.53",
+    "@types/jasminewd2": "~2.0.2",
+    "@types/node": "~6.0.60",
+    "codelyzer": "^4.0.1",
+    "core-js": "^2.4.1",
+    "jasmine-core": "~2.6.2",
+    "jasmine-spec-reporter": "~4.1.0",
+    "karma": "~1.7.0",
+    "karma-chrome-launcher": "~2.1.1",
+    "karma-cli": "~1.0.1",
+    "karma-coverage-istanbul-reporter": "^1.2.1",
+    "karma-jasmine": "~1.1.0",
+    "karma-jasmine-html-reporter": "^0.2.2",
+    "ng-packagr": "^2.0.0",
+    "protractor": "~5.1.2",
+    "rxjs": "^5.5.6",
+    "ts-node": "~3.2.0",
+    "tslint": "~5.7.0",
+    "typescript": "~2.4.2",
+    "zone.js": "^0.8.14"
   }
 }

@@ -27,97 +27,101 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+import { Layout, LayoutEntry, Pane } from '../core';
+import { Size, BoundsUnmodifiable } from '../bounds';
+import { Color } from '../color';
+import { newBackgroundPainter } from '../misc';
+import { hasval } from '../util/util';
 
 
+export interface Insets {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+}
 
-    export interface Insets {
-        top : number;
-        right : number;
-        bottom : number;
-        left : number;
+
+export function newInsets(...insets: number[]): Insets {
+    switch (insets.length) {
+
+        case 1:
+            return {
+                top: insets[0],
+                right: insets[0],
+                bottom: insets[0],
+                left: insets[0]
+            };
+
+        case 2:
+            return {
+                top: insets[0],
+                right: insets[1],
+                bottom: insets[0],
+                left: insets[1]
+            };
+
+        case 3:
+            return {
+                top: insets[0],
+                right: insets[1],
+                bottom: insets[2],
+                left: insets[1]
+            };
+
+        case 4:
+            return {
+                top: insets[0],
+                right: insets[1],
+                bottom: insets[2],
+                left: insets[3]
+            };
+
+        default:
+            throw new Error('Expected 1, 2, 3, or 4 args, but found ' + insets.length);
     }
+}
 
 
-    export function newInsets( ...insets : number[] ) : Insets {
-        switch ( insets.length ) {
-
-            case 1:
-                return {
-                    top: insets[ 0 ],
-                    right: insets[ 0 ],
-                    bottom: insets[ 0 ],
-                    left: insets[ 0 ]
-                };
-
-            case 2:
-                return {
-                    top: insets[ 0 ],
-                    right: insets[ 1 ],
-                    bottom: insets[ 0 ],
-                    left: insets[ 1 ]
-                };
-
-            case 3:
-                return {
-                    top: insets[ 0 ],
-                    right: insets[ 1 ],
-                    bottom: insets[ 2 ],
-                    left: insets[ 1 ]
-                };
-
-            case 4:
-                return {
-                    top: insets[ 0 ],
-                    right: insets[ 1 ],
-                    bottom: insets[ 2 ],
-                    left: insets[ 3 ]
-                };
-
-            default:
-                throw new Error( 'Expected 1, 2, 3, or 4 args, but found ' + insets.length );
-        }
-    }
-
-
-    export function newInsetLayout( insets : Insets ) : Layout {
-        return {
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                if ( children.length === 0 ) {
-                    parentPrefSize.w = insets.left + insets.right;
-                    parentPrefSize.h = insets.top + insets.bottom;
-                }
-                else if ( children.length === 1 ) {
-                    var childPrefSize = children[ 0 ].prefSize;
-                    parentPrefSize.w = ( hasval( childPrefSize.w ) ? childPrefSize.w + insets.left + insets.right : null );
-                    parentPrefSize.h = ( hasval( childPrefSize.h ) ? childPrefSize.h + insets.top + insets.bottom : null );
-                }
-                else if ( children.length > 1 ) {
-                    throw new Error( 'Inset layout works with at most 1 child, but pane has ' + this.children.length + ' children' );
-                }
-            },
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                if ( children.length === 1 ) {
-                    var childViewport = children[ 0 ].viewport;
-                    childViewport.setEdges( parentViewport.iStart + insets.left,
-                                            parentViewport.iEnd   - insets.right,
-                                            parentViewport.jStart + insets.bottom,
-                                            parentViewport.jEnd   - insets.top );
-                }
-                else if ( children.length > 1 ) {
-                    throw new Error( 'Inset layout works with at most 1 child, but pane has ' + this.children.length + ' children' );
-                }
+export function newInsetLayout(insets: Insets): Layout {
+    return <Layout>{
+        updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
+            if (children.length === 0) {
+                parentPrefSize.w = insets.left + insets.right;
+                parentPrefSize.h = insets.top + insets.bottom;
             }
-        };
-    }
-
-
-    export function newInsetPane( pane : Pane, insets : Insets, bgColor : Color = null, consumeInputEvents : boolean = true ) : Pane {
-        var insetPane = new Pane( newInsetLayout( insets ), consumeInputEvents );
-        if ( hasval( bgColor ) ) {
-            insetPane.addPainter( newBackgroundPainter( bgColor ) );
+            else if (children.length === 1) {
+                let childPrefSize = children[0].prefSize;
+                parentPrefSize.w = (hasval(childPrefSize.w) ? childPrefSize.w + insets.left + insets.right : null);
+                parentPrefSize.h = (hasval(childPrefSize.h) ? childPrefSize.h + insets.top + insets.bottom : null);
+            }
+            else if (children.length > 1) {
+                throw new Error('Inset layout works with at most 1 child, but pane has ' + this.children.length + ' children');
+            }
+        },
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            if (children.length === 1) {
+                let childViewport = children[0].viewport;
+                childViewport.setEdges(parentViewport.iStart + insets.left,
+                    parentViewport.iEnd - insets.right,
+                    parentViewport.jStart + insets.bottom,
+                    parentViewport.jEnd - insets.top);
+            }
+            else if (children.length > 1) {
+                throw new Error('Inset layout works with at most 1 child, but pane has ' + this.children.length + ' children');
+            }
         }
-        insetPane.addPane( pane );
-        return insetPane;
+    };
+}
+
+
+export function newInsetPane(pane: Pane, insets: Insets, bgColor: Color = null, consumeInputEvents: boolean = true): Pane {
+    let insetPane = new Pane(newInsetLayout(insets), consumeInputEvents);
+    if (hasval(bgColor)) {
+        insetPane.addPainter(newBackgroundPainter(bgColor));
     }
+    insetPane.addPane(pane);
+    return insetPane;
+}
 
 

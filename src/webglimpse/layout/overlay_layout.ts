@@ -27,63 +27,65 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+import { Layout, LayoutEntry } from '../core';
+import { Size, BoundsUnmodifiable } from '../bounds';
+import { isEmpty, hasval } from '../util/util';
 
 
+/**
+ * Simple layout which sets the sizes of all child panes to the size of the parent pane
+ * (causing all the children to 'overlay' each other and the parent).
+ */
+export function newOverlayLayout(): Layout {
 
-    /**
-     * Simple layout which sets the sizes of all child panes to the size of the parent pane
-     * (causing all the children to 'overlay' each other and the parent).
-     */
-    export function newOverlayLayout( ): Layout {
+    return <Layout>{
 
-        return {
-
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                var underlays : LayoutEntry[] = [];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    var isUnderlay = child.layoutArg;
-                    if ( isUnderlay ) {
-                        underlays.push( child );
-                    }
-                }
-
-                if ( !isEmpty( underlays ) ) {
-                    var maxChildPrefWidth = 0;
-                    var maxChildPrefHeight = 0;
-                    for ( var c = 0; c < underlays.length; c++ ) {
-                        var childPrefSize = underlays[ c ].prefSize;
-
-                        var childPrefWidth = childPrefSize.w;
-                        if ( hasval( maxChildPrefWidth ) && hasval( childPrefWidth ) ) {
-                            maxChildPrefWidth = Math.max( maxChildPrefWidth, childPrefWidth );
-                        }
-                        else {
-                            maxChildPrefWidth = null;
-                        }
-
-                        var childPrefHeight = childPrefSize.h;
-                        if ( hasval( maxChildPrefHeight ) && hasval( childPrefHeight ) ) {
-                            maxChildPrefHeight = Math.max( maxChildPrefHeight, childPrefHeight );
-                        }
-                        else {
-                            maxChildPrefHeight = null;
-                        }
-                    }
-                    parentPrefSize.w = maxChildPrefWidth;
-                    parentPrefSize.h = maxChildPrefHeight;
-                }
-                else {
-                    parentPrefSize.w = 0;
-                    parentPrefSize.h = 0;
-                }
-            },
-
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                for ( var c = 0; c < children.length; c++ ) {
-                    children[ c ].viewport.setBounds( parentViewport );
+        updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
+            let underlays: LayoutEntry[] = [];
+            for (let c = 0; c < children.length; c++) {
+                let child = children[c];
+                let isUnderlay = child.layoutArg;
+                if (isUnderlay) {
+                    underlays.push(child);
                 }
             }
 
-        };
-    }
+            if (!isEmpty(underlays)) {
+                let maxChildPrefWidth = 0;
+                let maxChildPrefHeight = 0;
+                for (let c = 0; c < underlays.length; c++) {
+                    let childPrefSize = underlays[c].prefSize;
+
+                    let childPrefWidth = childPrefSize.w;
+                    if (hasval(maxChildPrefWidth) && hasval(childPrefWidth)) {
+                        maxChildPrefWidth = Math.max(maxChildPrefWidth, childPrefWidth);
+                    }
+                    else {
+                        maxChildPrefWidth = null;
+                    }
+
+                    let childPrefHeight = childPrefSize.h;
+                    if (hasval(maxChildPrefHeight) && hasval(childPrefHeight)) {
+                        maxChildPrefHeight = Math.max(maxChildPrefHeight, childPrefHeight);
+                    }
+                    else {
+                        maxChildPrefHeight = null;
+                    }
+                }
+                parentPrefSize.w = maxChildPrefWidth;
+                parentPrefSize.h = maxChildPrefHeight;
+            }
+            else {
+                parentPrefSize.w = 0;
+                parentPrefSize.h = 0;
+            }
+        },
+
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            for (let c = 0; c < children.length; c++) {
+                children[c].viewport.setBounds(parentViewport);
+            }
+        }
+
+    };
+}

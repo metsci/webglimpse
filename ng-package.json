@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/ng-packagr/package.schema.json",
+  "ngPackage": {
+    "lib": {
+      "entryFile": "public_api.ts",
+      "externals": {
+        "moment": "moment"
+      },
+      "umdModuleIds": {
+        "moment": "moment"
+      }
+    }
+  }
+}

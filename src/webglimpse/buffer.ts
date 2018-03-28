@@ -27,141 +27,140 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+import { StringMap, GL, getObjectId, hasval } from './util/util';
+
+export interface Buffer {
+    bind(gl: WebGLRenderingContext, target: number): void;
+    unbind(gl: WebGLRenderingContext, target: number): void;
+    dispose(): void;
+}
+
+export interface DynamicBuffer extends Buffer {
+    setData(newData: Float32Array): void;
+}
+
+export function newStaticBuffer(data: Float32Array): Buffer {
+    return new StaticBufferImpl(data);
+}
+
+export function newDynamicBuffer(data: Float32Array = new Float32Array(0)): DynamicBuffer {
+    return new DynamicBufferImpl(data);
+}
 
 
+class BufferEntry {
+    gl: WebGLRenderingContext;
+    buffer: WebGLBuffer;
+    capacity: number = 0;
+    marker: number = null;
 
-    export interface Buffer {
-        bind( gl : WebGLRenderingContext, target : number );
-        unbind( gl : WebGLRenderingContext, target : number );
-        dispose( );
+    constructor(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
+        this.gl = gl;
+        this.buffer = buffer;
+    }
+}
+
+class AbstractBuffer implements Buffer {
+    private buffers: StringMap<BufferEntry> = {};
+    private currentMarker: number = 0;
+
+    init(gl: WebGLRenderingContext, target: number): number {
+        throw new Error('Method is abstract');
     }
 
-    export interface DynamicBuffer extends Buffer {
-        setData( newData : ArrayBuffer );
+    update(gl: WebGLRenderingContext, target: number, capacity: number): number {
+        throw new Error('Method is abstract');
     }
 
-    export function newStaticBuffer( data : ArrayBuffer ) : Buffer {
-        return new StaticBufferImpl( data );
+    setDirty() {
+        this.currentMarker++;
     }
 
-    export function newDynamicBuffer( data : ArrayBuffer = new Float32Array( 0 ) ) : DynamicBuffer {
-        return new DynamicBufferImpl( data );
-    }
+    bind(gl: WebGLRenderingContext, target: number) {
+        let glId = getObjectId(gl);
+        if (this.buffers[glId] === undefined) {
+            let buffer = gl.createBuffer();
+            if (!hasval(buffer)) throw new Error('Failed to create buffer');
+            this.buffers[glId] = new BufferEntry(gl, buffer);
 
-
-    class BufferEntry {
-        gl : WebGLRenderingContext;
-        buffer : WebGLBuffer;
-        capacity : number = 0;
-        marker : number = null;
-
-        constructor( gl : WebGLRenderingContext, buffer : WebGLBuffer ) {
-            this.gl = gl;
-            this.buffer = buffer;
+            gl.bindBuffer(target, this.buffers[glId].buffer);
+            this.buffers[glId].capacity = this.init(gl, target);
+            this.buffers[glId].marker = this.currentMarker;
+        }
+        else if (this.buffers[glId].marker !== this.currentMarker) {
+            gl.bindBuffer(target, this.buffers[glId].buffer);
+            this.buffers[glId].capacity = this.update(gl, target, this.buffers[glId].capacity);
+            this.buffers[glId].marker = this.currentMarker;
+        }
+        else {
+            gl.bindBuffer(target, this.buffers[glId].buffer);
         }
     }
 
-    class AbstractBuffer implements Buffer {
-        private buffers : StringMap<BufferEntry> = { };
-        private currentMarker : number = 0;
+    unbind(gl: WebGLRenderingContext, target: number) {
+        gl.bindBuffer(target, null);
+    }
 
-        init( gl : WebGLRenderingContext, target : number ) : number {
-            throw new Error( 'Method is abstract' );
-        }
-
-        update( gl : WebGLRenderingContext, target : number, capacity : number ) : number {
-            throw new Error( 'Method is abstract' );
-        }
-
-        setDirty( ) {
-            this.currentMarker++;
-        }
-
-        bind( gl : WebGLRenderingContext, target : number ) {
-            var glId = getObjectId( gl );
-            if ( this.buffers[ glId ] === undefined ) {
-                var buffer = gl.createBuffer( );
-                if ( !hasval( buffer ) ) throw new Error( 'Failed to create buffer' );
-                this.buffers[ glId ] = new BufferEntry( gl, buffer );
-
-                gl.bindBuffer( target, this.buffers[ glId ].buffer );
-                this.buffers[ glId ].capacity = this.init( gl, target );
-                this.buffers[ glId ].marker = this.currentMarker;
+    dispose() {
+        // XXX: Not sure this actually works ... may have to make each gl current or something
+        for (let glid in this.buffers) {
+            if (this.buffers.hasOwnProperty(glid)) {
+                let en = this.buffers[glid];
+                en.gl.deleteBuffer(en.buffer);
             }
-            else if ( this.buffers[ glId ].marker !== this.currentMarker ) {
-                gl.bindBuffer( target, this.buffers[ glId ].buffer );
-                this.buffers[ glId ].capacity = this.update( gl, target, this.buffers[ glId ].capacity );
-                this.buffers[ glId ].marker = this.currentMarker;
-            }
-            else {
-                gl.bindBuffer( target, this.buffers[ glId ].buffer );
-            }
         }
+        this.buffers = {};
+    }
+}
 
-        unbind( gl : WebGLRenderingContext, target : number ) {
-            gl.bindBuffer( target, null );
-        }
 
-        dispose( ) {
-            // XXX: Not sure this actually works ... may have to make each gl current or something
-            for ( var glid in this.buffers ) {
-                if ( this.buffers.hasOwnProperty( glid ) ) {
-                    var en = this.buffers[ glid ];
-                    en.gl.deleteBuffer( en.buffer );
-                }
-            }
-            this.buffers = { };
-        }
+class StaticBufferImpl extends AbstractBuffer {
+    private _data: Float32Array;
+
+    constructor(data: Float32Array) {
+        super();
+        this._data = data;
     }
 
+    init(gl: WebGLRenderingContext, target: number): number {
+        gl.bufferData(target, this._data, GL.STATIC_DRAW);
+        return this._data.byteLength;
+    }
 
-    class StaticBufferImpl extends AbstractBuffer {
-        private _data : ArrayBuffer;
+    update(gl: WebGLRenderingContext, target: number, capacity: number): number {
+        throw new Error('This buffer is static and should never need to be updated');
+    }
+}
 
-        constructor( data : ArrayBuffer ) {
-            super( );
-            this._data = data;
+
+class DynamicBufferImpl extends AbstractBuffer implements DynamicBuffer {
+    private _data: Float32Array;
+
+    constructor(data: Float32Array) {
+        super();
+        this._data = data;
+    }
+
+    setData(data: Float32Array) {
+        this._data = data;
+        this.setDirty();
+    }
+
+    init(gl: WebGLRenderingContext, target: number): number {
+        gl.bufferData(target, this._data, GL.DYNAMIC_DRAW);
+        return this._data.byteLength;
+    }
+
+    update(gl: WebGLRenderingContext, target: number, capacity: number): number {
+        if (this._data.byteLength <= capacity) {
+            gl.bufferSubData(target, 0, this._data);
+            return capacity;
         }
-
-        init( gl : WebGLRenderingContext, target : number ) : number {
-            gl.bufferData( target, this._data, GL.STATIC_DRAW );
+        else {
+            gl.bufferData(target, this._data, GL.DYNAMIC_DRAW);
             return this._data.byteLength;
         }
-
-        update( gl : WebGLRenderingContext, target : number, capacity : number ) : number {
-            throw new Error( 'This buffer is static and should never need to be updated' );
-        }
     }
-
-
-    class DynamicBufferImpl extends AbstractBuffer implements DynamicBuffer {
-        private _data : ArrayBuffer;
-
-        constructor( data : ArrayBuffer ) {
-            super( );
-            this._data = data;
-        }
-
-        setData( data : ArrayBuffer ) {
-            this._data = data;
-            this.setDirty( );
-        }
-
-        init( gl : WebGLRenderingContext, target : number ) : number {
-            gl.bufferData( target, this._data, GL.DYNAMIC_DRAW );
-            return this._data.byteLength;
-        }
-
-        update( gl : WebGLRenderingContext, target : number, capacity : number ) : number {
-            if ( this._data.byteLength <= capacity ) {
-                gl.bufferSubData( target, 0, this._data );
-                return capacity;
-            }
-            else {
-                gl.bufferData( target, this._data, GL.DYNAMIC_DRAW );
-                return this._data.byteLength;
-            }
-        }
-    }
+}
 
 

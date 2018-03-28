@@ -27,30 +27,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+import { BoundsUnmodifiable } from './bounds';
+import { Axis2D } from './plot/axis';
 
+// see: http://www.cs.rit.edu/usr/local/pub/wrc/graphics/doc/opengl/books/blue/glOrtho.html
+// see: http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
+export function glOrtho(left: number, right: number, bottom: number, top: number, near: number, far: number): Float32Array {
 
+    let tx = (right + left) / (right - left);
+    let ty = (top + bottom) / (top - bottom);
+    let tz = (far + near) / (far - near);
 
-    // see: http://www.cs.rit.edu/usr/local/pub/wrc/graphics/doc/opengl/books/blue/glOrtho.html
-    // see: http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
-    export function glOrtho( left : number, right : number, bottom : number, top : number, near : number, far : number ) : Float32Array {
+    // GL ES (and therefore WebGL) requires matrices to be column-major
+    return new Float32Array([
+        2 / (right - left), 0, 0, 0,
+        0, 2 / (top - bottom), 0, 0,
+        0, 0, -2 / (far - near), 0,
+        -tx, -ty, -tz, 1
+    ]);
+}
 
-        var tx = ( right + left ) / ( right - left );
-        var ty = ( top + bottom ) / ( top - bottom );
-        var tz = ( far + near )   / ( far - near );
+export function glOrthoViewport(viewport: BoundsUnmodifiable): Float32Array {
+    return glOrtho(-0.5, viewport.w - 0.5, -0.5, viewport.h - 0.5, -1, 1);
+}
 
-        // GL ES (and therefore WebGL) requires matrices to be column-major
-        return new Float32Array( [
-            2 / ( right - left ), 0, 0, 0,
-            0, 2 / ( top - bottom ), 0, 0,
-            0, 0, -2 / ( far - near ), 0,
-            -tx, -ty, -tz, 1
-        ] );
-    }
-
-    export function glOrthoViewport( viewport : BoundsUnmodifiable ) : Float32Array {
-        return glOrtho( -0.5, viewport.w-0.5, -0.5, viewport.h-0.5, -1, 1 );
-    }
-
-    export function glOrthoAxis( axis : Axis2D ) : Float32Array {
-        return glOrtho( axis.xAxis.vMin, axis.xAxis.vMax, axis.yAxis.vMin, axis.yAxis.vMax, -1, 1 );
-    }
+export function glOrthoAxis(axis: Axis2D): Float32Array {
+    return glOrtho(axis.xAxis.vMin, axis.xAxis.vMax, axis.yAxis.vMin, axis.yAxis.vMax, -1, 1);
+}

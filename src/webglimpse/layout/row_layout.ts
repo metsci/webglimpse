@@ -27,187 +27,189 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+import { LayoutEntry, Layout } from '../core';
+import { BoundsUnmodifiable, Size } from '../bounds';
+import { hasval, isNumber } from '../util/util';
 
 
+// 'pref'     indicates the child's height should be its preferred height
+// 'pref-max' indicates the child's height should be at most its preferred height, but should be made smaller
+//            (treated as a flex with child.layoutOptions.height === null) if their is insufficient room in the
+//            parentViewport to accommodate all children at their set size
+//
+// This layout is essentially a generalization of timeline_layout.ts. If you use a row_layout with the center element set to pref-max
+// you get the same effect as timeline_layout).
+function childHeight(child: LayoutEntry): number {
+    let usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' || child.layoutOptions.height === 'pref-max');
+    return (usePrefHeight ? child.prefSize.h : child.layoutOptions.height);
+}
 
-    // 'pref'     indicates the child's height should be its preferred height
-    // 'pref-max' indicates the child's height should be at most its preferred height, but should be made smaller
-    //            (treated as a flex with child.layoutOptions.height === null) if their is insufficient room in the
-    //            parentViewport to accommodate all children at their set size
-    //
-    // This layout is essentially a generalization of timeline_layout.ts. If you use a row_layout with the center element set to pref-max
-    // you get the same effect as timeline_layout).
-    function childHeight( child : LayoutEntry ) : number {
-        var usePrefHeight = ( !hasval( child.layoutOptions ) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' || child.layoutOptions.height === 'pref-max' );
-        return ( usePrefHeight ? child.prefSize.h : child.layoutOptions.height );
+// see above, like childHeight( ) but don't count 'pref-max'
+function childHeightOverfull(child: LayoutEntry): number {
+    let usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref');
+
+    if (usePrefHeight) {
+        return child.prefSize.h;
     }
+    else if (child.layoutOptions.height === 'pref-max') {
+        return null;
+    }
+    else {
+        return child.layoutOptions.height;
+    }
+}
 
-    // see above, like childHeight( ) but don't count 'pref-max'
-    function childHeightOverfull( child : LayoutEntry ) : number {
-        var usePrefHeight = ( !hasval( child.layoutOptions ) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' );
+interface FlexData {
+    numFlexible: number;
+    totalHeight: number;
+    totalFlexHeight: number;
+    flexHeight: number;
+    childHeight: (child: LayoutEntry) => number;
+}
 
-        if ( usePrefHeight ) {
-            return child.prefSize.h;
-        }
-        else if ( child.layoutOptions.height == 'pref-max' ) {
-            return null;
+function calculateFlexData(childrenToPlace: LayoutEntry[], parentViewport: BoundsUnmodifiable, childHeight: (child: LayoutEntry) => number): FlexData {
+    let numFlexible = 0;
+    let totalHeight = 0;
+    for (let c = 0; c < childrenToPlace.length; c++) {
+        let h = childHeight(childrenToPlace[c]);
+        if (hasval(h)) {
+            totalHeight += h;
         }
         else {
-            return child.layoutOptions.height;
+            numFlexible++;
         }
     }
+    let totalFlexHeight = parentViewport.h - totalHeight;
+    let flexHeight = totalFlexHeight / numFlexible;
+    return { numFlexible: numFlexible, totalHeight: totalHeight, flexHeight: flexHeight, totalFlexHeight: totalFlexHeight, childHeight: childHeight };
+}
 
-    interface FlexData {
-        numFlexible : number;
-        totalHeight : number;
-        totalFlexHeight : number;
-        flexHeight : number;
-        childHeight : ( child : LayoutEntry ) => number;
-    }
+export function newRowLayout(topToBottom: boolean = true): Layout {
 
-    function calculateFlexData( childrenToPlace : LayoutEntry[], parentViewport : BoundsUnmodifiable, childHeight : ( child : LayoutEntry ) => number ) : FlexData {
-        var numFlexible = 0;
-        var totalHeight = 0;
-        for ( var c = 0; c < childrenToPlace.length; c++ ) {
-            var h = childHeight( childrenToPlace[ c ] );
-            if ( hasval( h ) ) {
-                totalHeight += h;
-            }
-            else {
-                numFlexible++;
-            }
-        }
-        var totalFlexHeight = parentViewport.h - totalHeight;
-        var flexHeight = totalFlexHeight / numFlexible;
-        return { numFlexible : numFlexible, totalHeight : totalHeight, flexHeight : flexHeight, totalFlexHeight : totalFlexHeight, childHeight : childHeight };
-    }
-
-    export function newRowLayout( topToBottom : boolean = true ) : Layout {
-
-        return {
+    return <Layout>{
 
 
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                var childrenToPlace = <LayoutEntry[]> [ ];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    if ( isNumber( child.layoutArg ) && !( child.layoutOptions && child.layoutOptions.hide ) ) {
-                        childrenToPlace.push( child );
-                    }
+        updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
+            let childrenToPlace = <LayoutEntry[]>[];
+            for (let c = 0; c < children.length; c++) {
+                let child = children[c];
+                if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
+                    childrenToPlace.push(child);
                 }
+            }
 
-                var wMax = 0;
-                var hSum = 0;
-                for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                    var child = childrenToPlace[ c ];
+            let wMax = 0;
+            let hSum = 0;
+            for (let c = 0; c < childrenToPlace.length; c++) {
+                let child = childrenToPlace[c];
 
-                    var honorChildWidth = !( child.layoutOptions && child.layoutOptions.ignoreWidth );
-                    if ( honorChildWidth ) {
-                        var w = child.prefSize.w;
-                        if ( hasval( wMax ) && hasval( w ) ) {
-                            wMax = Math.max( wMax, w );
-                        }
-                        else {
-                            wMax = null;
-                        }
-                    }
-
-                    var h = childHeight( child );
-                    if ( hasval( hSum ) && hasval( h ) ) {
-                        hSum += h;
+                let honorChildWidth = !(child.layoutOptions && child.layoutOptions.ignoreWidth);
+                if (honorChildWidth) {
+                    let w = child.prefSize.w;
+                    if (hasval(wMax) && hasval(w)) {
+                        wMax = Math.max(wMax, w);
                     }
                     else {
-                        hSum = null;
-                    }
-                }
-                parentPrefSize.w = wMax;
-                parentPrefSize.h = hSum;
-            },
-
-
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                var childrenToPlace = <LayoutEntry[]> [ ];
-                var childrenToHide = <LayoutEntry[]> [ ];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    if ( isNumber( child.layoutArg ) && !( child.layoutOptions && child.layoutOptions.hide ) ) {
-                        childrenToPlace.push( child );
-                    }
-                    else {
-                        childrenToHide.push( child );
+                        wMax = null;
                     }
                 }
 
-                // Use the original index to make the sort stable
-                var indexProp = 'webglimpse_rowLayout_index';
-                for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                    var child = childrenToPlace[ c ];
-                    child[ indexProp ] = c;
-                }
-
-                childrenToPlace.sort( function( a : LayoutEntry, b : LayoutEntry ) {
-                    var orderDiff = a.layoutArg - b.layoutArg;
-                    return ( orderDiff !== 0 ? orderDiff : ( a[ indexProp ] - b[ indexProp ] ) );
-                } );
-
-                // calculate assuming sufficient space
-                var flexData = calculateFlexData( children, parentViewport, childHeight );
-
-                // recalculate allowing 'pref-max' children to shrink if insufficient space
-                if ( flexData.totalHeight > parentViewport.h ) {
-                    flexData = calculateFlexData( children, parentViewport, childHeightOverfull );
-                }
-
-                if ( topToBottom ) {
-                    var iStart = parentViewport.iStart;
-                    var iEnd = parentViewport.iEnd;
-                    var jEnd = parentViewport.jEnd;
-                    var jRemainder = 0;
-                    for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                        var child = childrenToPlace[ c ];
-
-                        var jStart : number;
-                        var h = flexData.childHeight( child );
-                        if ( hasval( h ) ) {
-                            jStart = jEnd - h;
-                        }
-                        else {
-                            var jStart0 = jEnd - flexData.flexHeight - jRemainder;
-                            jStart = Math.round( jStart0 );
-                            jRemainder = jStart - jStart0;
-                        }
-
-                        child.viewport.setEdges( iStart, iEnd, jStart, jEnd );
-                        jEnd = jStart;
-                    }
+                let h = childHeight(child);
+                if (hasval(hSum) && hasval(h)) {
+                    hSum += h;
                 }
                 else {
-                    var iStart = parentViewport.iStart;
-                    var iEnd = parentViewport.iEnd;
-                    var jStart = parentViewport.jStart;
-                    var jRemainder = 0;
-                    for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                        var child = childrenToPlace[ c ];
-
-                        var jEnd : number;
-                        var h = flexData.childHeight( child );
-                        if ( hasval( h ) ) {
-                            jEnd = jStart + h;
-                        }
-                        else {
-                            var jEnd0 = jStart + flexData.flexHeight + jRemainder;
-                            jEnd = Math.round( jEnd0 );
-                            jRemainder = jEnd0 - jEnd;
-                        }
-
-                        child.viewport.setEdges( iStart, iEnd, jStart, jEnd );
-                        jStart = jEnd;
-                    }
-                }
-
-                for ( var c = 0; c < childrenToHide.length; c++ ) {
-                    childrenToHide[ c ].viewport.setEdges( 0, 0, 0, 0 );
+                    hSum = null;
                 }
             }
-        };
-    }
+            parentPrefSize.w = wMax;
+            parentPrefSize.h = hSum;
+        },
+
+
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            let childrenToPlace = <LayoutEntry[]>[];
+            let childrenToHide = <LayoutEntry[]>[];
+            for (let c = 0; c < children.length; c++) {
+                let child = children[c];
+                if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
+                    childrenToPlace.push(child);
+                }
+                else {
+                    childrenToHide.push(child);
+                }
+            }
+
+            // Use the original index to make the sort stable
+            let indexProp = 'webglimpse_rowLayout_index';
+            for (let c = 0; c < childrenToPlace.length; c++) {
+                let child = childrenToPlace[c];
+                child[indexProp] = c;
+            }
+
+            childrenToPlace.sort(function (a: LayoutEntry, b: LayoutEntry) {
+                let orderDiff = a.layoutArg - b.layoutArg;
+                return (orderDiff !== 0 ? orderDiff : (a[indexProp] - b[indexProp]));
+            });
+
+            // calculate assuming sufficient space
+            let flexData = calculateFlexData(children, parentViewport, childHeight);
+
+            // recalculate allowing 'pref-max' children to shrink if insufficient space
+            if (flexData.totalHeight > parentViewport.h) {
+                flexData = calculateFlexData(children, parentViewport, childHeightOverfull);
+            }
+
+            if (topToBottom) {
+                let iStart = parentViewport.iStart;
+                let iEnd = parentViewport.iEnd;
+                let jEnd = parentViewport.jEnd;
+                let jRemainder = 0;
+                for (let c = 0; c < childrenToPlace.length; c++) {
+                    let child = childrenToPlace[c];
+
+                    let jStart: number;
+                    let h = flexData.childHeight(child);
+                    if (hasval(h)) {
+                        jStart = jEnd - h;
+                    }
+                    else {
+                        let jStart0 = jEnd - flexData.flexHeight - jRemainder;
+                        jStart = Math.round(jStart0);
+                        jRemainder = jStart - jStart0;
+                    }
+
+                    child.viewport.setEdges(iStart, iEnd, jStart, jEnd);
+                    jEnd = jStart;
+                }
+            }
+            else {
+                let iStart = parentViewport.iStart;
+                let iEnd = parentViewport.iEnd;
+                let jStart = parentViewport.jStart;
+                let jRemainder = 0;
+                for (let c = 0; c < childrenToPlace.length; c++) {
+                    let child = childrenToPlace[c];
+
+                    let jEnd: number;
+                    let h = flexData.childHeight(child);
+                    if (hasval(h)) {
+                        jEnd = jStart + h;
+                    }
+                    else {
+                        let jEnd0 = jStart + flexData.flexHeight + jRemainder;
+                        jEnd = Math.round(jEnd0);
+                        jRemainder = jEnd0 - jEnd;
+                    }
+
+                    child.viewport.setEdges(iStart, iEnd, jStart, jEnd);
+                    jStart = jEnd;
+                }
+            }
+
+            for (let c = 0; c < childrenToHide.length; c++) {
+                childrenToHide[c].viewport.setEdges(0, 0, 0, 0);
+            }
+        }
+    };
+}
