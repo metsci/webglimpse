@@ -1,3 +1,10 @@
+Webglimpse 2.0.2 (release 2018-3-28)
+
+* Replaced build system with ng-packagr.
+* Updated typescript and other dependencies.
+* Fixed tons of typescript errors.
+* Removed Webglimpse namespace and ported code to use newer module based structure.
+
 Webglimpse 1.9.2 (released 2018-3-22)
 
 * Made release package installable from npm.
