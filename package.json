@@ -1,6 +1,6 @@
 {
   "name": "webglimpse",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Webglimpse is a data visualization library for the web.",
   "repository": {
     "type": "git",
@@ -25,18 +25,6 @@
     "serve-docs": "node_modules/.bin/compodoc -s -d docs"
   },
   "peerDependencies": {
-    "@angular/core": "^5.2.0",
-    "@angular/animations": "^5.2.0",
-    "@angular/common": "^5.2.0",
-    "@angular/compiler": "^5.2.0",
-    "@angular/forms": "^5.2.0",
-    "@angular/http": "^5.2.0",
-    "@angular/platform-browser": "^5.2.0",
-    "@angular/platform-browser-dynamic": "^5.2.0",
-    "@angular/router": "^5.2.0",
-    "core-js": "^2.4.1",
-    "rxjs": "^5.5.6",
-    "zone.js": "^0.8.14",
     "moment": "^2.21.0"
   },
   "devDependencies": {
