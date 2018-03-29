@@ -255,7 +255,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
         let scrollbar = newVerticalScrollbar(scrollLayout, drawable, scrollbarOptions);
         ui.addPane('scrollbar', scrollbar);
 
-        let contentPane = new Pane(newColumnLayout(false), false);
+        contentPane = new Pane(newColumnLayout(false), false);
         ui.addPane('scroll-outer-pane', contentPane);
 
         contentPane.addPane(scrollbar, 0, { width: scrollbarWidth, ignoreHeight: true });
@@ -265,7 +265,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     else {
 
         contentPaneArgs = { drawable: drawable, scrollLayout: null, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
-        let contentPane = newTimelineContentPane(contentPaneArgs);
+        contentPane = newTimelineContentPane(contentPaneArgs);
         ui.addPane('content-pane', contentPane);
 
     }
@@ -1073,16 +1073,16 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             groupButtonHeaderUnderlay.addPane(groupButton, 1);
             groupButtonHeaderUnderlay.addPane(groupHeaderStripe, 2, { ignoreHeight: true });
 
-            let groupHeaderUnderlay = new Pane(newColumnLayout());
+            groupHeaderUnderlay = new Pane(newColumnLayout());
             groupHeaderUnderlay.addPainter(newBackgroundPainter(bgColor));
             groupHeaderUnderlay.addPane(groupButtonHeaderUnderlay, 0, { width: rowLabelPaneWidth });
             groupHeaderUnderlay.addPane(rowBackgroundPane, 1, { width: null });
 
-            let groupHeaderPane = groupHeaderUnderlay;
+            groupHeaderPane = groupHeaderUnderlay;
         }
         else {
 
-            let groupHeaderUnderlay = new Pane(newColumnLayout());
+            groupHeaderUnderlay = new Pane(newColumnLayout());
             groupHeaderUnderlay.addPainter(newBackgroundPainter(bgColor));
             groupHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
             groupHeaderUnderlay.addPane(groupButton, 1);
@@ -1091,7 +1091,7 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             let groupHeaderOverlay = newTimeAxisPane(args, null);
             let groupHeaderOverlayInsets = newInsets(0, 0, 0, rowLabelPaneWidth);
 
-            let groupHeaderPane = new Pane(newOverlayLayout());
+            groupHeaderPane = new Pane(newOverlayLayout());
             groupHeaderPane.addPane(groupHeaderUnderlay, true);
             groupHeaderPane.addPane(newInsetPane(groupHeaderOverlay, groupHeaderOverlayInsets, null, false), false);
 

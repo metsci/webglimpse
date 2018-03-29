@@ -1,3 +1,7 @@
+Webglimpse 2.0.3 (release 2018-3-29)
+
+* Fixed incorrect scoped redefinition of variables.
+
 Webglimpse 2.0.2 (release 2018-3-28)
 
 * Replaced build system with ng-packagr.
