@@ -24,7 +24,7 @@
     "docs": "node_modules/.bin/compodoc -p tsconfig.json -d docs --theme readthedocs",
     "serve-docs": "node_modules/.bin/compodoc -s -d docs"
   },
-  "peerDependencies": {
+  "dependencies": {
     "moment": "^2.21.0"
   },
   "devDependencies": {
@@ -60,7 +60,6 @@
     "ts-node": "~3.2.0",
     "tslint": "~5.7.0",
     "typescript": "~2.4.2",
-    "zone.js": "^0.8.14",
-    "moment": "^2.21.0"
+    "zone.js": "^0.8.14"
   }
 }
