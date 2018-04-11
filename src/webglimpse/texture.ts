@@ -32,7 +32,6 @@ import { Program, Uniform2f, Uniform1f, UniformSampler2D, Attribute } from './sh
 import { Buffer, newStaticBuffer } from './buffer';
 import { BoundsUnmodifiable } from './bounds';
 import { nearestPixel } from './misc';
-import { xFrac, yFrac } from './core';
 
 class TextureEntry {
     gl: WebGLRenderingContext;
@@ -65,20 +64,22 @@ export class Texture {
     }
 
     bind(gl: WebGLRenderingContext, textureUnit: number) {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (hasval(this.textures[glId])) {
-            let en = this.textures[glId];
+            const en = this.textures[glId];
             gl.activeTexture(GL.TEXTURE0 + textureUnit);
             gl.bindTexture(en.target, en.texture);
             en.textureUnit = textureUnit;
         }
         else {
-            let target = this.helper.target(gl);
-            let texture = gl.createTexture();
-            if (!hasval(texture)) throw new Error('Failed to create texture');
+            const target = this.helper.target(gl);
+            const texture = gl.createTexture();
+            if (!hasval(texture)) {
+                throw new Error('Failed to create texture');
+            }
             this.textures[glId] = new TextureEntry(gl, target, texture);
 
-            let en = this.textures[glId];
+            const en = this.textures[glId];
             gl.activeTexture(GL.TEXTURE0 + textureUnit);
             gl.bindTexture(en.target, en.texture);
             en.textureUnit = textureUnit;
@@ -88,9 +89,9 @@ export class Texture {
     }
 
     unbind(gl: WebGLRenderingContext) {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (hasval(this.textures[glId])) {
-            let en = this.textures[glId];
+            const en = this.textures[glId];
             gl.activeTexture(GL.TEXTURE0 + en.textureUnit);
             gl.bindTexture(en.target, null);
             en.textureUnit = -1;
@@ -99,9 +100,9 @@ export class Texture {
 
     dispose() {
         // XXX: Not sure this actually works ... may have to make each gl current or something
-        for (let glid in this.textures) {
+        for (const glid in this.textures) {
             if (this.textures.hasOwnProperty(glid)) {
-                let en = this.textures[glid];
+                const en = this.textures[glid];
                 en.gl.deleteTexture(en.texture);
             }
         }
@@ -110,9 +111,7 @@ export class Texture {
 }
 
 
-export interface ImageDrawer {
-    (context: CanvasRenderingContext2D): void;
-}
+export type ImageDrawer = (context: CanvasRenderingContext2D) => void;
 
 export class FloatDataTexture2D extends Texture {
     private _w: number;
@@ -155,7 +154,7 @@ export class Texture2D extends Texture {
     get h(): number { return this._h; }
 
     constructor(w: number, h: number, minFilter: number, magFilter: number, draw: ImageDrawer) {
-        let canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         draw(canvas.getContext('2d'));
@@ -278,11 +277,11 @@ export class TextureRenderer {
     }
 
     draw(gl: WebGLRenderingContext, texture: Texture2D, xFrac: number, yFrac: number, options?: TextureDrawOptions) {
-        let xAnchor = (hasval(options) && hasval(options.xAnchor) ? options.xAnchor : 0.5);
-        let yAnchor = (hasval(options) && hasval(options.yAnchor) ? options.yAnchor : 0.5);
-        let rotation_CCWRAD = (hasval(options) && hasval(options.rotation_CCWRAD) ? options.rotation_CCWRAD : 0);
-        let width = (hasval(options) && hasval(options.width) ? options.width : texture.w);
-        let height = (hasval(options) && hasval(options.height) ? options.height : texture.h);
+        const xAnchor = (hasval(options) && hasval(options.xAnchor) ? options.xAnchor : 0.5);
+        const yAnchor = (hasval(options) && hasval(options.yAnchor) ? options.yAnchor : 0.5);
+        const rotation_CCWRAD = (hasval(options) && hasval(options.rotation_CCWRAD) ? options.rotation_CCWRAD : 0);
+        const width = (hasval(options) && hasval(options.width) ? options.width : texture.w);
+        const height = (hasval(options) && hasval(options.height) ? options.height : texture.h);
 
         this.u_XyFrac.setData(gl, nearestPixel(xFrac, this.wViewport, xAnchor, texture.w), nearestPixel(yFrac, this.hViewport, yAnchor, texture.h));
         this.u_Anchor.setData(gl, xAnchor, yAnchor);

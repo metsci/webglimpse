@@ -91,7 +91,7 @@ export function newInsetLayout(insets: Insets): Layout {
                 parentPrefSize.h = insets.top + insets.bottom;
             }
             else if (children.length === 1) {
-                let childPrefSize = children[0].prefSize;
+                const childPrefSize = children[0].prefSize;
                 parentPrefSize.w = (hasval(childPrefSize.w) ? childPrefSize.w + insets.left + insets.right : null);
                 parentPrefSize.h = (hasval(childPrefSize.h) ? childPrefSize.h + insets.top + insets.bottom : null);
             }
@@ -101,7 +101,7 @@ export function newInsetLayout(insets: Insets): Layout {
         },
         updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
             if (children.length === 1) {
-                let childViewport = children[0].viewport;
+                const childViewport = children[0].viewport;
                 childViewport.setEdges(parentViewport.iStart + insets.left,
                     parentViewport.iEnd - insets.right,
                     parentViewport.jStart + insets.bottom,
@@ -116,7 +116,7 @@ export function newInsetLayout(insets: Insets): Layout {
 
 
 export function newInsetPane(pane: Pane, insets: Insets, bgColor: Color = null, consumeInputEvents: boolean = true): Pane {
-    let insetPane = new Pane(newInsetLayout(insets), consumeInputEvents);
+    const insetPane = new Pane(newInsetLayout(insets), consumeInputEvents);
     if (hasval(bgColor)) {
         insetPane.addPainter(newBackgroundPainter(bgColor));
     }

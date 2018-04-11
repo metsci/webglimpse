@@ -38,8 +38,9 @@ export function indexOf(vs: number[], x: number): number {
 
     while (a <= b) {
         // Bitwise-or-zero truncates to integer
-        let pivot = ((a + b) / 2) | 0;
-        let vPivot = vs[pivot];
+        // tslint:disable-next-line:no-bitwise
+        const pivot = ((a + b) / 2) | 0;
+        const vPivot = vs[pivot];
 
         if (vPivot < x) {
             a = pivot + 1;
@@ -59,20 +60,26 @@ export function indexOf(vs: number[], x: number): number {
 
 
 export function indexNearest(vs: number[], x: number): number {
-    let i = indexOf(vs, x);
+    const i = indexOf(vs, x);
 
     // Exact value found
-    if (i >= 0) return i;
+    if (i >= 0) {
+        return i;
+    }
 
     // Find the closer of the adjacent values
-    let iAfter = -i - 1;
-    let iBefore = iAfter - 1;
+    const iAfter = -i - 1;
+    const iBefore = iAfter - 1;
 
-    if (iAfter >= vs.length) return iBefore;
-    if (iBefore < 0) return iAfter;
+    if (iAfter >= vs.length) {
+        return iBefore;
+    }
+    if (iBefore < 0) {
+        return iAfter;
+    }
 
-    let diffAfter = vs[iAfter] - x;
-    let diffBefore = x - vs[iBefore];
+    const diffAfter = vs[iAfter] - x;
+    const diffBefore = x - vs[iBefore];
 
     return (diffAfter <= diffBefore ? iAfter : iBefore);
 }
@@ -80,15 +87,19 @@ export function indexNearest(vs: number[], x: number): number {
 
 
 export function indexAfter(vs: number[], x: number): number {
-    let i = indexOf(vs, x);
+    const i = indexOf(vs, x);
 
     // Exact value not found
-    if (i < 0) return (-i - 1);
+    if (i < 0) {
+        return (-i - 1);
+    }
 
     // If the exact value was found, find the value's last occurrence
-    let n = vs.length;
+    const n = vs.length;
     for (let j = i + 1; j < n; j++) {
-        if (vs[j] > x) return j;
+        if (vs[j] > x) {
+            return j;
+        }
     }
     return n;
 }
@@ -96,15 +107,19 @@ export function indexAfter(vs: number[], x: number): number {
 
 
 export function indexAtOrAfter(vs: number[], x: number): number {
-    let i = indexOf(vs, x);
+    const i = indexOf(vs, x);
 
     // Exact value not found
-    if (i < 0) return (-i - 1);
+    if (i < 0) {
+        return (-i - 1);
+    }
 
     // If the exact value was found, find the value's first occurrence
-    let n = vs.length;
+    const n = vs.length;
     for (let j = i; j > 0; j--) {
-        if (vs[j - 1] < x) return j;
+        if (vs[j - 1] < x) {
+            return j;
+        }
     }
     return 0;
 }

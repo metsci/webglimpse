@@ -41,20 +41,26 @@ export function newTimelineLayout(axisHeight: number): Layout {
             let bottomAxis: LayoutEntry = null;
             let center: LayoutEntry = null;
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 switch (child.layoutArg) {
                     case Side.TOP:
-                        if (hasval(topAxis)) throw new Error('Timeline-layout can have at most one top-axis pane');
+                        if (hasval(topAxis)) {
+                            throw new Error('Timeline-layout can have at most one top-axis pane');
+                        }
                         topAxis = child;
                         break;
 
                     case Side.BOTTOM:
-                        if (hasval(bottomAxis)) throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        if (hasval(bottomAxis)) {
+                            throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        }
                         bottomAxis = child;
                         break;
 
                     default:
-                        if (hasval(center)) throw new Error('Timeline-layout can have at most one center pane');
+                        if (hasval(center)) {
+                            throw new Error('Timeline-layout can have at most one center pane');
+                        }
                         center = child;
                         break;
                 }
@@ -88,20 +94,26 @@ export function newTimelineLayout(axisHeight: number): Layout {
             let bottomAxis: LayoutEntry = null;
             let center: LayoutEntry = null;
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 switch (child.layoutArg) {
                     case Side.TOP:
-                        if (hasval(topAxis)) throw new Error('Timeline-layout can have at most one top-axis pane');
+                        if (hasval(topAxis)) {
+                            throw new Error('Timeline-layout can have at most one top-axis pane');
+                        }
                         topAxis = child;
                         break;
 
                     case Side.BOTTOM:
-                        if (hasval(bottomAxis)) throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        if (hasval(bottomAxis)) {
+                            throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        }
                         bottomAxis = child;
                         break;
 
                     default:
-                        if (hasval(center)) throw new Error('Timeline-layout can have at most one center pane');
+                        if (hasval(center)) {
+                            throw new Error('Timeline-layout can have at most one center pane');
+                        }
                         center = child;
                         break;
                 }
@@ -112,13 +124,13 @@ export function newTimelineLayout(axisHeight: number): Layout {
             }
 
             if (hasval(bottomAxis)) {
-                let jBottomMax = (hasval(topAxis) ? topAxis.viewport.j : parentViewport.jEnd) - axisHeight;
+                const jBottomMax = (hasval(topAxis) ? topAxis.viewport.j : parentViewport.jEnd) - axisHeight;
                 bottomAxis.viewport.setRect(parentViewport.i, Math.min(jBottomMax, parentViewport.j), parentViewport.w, axisHeight);
             }
 
             if (hasval(center)) {
-                let jCenterEnd = (hasval(topAxis) ? topAxis.viewport.jStart : parentViewport.jEnd);
-                let jCenterStart = (hasval(bottomAxis) ? bottomAxis.viewport.jEnd : parentViewport.jStart);
+                const jCenterEnd = (hasval(topAxis) ? topAxis.viewport.jStart : parentViewport.jEnd);
+                const jCenterStart = (hasval(bottomAxis) ? bottomAxis.viewport.jEnd : parentViewport.jStart);
                 center.viewport.setEdges(parentViewport.iStart, parentViewport.iEnd, jCenterStart, jCenterEnd);
             }
         }

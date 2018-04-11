@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import { Color, darker } from '../color';
-import { Drawable, Painter, Pane, PointerEvent, Mask2D, yFrac, xFrac, isLeftMouseDown, Layout } from '../core';
+import { Drawable, Painter, Pane, PointerEvent, Mask2D, isLeftMouseDown, Layout } from '../core';
 import { TimeAxis1D } from './time_axis';
 import { TimelineLaneArray, TimelineLane, effectiveEdges_PMILLIS } from './timeline_lanes';
 import { TimelineUi } from './timeline_ui';
@@ -57,9 +57,7 @@ export interface TimelineEventsPainterOptions {
 
 
 
-export interface TimelineEventsPainterFactory {
-    (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter;
-}
+export type TimelineEventsPainterFactory = (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) => Painter;
 
 
 
@@ -77,42 +75,42 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
 
     // Pane Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, row: TimelineRowModel, ui: TimelineUi, options: TimelineRowPaneOptions): Pane {
-        let rowTopPadding = (hasval(eventsRowOpts) && hasval(eventsRowOpts.rowTopPadding) ? eventsRowOpts.rowTopPadding : 6);
-        let rowBottomPadding = (hasval(eventsRowOpts) && hasval(eventsRowOpts.rowBottomPadding) ? eventsRowOpts.rowBottomPadding : 6);
-        let laneHeight = (hasval(eventsRowOpts) && hasval(eventsRowOpts.laneHeight) ? eventsRowOpts.laneHeight : 33);
-        let painterFactories = (hasval(eventsRowOpts) && hasval(eventsRowOpts.painterFactories) ? eventsRowOpts.painterFactories : []);
-        let allowMultipleLanes = (hasval(eventsRowOpts) && hasval(eventsRowOpts.allowMultipleLanes) ? eventsRowOpts.allowMultipleLanes : true);
+        const rowTopPadding = (hasval(eventsRowOpts) && hasval(eventsRowOpts.rowTopPadding) ? eventsRowOpts.rowTopPadding : 6);
+        const rowBottomPadding = (hasval(eventsRowOpts) && hasval(eventsRowOpts.rowBottomPadding) ? eventsRowOpts.rowBottomPadding : 6);
+        const laneHeight = (hasval(eventsRowOpts) && hasval(eventsRowOpts.laneHeight) ? eventsRowOpts.laneHeight : 33);
+        const painterFactories = (hasval(eventsRowOpts) && hasval(eventsRowOpts.painterFactories) ? eventsRowOpts.painterFactories : []);
+        const allowMultipleLanes = (hasval(eventsRowOpts) && hasval(eventsRowOpts.allowMultipleLanes) ? eventsRowOpts.allowMultipleLanes : true);
 
-        let timelineFont = options.timelineFont;
-        let timelineFgColor = options.timelineFgColor;
-        let draggableEdgeWidth = options.draggableEdgeWidth;
-        let snapToDistance = options.snapToDistance;
+        const timelineFont = options.timelineFont;
+        const timelineFgColor = options.timelineFgColor;
+        const draggableEdgeWidth = options.draggableEdgeWidth;
+        const snapToDistance = options.snapToDistance;
 
-        let rowUi = ui.rowUi(row.rowGuid);
-        let input = ui.input;
-        let selection = ui.selection;
+        const rowUi = ui.rowUi(row.rowGuid);
+        const input = ui.input;
+        const selection = ui.selection;
 
-        let lanes = new TimelineLaneArray(model, row, ui, allowMultipleLanes);
+        const lanes = new TimelineLaneArray(model, row, ui, allowMultipleLanes);
 
-        let timeAtCoords_PMILLIS = function (viewport: BoundsUnmodifiable, i: number): number {
+        const timeAtCoords_PMILLIS = function (viewport: BoundsUnmodifiable, i: number): number {
             return timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
         };
 
-        let timeAtPointer_PMILLIS = function (ev: PointerEvent): number {
+        const timeAtPointer_PMILLIS = function (ev: PointerEvent): number {
             return timeAtCoords_PMILLIS(ev.paneViewport, ev.i);
         };
 
-        let eventAtCoords = function (viewport: BoundsUnmodifiable, i: number, j: number): TimelineEventModel {
-            let laneNum = Math.floor((viewport.jEnd - j - rowTopPadding) / laneHeight);
-            let time_PMILLIS = timeAtCoords_PMILLIS(viewport, i);
+        const eventAtCoords = function (viewport: BoundsUnmodifiable, i: number, j: number): TimelineEventModel {
+            const laneNum = Math.floor((viewport.jEnd - j - rowTopPadding) / laneHeight);
+            const time_PMILLIS = timeAtCoords_PMILLIS(viewport, i);
             return lanes.eventAt(laneNum, time_PMILLIS);
         };
 
-        let eventAtPointer = function (ev: PointerEvent): TimelineEventModel {
+        const eventAtPointer = function (ev: PointerEvent): TimelineEventModel {
             return eventAtCoords(ev.paneViewport, ev.i, ev.j);
         };
 
-        let isInsideAnEvent: Mask2D = function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
+        const isInsideAnEvent: Mask2D = function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
             return hasval(eventAtCoords(viewport, i, j));
         };
 
@@ -120,24 +118,24 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         // Create pane
         //
 
-        let layout = <Layout>{
+        const layout = <Layout>{
             updatePrefSize: <Layout>function (parentPrefSize: Size): void {
                 parentPrefSize.h = rowTopPadding + rowBottomPadding + Math.max(1, lanes.length) * laneHeight;
                 parentPrefSize.w = null;
             }
         };
-        let rowContentPane = new Pane(layout, true, isInsideAnEvent);
+        const rowContentPane = new Pane(layout, true, isInsideAnEvent);
 
         rowUi.addPane('content', rowContentPane);
 
-        let painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding, laneHeight: laneHeight };
+        const painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding, laneHeight: laneHeight };
         for (let n = 0; n < painterFactories.length; n++) {
-            let createPainter = painterFactories[n];
+            const createPainter = painterFactories[n];
             rowContentPane.addPainter(createPainter(drawable, timeAxis, lanes, ui, painterOptions));
         }
 
 
-        let redraw = function () {
+        const redraw = function () {
             drawable.redraw();
         };
 
@@ -145,15 +143,15 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         row.eventGuids.valueMoved.on(redraw);
         row.eventGuids.valueRemoved.on(redraw);
 
-        let watchEventAttrs = function (eventGuid: string) {
+        const watchEventAttrs = function (eventGuid: string) {
             model.event(eventGuid).attrsChanged.on(redraw);
         };
         row.eventGuids.forEach(watchEventAttrs);
         row.eventGuids.valueAdded.on(watchEventAttrs);
 
-        let removeRedraw = function (eventGuid: string) {
+        const removeRedraw = function (eventGuid: string) {
             model.event(eventGuid).attrsChanged.off(redraw);
-        }
+        };
         row.eventGuids.valueRemoved.on(removeRedraw);
 
 
@@ -188,9 +186,9 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
             recentMouseMove = null;
         });
 
-        let uiMillisPerPxChanged = function () {
+        const uiMillisPerPxChanged = function () {
             if (!eventDragMode && recentMouseMove != null) {
-                let ev = recentMouseMove;
+                const ev = recentMouseMove;
                 input.timeHover.fire(timeAtPointer_PMILLIS(ev), ev);
                 input.eventHover.fire(eventAtPointer(ev), ev);
             }
@@ -222,7 +220,7 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
 
 
         // Event-edges are draggable for events at least this wide
-        let minEventWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+        const minEventWidthForEdgeDraggability = 3 * draggableEdgeWidth;
 
         // When dragging an event-edge, the event cannot be made narrower than this
         //
@@ -230,7 +228,7 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         // cover floating-point precision loss -- so a user can't accidentally make
         // an event so narrow that it can't easily be widened again.
         //
-        let minEventWidthWhenDraggingEdge = minEventWidthForEdgeDraggability + 1;
+        const minEventWidthWhenDraggingEdge = minEventWidthForEdgeDraggability + 1;
 
 
         function allUserEditable(events: TimelineEventModel[]): boolean {
@@ -242,29 +240,29 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
             return true;
         }
 
-        function chooseEventDragMode(ui: TimelineUi, mouseTime_PMILLIS: number, eventDragEvents: TimelineEventModel[]): string {
-            if (eventDragEvents.length === 0) {
+        function chooseEventDragMode(timelineUi: TimelineUi, mouseTime_PMILLIS: number, timelineEventDragEvents: TimelineEventModel[]): string {
+            if (timelineEventDragEvents.length === 0) {
                 // If no events are selected, then we don't have any to drag
                 return null;
             }
-            else if (!allUserEditable(eventDragEvents)) {
+            else if (!allUserEditable(timelineEventDragEvents)) {
                 // If any selected event is not user-editable, don't allow editing
                 return 'undraggable';
             }
-            else if (eventDragEvents.length > 1) {
+            else if (timelineEventDragEvents.length > 1) {
                 // If more than one event is selected, don't allow edge dragging
                 return 'center';
             }
-            else if (eventDragEvents.length === 1) {
-                let event = eventDragEvents[0];
-                let pxPerMilli = 1 / ui.millisPerPx.value;
-                let eventWidth = (event.end_PMILLIS - event.start_PMILLIS) * pxPerMilli;
+            else if (timelineEventDragEvents.length === 1) {
+                const event = timelineEventDragEvents[0];
+                const pxPerMilli = 1 / timelineUi.millisPerPx.value;
+                const eventWidth = (event.end_PMILLIS - event.start_PMILLIS) * pxPerMilli;
                 if (eventWidth < minEventWidthForEdgeDraggability) {
                     // If event isn't very wide, don't try to allow edge dragging
                     return 'center';
                 }
                 else {
-                    let mouseOffset = (mouseTime_PMILLIS - event.start_PMILLIS) * pxPerMilli;
+                    const mouseOffset = (mouseTime_PMILLIS - event.start_PMILLIS) * pxPerMilli;
                     if (mouseOffset < draggableEdgeWidth) {
                         // If mouse is near the left edge, drag the event's start-time
                         return 'start';
@@ -285,19 +283,19 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
             }
         }
 
-        let updateCursor = function () {
+        const updateCursor = function () {
             if (!eventDragMode) {
 
-                let mouseCursors = { 'center': 'default', 'start': 'w-resize', 'end': 'e-resize', 'undraggable': 'default' };
-                let hoveredTime_PMILLIS = selection.hoveredTime_PMILLIS.value;
+                const mouseCursors = { 'center': 'default', 'start': 'w-resize', 'end': 'e-resize', 'undraggable': 'default' };
+                const hoveredTime_PMILLIS = selection.hoveredTime_PMILLIS.value;
 
                 // if a multi-selection has been made, update the cursor based on all the events in the multi-selection
                 if (selection.selectedEvents.length > 1) {
                     rowContentPane.mouseCursor = mouseCursors[chooseEventDragMode(ui, hoveredTime_PMILLIS, selection.selectedEvents.toArray())];
                 }
                 else {
-                    let hoveredEvent = selection.hoveredEvent.value;
-                    let hoveredEvents = (hasval(hoveredEvent) ? [hoveredEvent] : []);
+                    const hoveredEvent = selection.hoveredEvent.value;
+                    const hoveredEvents = (hasval(hoveredEvent) ? [hoveredEvent] : []);
                     rowContentPane.mouseCursor = mouseCursors[chooseEventDragMode(ui, hoveredTime_PMILLIS, hoveredEvents)];
                 }
             }
@@ -308,17 +306,17 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
 
         rowContentPane.mouseDown.on(function (ev: PointerEvent) {
             if (isLeftMouseDown(ev.mouseEvent)) {
-                let eventDragEventsSet = selection.selectedEvents;
+                const eventDragEventsSet = selection.selectedEvents;
                 eventDragEvents = eventDragEventsSet.toArray();
                 eventDragMode = chooseEventDragMode(ui, timeAtPointer_PMILLIS(ev), eventDragEvents);
 
                 eventDragSnapTimes_PMILLIS = new Array();
-                let numSnapTimes = 0;
-                let allEventGuids = row.eventGuids;
+                const numSnapTimes = 0;
+                const allEventGuids = row.eventGuids;
                 for (let n = 0; n < allEventGuids.length; n++) {
-                    let eventGuid = allEventGuids.valueAt(n);
+                    const eventGuid = allEventGuids.valueAt(n);
                     if (!eventDragEventsSet.hasId(eventGuid)) {
-                        let event = model.event(eventGuid);
+                        const event = model.event(eventGuid);
                         eventDragSnapTimes_PMILLIS.push(event.start_PMILLIS);
                         eventDragSnapTimes_PMILLIS.push(event.end_PMILLIS);
                     }
@@ -328,9 +326,9 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         });
 
         function findSnapShift_MILLIS(t_PMILLIS: number, maxShift_MILLIS: number): number {
-            let i = indexNearest(eventDragSnapTimes_PMILLIS, t_PMILLIS);
+            const i = indexNearest(eventDragSnapTimes_PMILLIS, t_PMILLIS);
             if (i >= 0) {
-                let shift_MILLIS = eventDragSnapTimes_PMILLIS[i] - t_PMILLIS;
+                const shift_MILLIS = eventDragSnapTimes_PMILLIS[i] - t_PMILLIS;
                 if (Math.abs(shift_MILLIS) <= maxShift_MILLIS) {
                     return shift_MILLIS;
                 }
@@ -344,7 +342,7 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
 
         let eventDragPointer_PMILLIS: number = null;
 
-        let updateEventDragPointer = function (ev: PointerEvent) {
+        const updateEventDragPointer = function (ev: PointerEvent) {
             if (isLeftMouseDown(ev.mouseEvent) && eventDragMode) {
                 eventDragPointer_PMILLIS = timeAtPointer_PMILLIS(ev);
             }
@@ -356,10 +354,10 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         // Dragging event-center
         //
 
-        let grabEventCenter = function () {
+        const grabEventCenter = function () {
             if (eventDragMode === 'center') {
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
+                    const event = eventDragEvents[n];
                     eventDragOffsets_MILLIS[event.eventGuid] = eventDragPointer_PMILLIS - event.start_PMILLIS;
                 }
 
@@ -367,13 +365,13 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 // but once we can tell that it's actually a drag, change to a drag cursor
                 //
 
-                let beginDrag = function () {
+                const beginDrag = function () {
                     rowContentPane.mouseCursor = 'move';
                 };
                 rowContentPane.mouseMove.on(beginDrag);
-                let pendingBeginDrag = setTimeout(beginDrag, 300);
+                const pendingBeginDrag = setTimeout(beginDrag, 300);
 
-                let endDrag = function () {
+                const endDrag = function () {
                     clearTimeout(pendingBeginDrag);
                     rowContentPane.mouseMove.off(beginDrag);
                     rowContentPane.mouseUp.off(endDrag);
@@ -383,24 +381,24 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         };
         rowContentPane.mouseDown.on(grabEventCenter);
 
-        let dragEventCenter = function () {
+        const dragEventCenter = function () {
             if (eventDragMode === 'center') {
-                let maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
+                const maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
 
                 let snapShift_MILLIS: number = null;
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newStart_PMILLIS = (eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid]);
-                    let newEnd_PMILLIS = event.end_PMILLIS + (newStart_PMILLIS - event.start_PMILLIS);
+                    const event = eventDragEvents[n];
+                    const newStart_PMILLIS = (eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid]);
+                    const newEnd_PMILLIS = event.end_PMILLIS + (newStart_PMILLIS - event.start_PMILLIS);
 
-                    let eventStartSnapShift_MILLIS = findSnapShift_MILLIS(newStart_PMILLIS, maxSnapShift_MILLIS);
+                    const eventStartSnapShift_MILLIS = findSnapShift_MILLIS(newStart_PMILLIS, maxSnapShift_MILLIS);
                     if (hasval(eventStartSnapShift_MILLIS)) {
                         if (!hasval(snapShift_MILLIS) || Math.abs(eventStartSnapShift_MILLIS) < Math.abs(snapShift_MILLIS)) {
                             snapShift_MILLIS = eventStartSnapShift_MILLIS;
                         }
                     }
 
-                    let eventEndSnapShift_MILLIS = findSnapShift_MILLIS(newEnd_PMILLIS, maxSnapShift_MILLIS);
+                    const eventEndSnapShift_MILLIS = findSnapShift_MILLIS(newEnd_PMILLIS, maxSnapShift_MILLIS);
                     if (hasval(eventEndSnapShift_MILLIS)) {
                         if (!hasval(snapShift_MILLIS) || Math.abs(eventEndSnapShift_MILLIS) < Math.abs(snapShift_MILLIS)) {
                             snapShift_MILLIS = eventEndSnapShift_MILLIS;
@@ -412,9 +410,9 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 }
 
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
-                    let newEnd_PMILLIS = event.end_PMILLIS + (newStart_PMILLIS - event.start_PMILLIS);
+                    const event = eventDragEvents[n];
+                    const newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
+                    const newEnd_PMILLIS = event.end_PMILLIS + (newStart_PMILLIS - event.start_PMILLIS);
                     event.setInterval(newStart_PMILLIS, newEnd_PMILLIS);
                 }
             }
@@ -425,27 +423,27 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         // Dragging event-start
         //
 
-        let grabEventStart = function () {
+        const grabEventStart = function () {
             if (eventDragMode === 'start') {
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
+                    const event = eventDragEvents[n];
                     eventDragOffsets_MILLIS[event.eventGuid] = eventDragPointer_PMILLIS - event.start_PMILLIS;
                 }
             }
         };
         rowContentPane.mouseDown.on(grabEventStart);
 
-        let dragEventStart = function () {
+        const dragEventStart = function () {
             if (eventDragMode === 'start') {
-                let wMin_MILLIS = minEventWidthWhenDraggingEdge * timeAxis.vSize / rowContentPane.viewport.w;
-                let maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
+                const wMin_MILLIS = minEventWidthWhenDraggingEdge * timeAxis.vSize / rowContentPane.viewport.w;
+                const maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
 
                 let snapShift_MILLIS: number = null;
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid];
+                    const event = eventDragEvents[n];
+                    const newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid];
 
-                    let eventSnapShift_MILLIS = findSnapShift_MILLIS(newStart_PMILLIS, maxSnapShift_MILLIS);
+                    const eventSnapShift_MILLIS = findSnapShift_MILLIS(newStart_PMILLIS, maxSnapShift_MILLIS);
                     if (hasval(eventSnapShift_MILLIS)) {
                         if (!hasval(snapShift_MILLIS) || Math.abs(eventSnapShift_MILLIS) < Math.abs(snapShift_MILLIS)) {
                             snapShift_MILLIS = eventSnapShift_MILLIS;
@@ -457,8 +455,8 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 }
 
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
+                    const event = eventDragEvents[n];
+                    const newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
                     event.start_PMILLIS = Math.min(event.end_PMILLIS - wMin_MILLIS, newStart_PMILLIS);
                 }
             }
@@ -470,27 +468,27 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
         // Dragging event-end
         //
 
-        let grabEventEnd = function () {
+        const grabEventEnd = function () {
             if (eventDragMode === 'end') {
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
+                    const event = eventDragEvents[n];
                     eventDragOffsets_MILLIS[event.eventGuid] = eventDragPointer_PMILLIS - event.end_PMILLIS;
                 }
             }
         };
         rowContentPane.mouseDown.on(grabEventEnd);
 
-        let dragEventEnd = function () {
+        const dragEventEnd = function () {
             if (eventDragMode === 'end') {
-                let wMin_MILLIS = minEventWidthWhenDraggingEdge * timeAxis.vSize / rowContentPane.viewport.w;
-                let maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
+                const wMin_MILLIS = minEventWidthWhenDraggingEdge * timeAxis.vSize / rowContentPane.viewport.w;
+                const maxSnapShift_MILLIS = snapToDistance * (timeAxis.tSize_MILLIS / rowContentPane.viewport.w);
 
                 let snapShift_MILLIS: number = null;
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newEnd_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid];
+                    const event = eventDragEvents[n];
+                    const newEnd_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid];
 
-                    let eventSnapShift_MILLIS = findSnapShift_MILLIS(newEnd_PMILLIS, maxSnapShift_MILLIS);
+                    const eventSnapShift_MILLIS = findSnapShift_MILLIS(newEnd_PMILLIS, maxSnapShift_MILLIS);
                     if (hasval(eventSnapShift_MILLIS)) {
                         if (!hasval(snapShift_MILLIS) || Math.abs(eventSnapShift_MILLIS) < Math.abs(snapShift_MILLIS)) {
                             snapShift_MILLIS = eventSnapShift_MILLIS;
@@ -502,8 +500,8 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 }
 
                 for (let n = 0; n < eventDragEvents.length; n++) {
-                    let event = eventDragEvents[n];
-                    let newEnd_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
+                    const event = eventDragEvents[n];
+                    const newEnd_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
                     event.end_PMILLIS = Math.max(event.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS);
                 }
             }
@@ -559,14 +557,14 @@ export interface TimelineEventLimitsPainterOptions {
 
 function eventLimitsPainterHelper(limitsOpts: TimelineEventLimitsPainterOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
 
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let lineColor = (hasval(limitsOpts) && hasval(limitsOpts.lineColor) ? limitsOpts.lineColor : new Color(1, 0, 0, 1));
-    let lineThickness = (hasval(limitsOpts) && hasval(limitsOpts.lineThickness) ? limitsOpts.lineThickness : 2.5);
+    const lineColor = (hasval(limitsOpts) && hasval(limitsOpts.lineColor) ? limitsOpts.lineColor : new Color(1, 0, 0, 1));
+    const lineThickness = (hasval(limitsOpts) && hasval(limitsOpts.lineThickness) ? limitsOpts.lineThickness : 2.5);
 
-    let xyFrac_vColor_VERTSHADER = concatLines(
+    const xyFrac_vColor_VERTSHADER = concatLines(
         '                                                                ',
         '  attribute vec2 a_XyFrac;                                      ',
         '  attribute vec4 a_Color;                                       ',
@@ -580,15 +578,15 @@ function eventLimitsPainterHelper(limitsOpts: TimelineEventLimitsPainterOptions,
         '                                                                '
     );
 
-    let program = new Program(xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let a_Color = new Attribute(program, 'a_Color');
+    const program = new Program(xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const a_Color = new Attribute(program, 'a_Color');
 
     let xys = new Float32Array(0);
-    let xysBuffer = newDynamicBuffer();
+    const xysBuffer = newDynamicBuffer();
 
     let rgbas = new Float32Array(0);
-    let rgbasBuffer = newDynamicBuffer();
+    const rgbasBuffer = newDynamicBuffer();
 
     return {
         paint(indexXys: number, indexRgbas: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -610,26 +608,26 @@ function eventLimitsPainterHelper(limitsOpts: TimelineEventLimitsPainterOptions,
             }
         },
         ensureCapacity: function (eventCount: number) {
-            let numVertices = (6 * 3 /* triangles */ * eventCount);
+            const numVertices = (6 * 3 /* triangles */ * eventCount);
             xys = ensureCapacityFloat32(xys, 2 * numVertices);
             rgbas = ensureCapacityFloat32(rgbas, 4 * numVertices);
         },
         fillEvent: function (laneIndex: number, eventIndex: number, indexXys: number, indexRgbas: number, viewport: BoundsUnmodifiable): { indexXys: number; indexRgbas: number } {
 
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
 
-            let wLine = lineThickness / viewport.w;
-            let hLine = lineThickness / viewport.h;
+            const wLine = lineThickness / viewport.w;
+            const hLine = lineThickness / viewport.h;
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight;
-            let yTop = (viewport.h - jTop) / viewport.h;
-            let jBottom = rowTopPadding + (laneIndex + 1) * laneHeight;
-            let yBottom = (viewport.h - jBottom) / viewport.h;
-            let yMid = (yTop + yBottom) / 2;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight;
+            const yTop = (viewport.h - jTop) / viewport.h;
+            const jBottom = rowTopPadding + (laneIndex + 1) * laneHeight;
+            const yBottom = (viewport.h - jBottom) / viewport.h;
+            const yMid = (yTop + yBottom) / 2;
 
-            let xLeft = hasval(event.startLimit_PMILLIS) ? timeAxis.tFrac(event.startLimit_PMILLIS) : 0;
-            let xRight = hasval(event.endLimit_PMILLIS) ? timeAxis.tFrac(event.endLimit_PMILLIS) : 1;
+            const xLeft = hasval(event.startLimit_PMILLIS) ? timeAxis.tFrac(event.startLimit_PMILLIS) : 0;
+            const xRight = hasval(event.endLimit_PMILLIS) ? timeAxis.tFrac(event.endLimit_PMILLIS) : 1;
 
             indexXys = putQuadXys(xys, indexXys, xLeft, xRight, yMid - hLine / 2, yMid + hLine / 2);
             indexXys = putQuadXys(xys, indexXys, xLeft, xLeft - wLine, yTop, yBottom);
@@ -646,12 +644,12 @@ export function newEventLimitsPainterFactory(limitOpts?: TimelineEventLimitsPain
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventLimitsPainterHelper(limitOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventLimitsPainterHelper(limitOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
-            let selectedEvents: OrderedSet<TimelineEventModel> = ui.selection.selectedEvents;
+            const selectedEvents: OrderedSet<TimelineEventModel> = ui.selection.selectedEvents;
 
             // XXX Instead of estimating the number of events we will need to draw ahead of time
             // XXX (difficult because selected events may be present in multiple lanes, so
@@ -663,13 +661,13 @@ export function newEventLimitsPainterFactory(limitOpts?: TimelineEventLimitsPain
             let indexRgbas = 0;
 
             for (let l = 0; l < lanes.length; l++) {
-                let lane = lanes.lane(l);
+                const lane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
+                    const event = lane.event(e);
 
                     // check whether the event is selected and has limits defined
                     if (selectedEvents.hasId(event.eventGuid) && (hasval(event.startLimit_PMILLIS) || hasval(event.endLimit_PMILLIS))) {
-                        let indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport);
+                        const indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport);
                         indexXys = indexes.indexXys;
                         indexRgbas = indexes.indexRgbas;
                     }
@@ -719,26 +717,26 @@ export enum FillPattern {
 }
 
 function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
-    let bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
-    let borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
-    let cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
-    let defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
-    let defaultColorSecondary = new Color(1, 1, 1, 1);
-    let minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
+    const topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
+    const bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
+    const borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
+    const cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
+    const defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
+    const defaultColorSecondary = new Color(1, 1, 1, 1);
+    const minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
 
-    let stripeWidth = (hasval(barOpts) && hasval(barOpts.stripeWidth) ? barOpts.stripeWidth : 5);
-    let stripeSecondaryWidth = (hasval(barOpts) && hasval(barOpts.stripeSecondaryWidth) ? barOpts.stripeSecondaryWidth : 5);
-    let stripeSlant = (hasval(barOpts) && hasval(barOpts.stripeSlant) ? barOpts.stripeSlant : 1);
-    let featherWidth = (hasval(barOpts) && hasval(barOpts.featherWidth) ? barOpts.featherWidth : 2);
+    const stripeWidth = (hasval(barOpts) && hasval(barOpts.stripeWidth) ? barOpts.stripeWidth : 5);
+    const stripeSecondaryWidth = (hasval(barOpts) && hasval(barOpts.stripeSecondaryWidth) ? barOpts.stripeSecondaryWidth : 5);
+    const stripeSlant = (hasval(barOpts) && hasval(barOpts.stripeSlant) ? barOpts.stripeSlant : 1);
+    const featherWidth = (hasval(barOpts) && hasval(barOpts.featherWidth) ? barOpts.featherWidth : 2);
 
-    let selection = ui.selection;
+    const selection = ui.selection;
 
-    let xyFrac_vColor_VERTSHADER = concatLines(
+    const xyFrac_vColor_VERTSHADER = concatLines(
         '                                                                ',
         '  attribute vec2 a_XyFrac;                                      ',
         '  attribute vec4 a_Color;                                       ',
@@ -761,7 +759,7 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
         '                                                                '
     );
 
-    let fillPattern_FRAGSHADER = concatLines(
+    const fillPattern_FRAGSHADER = concatLines(
         ' #define PI 3.1415926535897932384626433832795                                                  ',
         '                                                                                               ',
         ' precision lowp float;                                                                         ',
@@ -848,36 +846,38 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
         '                                                                                               '
     );
 
-    let program = new Program(xyFrac_vColor_VERTSHADER, fillPattern_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let a_Color = new Attribute(program, 'a_Color');
-    let a_ColorSecondary = new Attribute(program, 'a_ColorSecondary');
-    let a_relativeXy = new Attribute(program, 'a_relativeXy');
-    let a_fillPattern = new Attribute(program, 'a_fillPattern');
+    const program = new Program(xyFrac_vColor_VERTSHADER, fillPattern_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const a_Color = new Attribute(program, 'a_Color');
+    const a_ColorSecondary = new Attribute(program, 'a_ColorSecondary');
+    const a_relativeXy = new Attribute(program, 'a_relativeXy');
+    const a_fillPattern = new Attribute(program, 'a_fillPattern');
 
-    let u_stripeWidth = new Uniform1f(program, 'u_stripeWidth');
-    let u_stripeSecondaryWidth = new Uniform1f(program, 'u_stripeSecondaryWidth');
-    let u_slant = new Uniform1f(program, 'u_slant');
-    let u_featherWidth = new Uniform1f(program, 'u_featherWidth');
+    const u_stripeWidth = new Uniform1f(program, 'u_stripeWidth');
+    const u_stripeSecondaryWidth = new Uniform1f(program, 'u_stripeSecondaryWidth');
+    const u_slant = new Uniform1f(program, 'u_slant');
+    const u_featherWidth = new Uniform1f(program, 'u_featherWidth');
 
     let xys = new Float32Array(0);
-    let xysBuffer = newDynamicBuffer();
+    const xysBuffer = newDynamicBuffer();
 
     let rgbas = new Float32Array(0);
-    let rgbasBuffer = newDynamicBuffer();
+    const rgbasBuffer = newDynamicBuffer();
 
     let rgbasSecondary = new Float32Array(0);
-    let rgbasSecondaryBuffer = newDynamicBuffer();
+    const rgbasSecondaryBuffer = newDynamicBuffer();
 
     let relativeXys = new Float32Array(0);
-    let relativeXysBuffer = newDynamicBuffer();
+    const relativeXysBuffer = newDynamicBuffer();
 
     let fillPattern = new Float32Array(0);
-    let fillPatternBuffer = newDynamicBuffer();
+    const fillPatternBuffer = newDynamicBuffer();
 
     return {
         paint(indexXys: number, indexRgbas: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable, indexRelativeXys: number, indexFillPattern: number) {
-            if (indexXys === 0 || indexRgbas === 0) return;
+            if (indexXys === 0 || indexRgbas === 0) {
+                return;
+            }
 
             gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
             gl.enable(GL.BLEND);
@@ -915,7 +915,7 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
             program.endUse(gl);
         },
         ensureCapacity: function (eventCount: number) {
-            let numVertices = (6 * (1 /*quads*/)) * eventCount;
+            const numVertices = (6 * (1 /*quads*/)) * eventCount;
             xys = ensureCapacityFloat32(xys, 2 * numVertices);
             rgbas = ensureCapacityFloat32(rgbas, 4 * numVertices);
             rgbasSecondary = ensureCapacityFloat32(rgbasSecondary, 4 * numVertices);
@@ -923,25 +923,25 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
             fillPattern = ensureCapacityFloat32(fillPattern, numVertices);
         },
         fillEvent: function (laneIndex: number, eventIndex: number, indexXys: number, indexRgbas: number, viewport: BoundsUnmodifiable, indexRelativeXys: number, indexFillPattern: number): { indexXys: number; indexRgbas: number; indexRelativeXys: number; indexFillPattern: number; } {
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
 
-            let wBorder = borderThickness / viewport.w;
-            let hBorder = borderThickness / viewport.h;
+            const wBorder = borderThickness / viewport.w;
+            const hBorder = borderThickness / viewport.h;
 
-            let _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
-            let _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
+            const _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
+            const _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
-            let yTop = (viewport.h - jTop) / viewport.h;
-            let jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
-            let yBottom = (viewport.h - jBottom) / viewport.h;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
+            const yTop = (viewport.h - jTop) / viewport.h;
+            const jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
+            const yBottom = (viewport.h - jBottom) / viewport.h;
 
-            let xLeft = timeAxis.tFrac(event.start_PMILLIS);
-            let xRight = timeAxis.tFrac(event.end_PMILLIS);
+            const xLeft = timeAxis.tFrac(event.start_PMILLIS);
+            const xRight = timeAxis.tFrac(event.end_PMILLIS);
 
-            let xWidthPixels = viewport.w * (xRight - xLeft);
-            let yHeightPixels = jTop - jBottom;
+            const xWidthPixels = viewport.w * (xRight - xLeft);
+            const yHeightPixels = jTop - jBottom;
 
             if (!(xRight < 0 || xLeft > 1) && xWidthPixels > minimumVisibleWidth) {
 
@@ -954,7 +954,7 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
                 }
                 indexXys = putQuadXys(xys, indexXys, xLeft + wBorder, xRight - wBorder, yTop - hBorder, yBottom + hBorder);
 
-                let startIndex = indexRgbas;
+                const startIndex = indexRgbas;
                 putQuadRgbas(rgbas, startIndex, fillColor);
                 indexRgbas = putQuadRgbas(rgbasSecondary, startIndex, fillColorSecondary);
 
@@ -962,7 +962,7 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
                 indexRelativeXys = putQuadXys(relativeXys, indexRelativeXys, 0.0, xWidthPixels, 0.0, yHeightPixels);
 
                 // Set the fillPatternValue per vertex of the quad
-                let fillPatternValue: number = event.fillPattern;
+                const fillPatternValue: number = event.fillPattern;
 
                 fillPattern[indexFillPattern++] = fillPatternValue;
                 fillPattern[indexFillPattern++] = fillPatternValue;
@@ -978,24 +978,24 @@ function eventStripedBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, 
 }
 
 function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
-    let bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
-    let borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
-    let cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
-    let defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
-    let defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
-    let selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
-    let minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
-    let dashLength = (hasval(barOpts) && hasval(barOpts.dashLength) ? barOpts.dashLength : 5);
-    let defaultSecondaryColor = new Color(0, 0, 0, 0);
+    const topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
+    const bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
+    const borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
+    const cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
+    const defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
+    const defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
+    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
+    const minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
+    const dashLength = (hasval(barOpts) && hasval(barOpts.dashLength) ? barOpts.dashLength : 5);
+    const defaultSecondaryColor = new Color(0, 0, 0, 0);
 
-    let selection = ui.selection;
+    const selection = ui.selection;
 
-    let dashedBorder_VERTSHADER = concatLines(
+    const dashedBorder_VERTSHADER = concatLines(
         '                                                                ',
         '  attribute vec2 a_XyFrac;                                      ',
         '  attribute vec4 a_Color;                                       ',
@@ -1015,7 +1015,7 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
         '                                                                '
     );
 
-    let varyingBorder_FRAGSHADER = concatLines(
+    const varyingBorder_FRAGSHADER = concatLines(
         '                                                                            ',
         '  precision lowp float;                                                     ',
         '  varying vec4 v_Color;                                                     ',
@@ -1044,28 +1044,30 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
         '                                                                            '
     );
 
-    let program = new Program(dashedBorder_VERTSHADER, varyingBorder_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let a_Color = new Attribute(program, 'a_Color');
-    let a_SecondaryColor = new Attribute(program, 'a_SecondaryColor');
-    let a_LengthSoFar = new Attribute(program, 'a_LengthSoFar');
-    let u_DashLength_PX = new Uniform1f(program, 'u_DashLength_PX');
+    const program = new Program(dashedBorder_VERTSHADER, varyingBorder_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const a_Color = new Attribute(program, 'a_Color');
+    const a_SecondaryColor = new Attribute(program, 'a_SecondaryColor');
+    const a_LengthSoFar = new Attribute(program, 'a_LengthSoFar');
+    const u_DashLength_PX = new Uniform1f(program, 'u_DashLength_PX');
 
     let xys = new Float32Array(0);
-    let xysBuffer = newDynamicBuffer();
+    const xysBuffer = newDynamicBuffer();
 
     let rgbas = new Float32Array(0);
-    let rgbasBuffer = newDynamicBuffer();
+    const rgbasBuffer = newDynamicBuffer();
 
     let rgbasSecondary = new Float32Array(0);
-    let rgbasSecondaryBuffer = newDynamicBuffer();
+    const rgbasSecondaryBuffer = newDynamicBuffer();
 
     let lengths = new Float32Array(0);
-    let lengthsBuffer = newDynamicBuffer();
+    const lengthsBuffer = newDynamicBuffer();
 
     return {
         paint(indexXys: number, indexRgbas: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable, indexLengthSoFar: number) {
-            if (indexXys === 0 || indexRgbas === 0) return;
+            if (indexXys === 0 || indexRgbas === 0) {
+                return;
+            }
 
             gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
             gl.enable(GL.BLEND);
@@ -1107,27 +1109,27 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
             lengths = ensureCapacityFloat32(lengths, numVertices);
         },
         fillEvent: function (laneIndex: number, eventIndex: number, indexXys: number, indexRgbas: number, viewport: BoundsUnmodifiable, indexLengthSoFar: number): { indexXys: number; indexRgbas: number; indexLengthSoFar: number } {
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
 
-            let wBorder = borderThickness / viewport.w;
-            let hBorder = borderThickness / viewport.h;
+            const wBorder = borderThickness / viewport.w;
+            const hBorder = borderThickness / viewport.h;
 
-            let _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
-            let _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
+            const _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
+            const _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
-            let yTop = (viewport.h - jTop) / viewport.h;
-            let jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
-            let yBottom = (viewport.h - jBottom) / viewport.h;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
+            const yTop = (viewport.h - jTop) / viewport.h;
+            const jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
+            const yBottom = (viewport.h - jBottom) / viewport.h;
 
-            let xLeft = timeAxis.tFrac(event.start_PMILLIS);
-            let xRight = timeAxis.tFrac(event.end_PMILLIS);
+            const xLeft = timeAxis.tFrac(event.start_PMILLIS);
+            const xRight = timeAxis.tFrac(event.end_PMILLIS);
 
-            let widthPixels = viewport.w * (xRight - xLeft);
-            let heightPixels = jBottom - jTop;  // confirmed jBottom > jTop
+            const widthPixels = viewport.w * (xRight - xLeft);
+            const heightPixels = jBottom - jTop;  // confirmed jBottom > jTop
 
-            let setLengthsVertical = function (bottomEdge: number, topEdge: number) {
+            const setLengthsVertical = function (bottomEdge: number, topEdge: number) {
                 lengths[indexLengthSoFar++] = topEdge;
                 lengths[indexLengthSoFar++] = topEdge;
                 lengths[indexLengthSoFar++] = bottomEdge;
@@ -1139,7 +1141,7 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
                 return Math.abs(bottomEdge - topEdge);
             };
 
-            let setLengthsHorizontal = function (leftEdge: number, rightEdge: number) {
+            const setLengthsHorizontal = function (leftEdge: number, rightEdge: number) {
                 lengths[indexLengthSoFar++] = leftEdge;
                 lengths[indexLengthSoFar++] = rightEdge;
                 lengths[indexLengthSoFar++] = leftEdge;
@@ -1151,17 +1153,17 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
                 return Math.abs(leftEdge - rightEdge);
             };
 
-            let setLengthsTriangle = function (length: number) {
+            const setLengthsTriangle = function (length: number) {
                 lengths[indexLengthSoFar++] = length;
                 lengths[indexLengthSoFar++] = length;
                 lengths[indexLengthSoFar++] = length;
-            }
+            };
 
             if (!(xRight < 0 || xLeft > 1) && widthPixels > minimumVisibleWidth) {
 
                 // Border
                 let borderColor = (event.borderColor || event.bgColor || defaultBorderColor);
-                let borderSecondaryColor = (event.borderSecondaryColor || defaultSecondaryColor);
+                const borderSecondaryColor = (event.borderSecondaryColor || defaultSecondaryColor);
                 if (selection.selectedEvents.hasValue(event)) {
                     borderColor = selectedBorderColor;
                 }
@@ -1272,7 +1274,7 @@ export function newEventStripedBarsPainterFactory(barOpts?: TimelineEventBarsPai
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventStripedBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventStripedBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1284,10 +1286,10 @@ export function newEventStripedBarsPainterFactory(barOpts?: TimelineEventBarsPai
             let indexFillPattern = 0;
 
             for (let l = 0; l < lanes.length; l++) {
-                let lane = lanes.lane(l);
+                const lane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
-                    let indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport, indexRelativeXys, indexFillPattern);
+                    const event = lane.event(e);
+                    const indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport, indexRelativeXys, indexFillPattern);
                     indexXys = indexes.indexXys;
                     indexRgbas = indexes.indexRgbas;
                     indexRelativeXys = indexes.indexRelativeXys;
@@ -1305,7 +1307,7 @@ export function newEventDashedBordersPainterFactory(barOpts?: TimelineEventBarsP
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventDashedBorderPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventDashedBorderPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1316,10 +1318,10 @@ export function newEventDashedBordersPainterFactory(barOpts?: TimelineEventBarsP
             let indexLengthSoFar = 0;
 
             for (let l = 0; l < lanes.length; l++) {
-                let lane = lanes.lane(l);
+                const lane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
-                    let indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport, indexLengthSoFar);
+                    const event = lane.event(e);
+                    const indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport, indexLengthSoFar);
                     indexXys = indexes.indexXys;
                     indexRgbas = indexes.indexRgbas;
                     indexLengthSoFar = indexes.indexLengthSoFar;
@@ -1341,33 +1343,33 @@ export interface TimelineEventIconsPainterOptions {
 
 function eventIconsPainterHelper(iconOpts: TimelineEventIconsPainterOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
 
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let topMargin = (hasval(iconOpts) && hasval(iconOpts.topMargin) ? iconOpts.topMargin : 1.2);
-    let bottomMargin = (hasval(iconOpts) && hasval(iconOpts.bottomMargin) ? iconOpts.bottomMargin : 1.2);
-    let vAlign = (hasval(iconOpts) && hasval(iconOpts.vAlign) ? iconOpts.vAlign : 0.5);
+    const topMargin = (hasval(iconOpts) && hasval(iconOpts.topMargin) ? iconOpts.topMargin : 1.2);
+    const bottomMargin = (hasval(iconOpts) && hasval(iconOpts.bottomMargin) ? iconOpts.bottomMargin : 1.2);
+    const vAlign = (hasval(iconOpts) && hasval(iconOpts.vAlign) ? iconOpts.vAlign : 0.5);
 
-    let textureRenderer = new TextureRenderer();
+    const textureRenderer = new TextureRenderer();
 
     return {
         textureRenderer: textureRenderer,
         paintEvent: function (laneIndex: number, eventIndex: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
-            let eventStyle = ui.eventStyle(event.styleGuid);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
+            const eventStyle = ui.eventStyle(event.styleGuid);
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight + topMargin;
-            let yFrac = (viewport.h - jTop - (1.0 - vAlign) * (laneHeight - topMargin - bottomMargin)) / viewport.h;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight + topMargin;
+            const yFrac = (viewport.h - jTop - (1.0 - vAlign) * (laneHeight - topMargin - bottomMargin)) / viewport.h;
 
             for (let n = 0; n < eventStyle.numIcons; n++) {
-                let icon = eventStyle.icon(n);
-                let iconTime_PMILLIS = event.start_PMILLIS + icon.hPos * (event.end_PMILLIS - event.start_PMILLIS);
-                let xFrac = timeAxis.tFrac(iconTime_PMILLIS);
-                let w = icon.displayWidth / viewport.w;
+                const icon = eventStyle.icon(n);
+                const iconTime_PMILLIS = event.start_PMILLIS + icon.hPos * (event.end_PMILLIS - event.start_PMILLIS);
+                const xFrac = timeAxis.tFrac(iconTime_PMILLIS);
+                const w = icon.displayWidth / viewport.w;
                 if (-w <= xFrac && xFrac <= 1 + w) {
-                    let iconTexture = ui.loadImage(icon.url, function () { drawable.redraw(); });
+                    const iconTexture = ui.loadImage(icon.url, function () { drawable.redraw(); });
                     if (iconTexture) {
                         textureRenderer.draw(gl, iconTexture, xFrac, yFrac, { xAnchor: icon.hAlign, yAnchor: vAlign, width: icon.displayWidth, height: icon.displayHeight });
                     }
@@ -1382,7 +1384,7 @@ export function newEventIconsPainterFactory(iconOpts?: TimelineEventIconsPainter
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventIconsPainterHelper(iconOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventIconsPainterHelper(iconOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1391,7 +1393,7 @@ export function newEventIconsPainterFactory(iconOpts?: TimelineEventIconsPainter
 
             helper.textureRenderer.begin(gl, viewport);
             for (let l = 0; l < lanes.length; l++) {
-                let lane = lanes.lane(l);
+                const lane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
                     helper.paintEvent(l, e, gl, viewport);
                 }
@@ -1435,7 +1437,7 @@ function calculateTextWidth(textEnabled: boolean, labelText: string, fgColor: Co
     let wText = 0;
     let textTexture;
     if (textEnabled && labelText) {
-        let textColor = hasval(fgColor) ? fgColor : textDefaultColor;
+        const textColor = hasval(fgColor) ? fgColor : textDefaultColor;
         textTexture = textTextures.value(textColor.rgbaString, labelText);
         wText = textTexture.w / viewport.w;
     }
@@ -1446,65 +1448,65 @@ function calculateTextWidth(textEnabled: boolean, labelText: string, fgColor: Co
 }
 
 function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let topMargin = (hasval(labelOpts) && hasval(labelOpts.topMargin) ? labelOpts.topMargin : 1.2);
-    let bottomMargin = (hasval(labelOpts) && hasval(labelOpts.bottomMargin) ? labelOpts.bottomMargin : 1.2);
-    let leftMargin = (hasval(labelOpts) && hasval(labelOpts.leftMargin) ? labelOpts.leftMargin : 4);
-    let rightMargin = (hasval(labelOpts) && hasval(labelOpts.rightMargin) ? labelOpts.rightMargin : 4);
-    let vAlign = (hasval(labelOpts) && hasval(labelOpts.vAlign) ? labelOpts.vAlign : 0.5);
-    let spacing = (hasval(labelOpts) && hasval(labelOpts.spacing) ? labelOpts.spacing : 3);
-    let extendBeyondBar = (hasval(labelOpts) && hasval(labelOpts.extendBeyondBar) ? labelOpts.extendBeyondBar : false);
-    let textMode = (hasval(labelOpts) && hasval(labelOpts.textMode) ? labelOpts.textMode : 'force');
+    const topMargin = (hasval(labelOpts) && hasval(labelOpts.topMargin) ? labelOpts.topMargin : 1.2);
+    const bottomMargin = (hasval(labelOpts) && hasval(labelOpts.bottomMargin) ? labelOpts.bottomMargin : 1.2);
+    const leftMargin = (hasval(labelOpts) && hasval(labelOpts.leftMargin) ? labelOpts.leftMargin : 4);
+    const rightMargin = (hasval(labelOpts) && hasval(labelOpts.rightMargin) ? labelOpts.rightMargin : 4);
+    const vAlign = (hasval(labelOpts) && hasval(labelOpts.vAlign) ? labelOpts.vAlign : 0.5);
+    const spacing = (hasval(labelOpts) && hasval(labelOpts.spacing) ? labelOpts.spacing : 3);
+    const extendBeyondBar = (hasval(labelOpts) && hasval(labelOpts.extendBeyondBar) ? labelOpts.extendBeyondBar : false);
+    const textMode = (hasval(labelOpts) && hasval(labelOpts.textMode) ? labelOpts.textMode : 'force');
 
     // Icon options
-    let iconsEnabled = (hasval(labelOpts) && hasval(labelOpts.iconsEnabled) ? labelOpts.iconsEnabled : true);
-    let iconsForceWidth = (hasval(labelOpts) && hasval(labelOpts.iconsForceWidth) ? labelOpts.iconsForceWidth : 'auto');
-    let iconsForceHeight = (hasval(labelOpts) && hasval(labelOpts.iconsForceHeight) ? labelOpts.iconsForceHeight : 'auto');
-    let iconsSizeFactor = (hasval(labelOpts) && hasval(labelOpts.iconsSizeFactor) ? labelOpts.iconsSizeFactor : 1);
+    const iconsEnabled = (hasval(labelOpts) && hasval(labelOpts.iconsEnabled) ? labelOpts.iconsEnabled : true);
+    const iconsForceWidth = (hasval(labelOpts) && hasval(labelOpts.iconsForceWidth) ? labelOpts.iconsForceWidth : 'auto');
+    const iconsForceHeight = (hasval(labelOpts) && hasval(labelOpts.iconsForceHeight) ? labelOpts.iconsForceHeight : 'auto');
+    const iconsSizeFactor = (hasval(labelOpts) && hasval(labelOpts.iconsSizeFactor) ? labelOpts.iconsSizeFactor : 1);
 
     // Text options
-    let textEnabled = (hasval(labelOpts) && hasval(labelOpts.textEnabled) ? labelOpts.textEnabled : true);
-    let textDefaultColor = (hasval(labelOpts) && hasval(labelOpts.textDefaultColor) ? labelOpts.textDefaultColor : options.timelineFgColor);
-    let textFont = (hasval(labelOpts) && hasval(labelOpts.textFont) ? labelOpts.textFont : options.timelineFont);
+    const textEnabled = (hasval(labelOpts) && hasval(labelOpts.textEnabled) ? labelOpts.textEnabled : true);
+    const textDefaultColor = (hasval(labelOpts) && hasval(labelOpts.textDefaultColor) ? labelOpts.textDefaultColor : options.timelineFgColor);
+    const textFont = (hasval(labelOpts) && hasval(labelOpts.textFont) ? labelOpts.textFont : options.timelineFont);
 
     // XXX: Old icon textures never get cleaned out
-    let iconTextures: StringMap<Texture2D> = {};
-    let textTextures = newTextTextureCache2(textFont);
-    let textureRenderer = new TextureRenderer();
+    const iconTextures: StringMap<Texture2D> = {};
+    const textTextures = newTextTextureCache2(textFont);
+    const textureRenderer = new TextureRenderer();
 
     return {
         textTextures: textTextures,
         textureRenderer: textureRenderer,
         paintEvent: function (laneIndex: number, eventIndex: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
 
-            let labelTopMargin = hasval(event.labelTopMargin) ? event.labelTopMargin : topMargin;
-            let labelBottomMargin = hasval(event.labelBottomMargin) ? event.labelBottomMargin : bottomMargin;
+            const labelTopMargin = hasval(event.labelTopMargin) ? event.labelTopMargin : topMargin;
+            const labelBottomMargin = hasval(event.labelBottomMargin) ? event.labelBottomMargin : bottomMargin;
 
-            let labelVAlign = hasval(event.labelVAlign) ? event.labelVAlign : vAlign;
-            let labelVPos = hasval(event.labelVPos) ? event.labelVPos : labelVAlign;
+            const labelVAlign = hasval(event.labelVAlign) ? event.labelVAlign : vAlign;
+            const labelVPos = hasval(event.labelVPos) ? event.labelVPos : labelVAlign;
 
-            let labelHAlign = hasval(event.labelHAlign) ? event.labelHAlign : 0;
-            let labelHPos = hasval(event.labelHPos) ? event.labelHPos : labelHAlign;
+            const labelHAlign = hasval(event.labelHAlign) ? event.labelHAlign : 0;
+            const labelHPos = hasval(event.labelHPos) ? event.labelHPos : labelHAlign;
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight + labelTopMargin;
-            let yFrac = (viewport.h - jTop - (1.0 - labelVAlign) * (laneHeight - labelTopMargin - labelBottomMargin)) / viewport.h;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight + labelTopMargin;
+            const yFrac = (viewport.h - jTop - (1.0 - labelVAlign) * (laneHeight - labelTopMargin - labelBottomMargin)) / viewport.h;
 
-            let xLeftMin = 2 / viewport.w;
-            let xRightMax = (viewport.w - 2) / viewport.w;
-            let wLeftIndent = leftMargin / viewport.w;
-            let wRightIndent = rightMargin / viewport.w;
+            const xLeftMin = 2 / viewport.w;
+            const xRightMax = (viewport.w - 2) / viewport.w;
+            const wLeftIndent = leftMargin / viewport.w;
+            const wRightIndent = rightMargin / viewport.w;
 
-            let xStart = timeAxis.tFrac(event.start_PMILLIS);
-            let xEnd = timeAxis.tFrac(event.end_PMILLIS);
+            const xStart = timeAxis.tFrac(event.start_PMILLIS);
+            const xEnd = timeAxis.tFrac(event.end_PMILLIS);
 
-            let wTotal = (xEnd - wRightIndent) - (xStart + wLeftIndent)
-            let wSpacing = (spacing / viewport.w);
+            const wTotal = (xEnd - wRightIndent) - (xStart + wLeftIndent);
+            const wSpacing = (spacing / viewport.w);
 
             if (!(xEnd <= 0 || xStart > 1)) {
 
@@ -1512,8 +1514,8 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                 let xRight;
                 if (extendBeyondBar) {
                     if (eventIndex + 1 < lane.length) {
-                        let nextEvent = lane.event(eventIndex + 1);
-                        let nextStart_PMILLIS = effectiveEdges_PMILLIS(ui, nextEvent)[0];
+                        const nextEvent = lane.event(eventIndex + 1);
+                        const nextStart_PMILLIS = effectiveEdges_PMILLIS(ui, nextEvent)[0];
                         xRight = timeAxis.tFrac(nextStart_PMILLIS);
                     }
                     else {
@@ -1521,8 +1523,8 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                     }
 
                     if (eventIndex - 1 >= 0) {
-                        let previousEvent = lane.event(eventIndex - 1);
-                        let previousEnd_PMILLIS = effectiveEdges_PMILLIS(ui, previousEvent)[1];
+                        const previousEvent = lane.event(eventIndex - 1);
+                        const previousEnd_PMILLIS = effectiveEdges_PMILLIS(ui, previousEvent)[1];
                         xLeft = timeAxis.tFrac(previousEnd_PMILLIS);
                     }
                     else {
@@ -1551,8 +1553,8 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                         iconWidth = (isNumber(iconsForceWidth) ? iconsForceWidth : (iconsForceWidth === 'imageSize' ? iconTexture.w : null));
                         iconHeight = (isNumber(iconsForceHeight) ? iconsForceHeight : (iconsForceHeight === 'imageSize' ? iconTexture.h : null));
 
-                        let wIconKnown = hasval(iconWidth);
-                        let hIconKnown = hasval(iconHeight);
+                        const wIconKnown = hasval(iconWidth);
+                        const hIconKnown = hasval(iconHeight);
                         if (!wIconKnown && !hIconKnown) {
                             iconHeight = Math.round(iconsSizeFactor * (laneHeight - labelTopMargin - labelBottomMargin));
                             iconWidth = iconTexture.w * iconHeight / iconTexture.h;
@@ -1579,11 +1581,11 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                     else if (iconTexture !== null) {
                         iconTextures[event.labelIcon] = null;
 
-                        let image = new Image();
+                        const image = new Image();
                         image.onload = (function (url, img) {
                             return function () {
-                                let wImage = img.naturalWidth;
-                                let hImage = img.naturalHeight;
+                                const wImage = img.naturalWidth;
+                                const hImage = img.naturalHeight;
                                 iconTextures[url] = new Texture2D(wImage, hImage, GL.LINEAR, GL.LINEAR, function (g) {
                                     g.drawImage(img, 0, 0);
                                 });
@@ -1618,11 +1620,11 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
 
                 if (textMode === 'truncate') {
                     let labelText = event.label;
-                    while (!!labelText && labelText !== "...") {
+                    while (!!labelText && labelText !== '...') {
                         if (xEndLabel > xRight || xStartLabel < xLeft) {
                             // there is not enough room for the text, begin truncating the text
-                            labelText = labelText.substring(0, labelText.length - 4).concat("...");
-                            let calculatedTextWidth = calculateTextWidth(textEnabled, labelText, event.fgColor, textDefaultColor, textTextures, viewport);
+                            labelText = labelText.substring(0, labelText.length - 4).concat('...');
+                            calculatedTextWidth = calculateTextWidth(textEnabled, labelText, event.fgColor, textDefaultColor, textTextures, viewport);
                             wText = calculatedTextWidth.wText;
                             textTexture = calculatedTextWidth.textTexture;
 
@@ -1641,7 +1643,7 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                             break;
                         }
                     }
-                    if (!labelText || labelText === "...") {
+                    if (!labelText || labelText === '...') {
                         wText = 0;
                         textTexture = null;
                     }
@@ -1652,9 +1654,9 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                         textTexture = null;
 
                         // coordinates of the start edge of the icon + label
-                        let xStartLabel = xStart + wLeftIndent - (wIcon) * labelHPos + (wTotal) * labelHAlign;
+                        xStartLabel = xStart + wLeftIndent - (wIcon) * labelHPos + (wTotal) * labelHAlign;
                         // coordinates of the end edge of the icon + label
-                        let xEndLabel = xStartLabel + (wIcon);
+                        xEndLabel = xStartLabel + (wIcon);
 
                         // adjust xStartLabel and xEndLabel if they fall off the screen
                         if (xStartLabel < xLeftMin) {
@@ -1677,10 +1679,10 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                 // Icons
                 if (hasval(iconTexture)) {
                     // coordinates of the start edge of the icon + label
-                    let xStartLabel = xStart + wLeftIndent - (wSpacing + wIcon + wText) * labelHPos + (wTotal) * labelHAlign;
+                    xStartLabel = xStart + wLeftIndent - (wSpacing + wIcon + wText) * labelHPos + (wTotal) * labelHAlign;
 
                     // coordinates of the end edge of the icon + label
-                    let xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
+                    xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
 
                     if (xStartLabel < xLeftMin) {
                         textureRenderer.draw(gl, iconTexture, xLeftMin, yFrac, { xAnchor: 0, yAnchor: labelVPos, width: iconWidth, height: iconHeight });
@@ -1689,7 +1691,7 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                         textureRenderer.draw(gl, iconTexture, xRightMax - wSpacing - wText, yFrac, { xAnchor: 1, yAnchor: labelVPos, width: iconWidth, height: iconHeight });
                     }
                     else {
-                        let xFrac = xStart + wLeftIndent - (wSpacing + wText) * labelHPos + (wTotal) * labelHAlign;
+                        const xFrac = xStart + wLeftIndent - (wSpacing + wText) * labelHPos + (wTotal) * labelHAlign;
                         textureRenderer.draw(gl, iconTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: labelVPos, width: iconWidth, height: iconHeight });
                     }
                 }
@@ -1697,10 +1699,10 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                 // Text
                 if (hasval(textTexture)) {
                     // coordinates of the start edge of the icon + label
-                    let xStartLabel = xStart + wLeftIndent - (wSpacing + wIcon + wText) * labelHPos + (wTotal) * labelHAlign;
+                    xStartLabel = xStart + wLeftIndent - (wSpacing + wIcon + wText) * labelHPos + (wTotal) * labelHAlign;
 
                     // coordinates of the end edge of the icon + label
-                    let xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
+                    xEndLabel = xStartLabel + (wSpacing + wIcon + wText);
 
                     if (xStartLabel < xLeftMin) {
                         textureRenderer.draw(gl, textTexture, xLeftMin + wSpacing + wIcon, yFrac, { xAnchor: 0, yAnchor: textTexture.yAnchor(labelVPos) });
@@ -1709,7 +1711,7 @@ function eventLabelsPainterHelper(labelOpts: TimelineEventLabelOptions, drawable
                         textureRenderer.draw(gl, textTexture, xRightMax, yFrac, { xAnchor: 1, yAnchor: textTexture.yAnchor(labelVPos) });
                     }
                     else {
-                        let xFrac = xStart + wLeftIndent + (wIconPlusSpacing) * (1 - labelHPos) + (wTotal) * labelHAlign;
+                        const xFrac = xStart + wLeftIndent + (wIconPlusSpacing) * (1 - labelHPos) + (wTotal) * labelHAlign;
                         textureRenderer.draw(gl, textTexture, xFrac, yFrac, { xAnchor: labelHPos, yAnchor: textTexture.yAnchor(labelVPos) });
                     }
                 }
@@ -1723,7 +1725,7 @@ export function newEventLabelsPainterFactory(labelOpts?: TimelineEventLabelOptio
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventLabelsPainterHelper(labelOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventLabelsPainterHelper(labelOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1733,7 +1735,7 @@ export function newEventLabelsPainterFactory(labelOpts?: TimelineEventLabelOptio
             helper.textTextures.resetTouches();
             helper.textureRenderer.begin(gl, viewport);
             for (let l = 0; l < lanes.length; l++) {
-                let lane: TimelineLane = lanes.lane(l);
+                const lane: TimelineLane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
                     helper.paintEvent(l, e, gl, viewport);
                 }
@@ -1746,22 +1748,22 @@ export function newEventLabelsPainterFactory(labelOpts?: TimelineEventLabelOptio
 
 
 function eventBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions) {
-    let rowTopPadding = options.rowTopPadding;
-    let rowBottomPadding = options.rowBottomPadding;
-    let laneHeight = options.laneHeight;
+    const rowTopPadding = options.rowTopPadding;
+    const rowBottomPadding = options.rowBottomPadding;
+    const laneHeight = options.laneHeight;
 
-    let topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
-    let bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
-    let borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
-    let cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
-    let defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
-    let defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
-    let selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
-    let minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
+    const topMargin = (hasval(barOpts) && hasval(barOpts.topMargin) ? barOpts.topMargin : 1.2);
+    const bottomMargin = (hasval(barOpts) && hasval(barOpts.bottomMargin) ? barOpts.bottomMargin : 1.2);
+    const borderThickness = (hasval(barOpts) && hasval(barOpts.borderThickness) ? barOpts.borderThickness : 2);
+    const cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
+    const defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
+    const defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
+    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
+    const minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
 
-    let selection = ui.selection;
+    const selection = ui.selection;
 
-    let xyFrac_vColor_VERTSHADER = concatLines(
+    const xyFrac_vColor_VERTSHADER = concatLines(
         '                                                                ',
         '  attribute vec2 a_XyFrac;                                      ',
         '  attribute vec4 a_Color;                                       ',
@@ -1775,19 +1777,21 @@ function eventBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawabl
         '                                                                '
     );
 
-    let program = new Program(xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let a_Color = new Attribute(program, 'a_Color');
+    const program = new Program(xyFrac_vColor_VERTSHADER, varyingColor_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const a_Color = new Attribute(program, 'a_Color');
 
     let xys = new Float32Array(0);
-    let xysBuffer = newDynamicBuffer();
+    const xysBuffer = newDynamicBuffer();
 
     let rgbas = new Float32Array(0);
-    let rgbasBuffer = newDynamicBuffer();
+    const rgbasBuffer = newDynamicBuffer();
 
     return {
         paint(indexXys: number, indexRgbas: number, gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
-            if (indexXys === 0 || indexRgbas === 0) return;
+            if (indexXys === 0 || indexRgbas === 0) {
+                return;
+            }
 
             gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
             gl.enable(GL.BLEND);
@@ -1820,24 +1824,24 @@ function eventBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawabl
             rgbas = ensureCapacityFloat32(rgbas, 4 * numVertices);
         },
         fillEvent: function (laneIndex: number, eventIndex: number, indexXys: number, indexRgbas: number, viewport: BoundsUnmodifiable): { indexXys: number; indexRgbas: number } {
-            let lane: TimelineLane = lanes.lane(laneIndex);
-            let event: TimelineEventModel = lane.event(eventIndex);
+            const lane: TimelineLane = lanes.lane(laneIndex);
+            const event: TimelineEventModel = lane.event(eventIndex);
 
-            let wBorder = borderThickness / viewport.w;
-            let hBorder = borderThickness / viewport.h;
+            const wBorder = borderThickness / viewport.w;
+            const hBorder = borderThickness / viewport.h;
 
-            let _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
-            let _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
+            const _topMargin = hasval(event.topMargin) ? event.topMargin : topMargin;
+            const _bottomMargin = hasval(event.bottomMargin) ? event.bottomMargin : bottomMargin;
 
-            let jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
-            let yTop = (viewport.h - jTop) / viewport.h;
-            let jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
-            let yBottom = (viewport.h - jBottom) / viewport.h;
+            const jTop = rowTopPadding + (laneIndex) * laneHeight + _topMargin;
+            const yTop = (viewport.h - jTop) / viewport.h;
+            const jBottom = rowTopPadding + (laneIndex + 1) * laneHeight - _bottomMargin;
+            const yBottom = (viewport.h - jBottom) / viewport.h;
 
-            let xLeft = timeAxis.tFrac(event.start_PMILLIS);
-            let xRight = timeAxis.tFrac(event.end_PMILLIS);
+            const xLeft = timeAxis.tFrac(event.start_PMILLIS);
+            const xRight = timeAxis.tFrac(event.end_PMILLIS);
 
-            let xWidthPixels = viewport.w * (xRight - xLeft);
+            const xWidthPixels = viewport.w * (xRight - xLeft);
 
             if (!(xRight < 0 || xLeft > 1) && xWidthPixels > minimumVisibleWidth) {
 
@@ -1893,7 +1897,7 @@ export function newEventBarsPainterFactory(barOpts?: TimelineEventBarsPainterOpt
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let helper = eventBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
+        const helper = eventBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1903,10 +1907,10 @@ export function newEventBarsPainterFactory(barOpts?: TimelineEventBarsPainterOpt
             let indexRgbas = 0;
 
             for (let l = 0; l < lanes.length; l++) {
-                let lane = lanes.lane(l);
+                const lane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
-                    let indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport);
+                    const event = lane.event(e);
+                    const indexes = helper.fillEvent(l, e, indexXys, indexRgbas, viewport);
                     indexXys = indexes.indexXys;
                     indexRgbas = indexes.indexRgbas;
                 }
@@ -1923,10 +1927,10 @@ export function newCombinedEventPainterFactory(barOpts?: TimelineEventBarsPainte
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, lanes: TimelineLaneArray, ui: TimelineUi, options: TimelineEventsPainterOptions): Painter {
 
-        let labelHelper = eventLabelsPainterHelper(labelOpts, drawable, timeAxis, lanes, ui, options);
-        let iconHelper = eventIconsPainterHelper(iconOpts, drawable, timeAxis, lanes, ui, options);
-        let barHelper = eventStripedBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
-        let dashedHelper = eventDashedBorderPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
+        const labelHelper = eventLabelsPainterHelper(labelOpts, drawable, timeAxis, lanes, ui, options);
+        const iconHelper = eventIconsPainterHelper(iconOpts, drawable, timeAxis, lanes, ui, options);
+        const barHelper = eventStripedBarPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
+        const dashedHelper = eventDashedBorderPainterHelper(barOpts, drawable, timeAxis, lanes, ui, options);
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -1934,13 +1938,13 @@ export function newCombinedEventPainterFactory(barOpts?: TimelineEventBarsPainte
             gl.enable(GL.BLEND);
 
             for (let l = 0; l < lanes.length; l++) {
-                let lane: TimelineLane = lanes.lane(l);
+                const lane: TimelineLane = lanes.lane(l);
                 for (let e = 0; e < lane.length; e++) {
 
                     // draw bar
                     barHelper.ensureCapacity(1);
-                    let indexes = barHelper.fillEvent(l, e, 0, 0, viewport, 0, 0);
-                    let dashedIndexes = dashedHelper.fillEvent(l, e, 0, 0, viewport, 0);
+                    const indexes = barHelper.fillEvent(l, e, 0, 0, viewport, 0, 0);
+                    const dashedIndexes = dashedHelper.fillEvent(l, e, 0, 0, viewport, 0);
                     barHelper.paint(indexes.indexXys, indexes.indexRgbas, gl, viewport, indexes.indexRelativeXys, indexes.indexFillPattern);
                     dashedHelper.paint(dashedIndexes.indexXys, dashedIndexes.indexRgbas, gl, viewport, dashedIndexes.indexLengthSoFar);
 
@@ -1958,7 +1962,7 @@ export function newCombinedEventPainterFactory(barOpts?: TimelineEventBarsPainte
                 }
             }
 
-        }
-    }
+        };
+    };
 }
 

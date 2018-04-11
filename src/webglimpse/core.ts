@@ -32,9 +32,7 @@ import { Notification, Listener, Notification1 } from './util/notification';
 import { OrderedSet } from './util/ordered_set';
 import { alwaysTrue, GL, getObjectId, hasval } from './util/util';
 
-export interface Painter {
-    (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable): void;
-}
+export type Painter = (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) => void;
 
 
 export interface PointerEvent {
@@ -65,14 +63,10 @@ export interface LayoutEntry {
 }
 
 
-export interface LayoutPhase1 {
-    (parentPrefSize: Size, children?: LayoutEntry[]): LayoutPhase1;
-}
+export type LayoutPhase1 = (parentPrefSize: Size, children?: LayoutEntry[]) => LayoutPhase1;
 
 
-export interface LayoutPhase2 {
-    (children: LayoutEntry[], parentViewport: BoundsUnmodifiable): LayoutPhase2;
-}
+export type LayoutPhase2 = (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) => LayoutPhase2;
 
 
 export interface Layout {
@@ -81,9 +75,7 @@ export interface Layout {
 }
 
 
-export interface Mask2D {
-    (viewport: BoundsUnmodifiable, i: number, j: number): boolean;
-}
+export type Mask2D = (viewport: BoundsUnmodifiable, i: number, j: number) => boolean;
 
 
 class PaneChild implements LayoutEntry {
@@ -121,6 +113,17 @@ export class Pane {
     private _viewportChanged: Notification;
 
     private _dispose: Notification;
+
+    // Input Handling
+    //
+
+    private _mouseUp: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _mouseDown: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _mouseMove: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _mouseWheel: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _mouseEnter: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _mouseExit: Notification1<PointerEvent> = new Notification1<PointerEvent>();
+    private _contextMenu: Notification1<PointerEvent> = new Notification1<PointerEvent>();
 
     constructor(layout: Layout, consumesInputEvents: boolean = true, isInside: Mask2D = alwaysTrue) {
         this.painters = [];
@@ -202,7 +205,7 @@ export class Pane {
 
     updateLayoutArgs(updateFn: (layoutArg: any, layoutOptions: any) => any) {
         for (let c = 0; c < this.children.length; c++) {
-            let child = this.children.valueAt(c);
+            const child = this.children.valueAt(c);
             child.layoutArg = updateFn(child.layoutArg, child.layoutOptions);
         }
     }
@@ -222,7 +225,7 @@ export class Pane {
     updatePrefSizes(result: Size) {
         // Child panes
         for (let c = 0; c < this.children.length; c++) {
-            let child = this.children.valueAt(c);
+            const child = this.children.valueAt(c);
             child.pane.updatePrefSizes(child.prefSize);
         }
         // This pane
@@ -237,14 +240,14 @@ export class Pane {
 
     updateBounds(viewport: BoundsUnmodifiable, scissor: BoundsUnmodifiable) {
         // This pane
-        let viewportChanged = (viewport.iStart !== this._viewport.iStart || viewport.iEnd !== this._viewport.iEnd || viewport.jStart !== this._viewport.jStart || viewport.jEnd !== this._viewport.jEnd);
+        const viewportChanged = (viewport.iStart !== this._viewport.iStart || viewport.iEnd !== this._viewport.iEnd || viewport.jStart !== this._viewport.jStart || viewport.jEnd !== this._viewport.jEnd);
         this._viewport.setBounds(viewport);
         this._scissor.setBounds(scissor);
         // Child panes
         if (hasval(this._layout) && hasval(this._layout.updateChildViewports)) {
             this._layout.updateChildViewports(this.children.toArray(), viewport);
             for (let c = 0; c < this.children.length; c++) {
-                let child = this.children.valueAt(c);
+                const child = this.children.valueAt(c);
                 child.scissor.setBounds(child.viewport.unmod);
                 child.scissor.cropToBounds(scissor);
                 child.pane.updateBounds(child.viewport.unmod, child.scissor.unmod);
@@ -260,8 +263,8 @@ export class Pane {
     }
 
     paint(gl: WebGLRenderingContext) {
-        let viewport = this._viewport.unmod;
-        let scissor = this._scissor.unmod;
+        const viewport = this._viewport.unmod;
+        const scissor = this._scissor.unmod;
         if (scissor.w > 0 && scissor.h > 0) {
             // This pane
             gl.viewport(viewport.i, viewport.j, viewport.w, viewport.h);
@@ -290,7 +293,7 @@ export class Pane {
     }
 
     panesAt(i: number, j: number): Pane[] {
-        let result: Pane[] = [];
+        const result: Pane[] = [];
         this._panesAt(i, j, result);
         return result;
     }
@@ -298,8 +301,10 @@ export class Pane {
     private _panesAt(i: number, j: number, result: Pane[]): boolean {
         if (this._scissor.contains(i, j)) {
             for (let c = this.children.length - 1; c >= 0; c--) {
-                let consumed = this.children.valueAt(c).pane._panesAt(i, j, result);
-                if (consumed) return true;
+                const consumed = this.children.valueAt(c).pane._panesAt(i, j, result);
+                if (consumed) {
+                    return true;
+                }
             }
             if (this.isInside(this._viewport.unmod, i, j)) {
                 result.push(this);
@@ -308,18 +313,6 @@ export class Pane {
         }
         return false;
     }
-
-
-    // Input Handling
-    //
-
-    private _mouseUp: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _mouseDown: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _mouseMove: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _mouseWheel: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _mouseEnter: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _mouseExit: Notification1<PointerEvent> = new Notification1<PointerEvent>();
-    private _contextMenu: Notification1<PointerEvent> = new Notification1<PointerEvent>();
 
     get mouseUp(): Notification1<PointerEvent> { return this._mouseUp; }
     get mouseDown(): Notification1<PointerEvent> { return this._mouseDown; }
@@ -378,14 +371,18 @@ export function requireGL(canvasElement: HTMLCanvasElement): WebGLRenderingConte
     //
 
     try {
-        let glA = canvasElement.getContext('webgl');
-        if (glA) return glA;
+        const glA = canvasElement.getContext('webgl');
+        if (glA) {
+            return glA;
+        }
     }
     catch (e) { }
 
     try {
-        let glB = canvasElement.getContext('experimental-webgl');
-        if (glB) return glB;
+        const glB = canvasElement.getContext('experimental-webgl');
+        if (glB) {
+            return glB;
+        }
     }
     catch (e) { }
 
@@ -406,7 +403,7 @@ function jMouse(element: HTMLElement, ev: MouseEvent): number {
 function mouseWheelSteps(ev: MouseWheelEvent): number {
     // Firefox puts the scroll amount in the 'detail' field; everybody else puts it in 'wheelDelta'
     // Firefox uses positive values for a downward scroll; everybody else uses positive for upward
-    let raw = (ev.wheelDelta !== undefined ? ev.wheelDelta : -ev.detail);
+    const raw = (ev.wheelDelta !== undefined ? ev.wheelDelta : -ev.detail);
     if (raw > 0) { return -1; }
     if (raw < 0) { return +1; }
     return 0;
@@ -460,7 +457,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             newPanes[n]['isHovered'] = true;
         }
         for (let n = 0; n < oldPanes.length; n++) {
-            let oldPane = oldPanes[n];
+            const oldPane = oldPanes[n];
             if (!oldPane['isHovered']) {
                 oldPane.fireMouseExit(i, j, mouseEvent);
             }
@@ -473,7 +470,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             oldPanes[n]['wasHovered'] = true;
         }
         for (let n = 0; n < newPanes.length; n++) {
-            let newPane = newPanes[n];
+            const newPane = newPanes[n];
             if (!newPane['wasHovered']) {
                 newPane.fireMouseEnter(i, j, mouseEvent);
             }
@@ -483,20 +480,22 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     // Support for reporting click count. Browsers handle reporting single/double
     // clicks differently, so it's generally not a good idea to use both listeners
     // at one. That's why it's done this way instead of using the 'dblclick' event.
-    let multiPressTimeout_MILLIS = 250;
+    const multiPressTimeout_MILLIS = 250;
     let prevPress_PMILLIS = 0;
     let clickCount = 1;
 
     let currentPanes: Pane[] = [];
     let currentMouseCursor: string = null;
-    let dragging: boolean = false;
-    let pendingExit: boolean = false;
+    let dragging = false;
+    let pendingExit = false;
 
     function refreshMouseCursor() {
         let newMouseCursor = null;
         for (let n = 0; n < currentPanes.length; n++) {
             newMouseCursor = currentPanes[n].mouseCursor;
-            if (hasval(newMouseCursor)) break;
+            if (hasval(newMouseCursor)) {
+                break;
+            }
         }
         if (!hasval(newMouseCursor)) {
             newMouseCursor = 'default';
@@ -511,9 +510,9 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
 
 
     element.addEventListener('mousedown', function (ev: MouseEvent) {
-        let press_PMILLIS = (new Date()).getTime();
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+        const press_PMILLIS = (new Date()).getTime();
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         if (press_PMILLIS - prevPress_PMILLIS < multiPressTimeout_MILLIS) {
             clickCount++;
@@ -523,7 +522,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
         }
         prevPress_PMILLIS = press_PMILLIS;
 
-        let newPanes = contentPane.panesAt(i, j);
+        const newPanes = contentPane.panesAt(i, j);
         detectEntersAndExits(currentPanes, newPanes, i, j, ev);
         currentPanes = newPanes;
         for (let n = 0; n < currentPanes.length; n++) {
@@ -540,10 +539,10 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     // Only want NON-DRAG moves from the canvas (e.g. we don't want moves that occur in an overlay div) -- so subscribe to CANVAS's mousemove
     element.addEventListener('mousemove', function (ev: MouseEvent) {
         if (!dragging) {
-            let i = iMouse(element, ev);
-            let j = jMouse(element, ev);
+            const i = iMouse(element, ev);
+            const j = jMouse(element, ev);
 
-            let newPanes = contentPane.panesAt(i, j);
+            const newPanes = contentPane.panesAt(i, j);
             detectEntersAndExits(currentPanes, newPanes, i, j, ev);
             currentPanes = newPanes;
             for (let n = 0; n < currentPanes.length; n++) {
@@ -556,8 +555,8 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     // During a DRAG we want all move events, even ones that occur outside the canvas -- so subscribe to WINDOW's mousemove
     window.addEventListener('mousemove', function (ev: MouseEvent) {
         if (dragging) {
-            let i = iMouse(element, ev);
-            let j = jMouse(element, ev);
+            const i = iMouse(element, ev);
+            const j = jMouse(element, ev);
 
             for (let n = 0; n < currentPanes.length; n++) {
                 currentPanes[n].fireMouseMove(i, j, ev);
@@ -566,8 +565,8 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     });
 
     element.addEventListener('mouseout', function (ev: MouseEvent) {
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         if (dragging) {
             for (let n = 0; n < currentPanes.length; n++) {
@@ -583,14 +582,14 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     });
 
     element.addEventListener('mouseover', function (ev: MouseEvent) {
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         if (dragging) {
             pendingExit = false;
         }
         else {
-            let newPanes = contentPane.panesAt(i, j);
+            const newPanes = contentPane.panesAt(i, j);
             detectEntersAndExits(currentPanes, newPanes, i, j, ev);
             currentPanes = newPanes;
             for (let n = 0; n < currentPanes.length; n++) {
@@ -600,9 +599,9 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
         }
     });
 
-    let endDrag = function (ev: MouseEvent) {
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+    const endDrag = function (ev: MouseEvent) {
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         for (let n = 0; n < currentPanes.length; n++) {
             currentPanes[n].fireMouseUp(i, j, clickCount, ev);
@@ -617,7 +616,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             refreshMouseCursor();
         }
         else {
-            let newPanes = contentPane.panesAt(i, j);
+            const newPanes = contentPane.panesAt(i, j);
             detectEntersAndExits(currentPanes, newPanes, i, j, ev);
             currentPanes = newPanes;
             for (let n = 0; n < currentPanes.length; n++) {
@@ -641,10 +640,10 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
 
     // If we're dragging, and we see a mousemove with no buttons down, end the drag
     let recentDrag: MouseEvent = null;
-    let handleMissedMouseUp = function (ev: MouseEvent) {
+    const handleMissedMouseUp = function (ev: MouseEvent) {
         if (dragging) {
             if (!isMouseDown(ev) && recentDrag) {
-                let mouseUp = <MouseEvent>document.createEvent('MouseEvents');
+                const mouseUp = <MouseEvent>document.createEvent('MouseEvents');
                 mouseUp.initMouseEvent('mouseup', true, true, window, 0, recentDrag.screenX, recentDrag.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, recentDrag.ctrlKey, recentDrag.altKey, recentDrag.shiftKey, recentDrag.metaKey, 0, null);
                 endDrag(mouseUp);
             }
@@ -663,7 +662,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             // the least bad option is to terminate drags on exit from the highest accessible window
             w.addEventListener('mouseout', function (ev: MouseEvent) {
                 if (dragging) {
-                    let mouseUp = <MouseEvent>document.createEvent('MouseEvents');
+                    const mouseUp = <MouseEvent>document.createEvent('MouseEvents');
                     mouseUp.initMouseEvent('mouseup', true, true, window, 0, ev.screenX, ev.screenY, ev.screenX - window.screenX, ev.screenY - window.screenY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, 0, null);
                     endDrag(mouseUp);
                 }
@@ -674,9 +673,9 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
 
 
     // Firefox uses event type 'DOMMouseScroll' for mouse-wheel events; everybody else uses 'mousewheel'
-    let handleMouseWheel = function (ev: MouseWheelEvent) {
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+    const handleMouseWheel = function (ev: MouseWheelEvent) {
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         if (dragging) {
             for (let n = 0; n < currentPanes.length; n++) {
@@ -684,7 +683,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             }
         }
         else {
-            let newPanes = contentPane.panesAt(i, j);
+            const newPanes = contentPane.panesAt(i, j);
             detectEntersAndExits(currentPanes, newPanes, i, j, ev);
             currentPanes = newPanes;
             for (let n = 0; n < currentPanes.length; n++) {
@@ -692,7 +691,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             }
         }
 
-        let wheelSteps = mouseWheelSteps(ev);
+        const wheelSteps = mouseWheelSteps(ev);
         for (let n = 0; n < currentPanes.length; n++) {
             currentPanes[n].fireMouseWheel(i, j, wheelSteps, ev);
         }
@@ -701,8 +700,8 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     element.addEventListener('DOMMouseScroll', handleMouseWheel, false);
 
     element.addEventListener('contextmenu', function (ev: MouseEvent) {
-        let i = iMouse(element, ev);
-        let j = jMouse(element, ev);
+        const i = iMouse(element, ev);
+        const j = jMouse(element, ev);
 
         if (dragging) {
             for (let n = 0; n < currentPanes.length; n++) {
@@ -710,7 +709,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             }
         }
         else {
-            let newPanes = contentPane.panesAt(i, j);
+            const newPanes = contentPane.panesAt(i, j);
             detectEntersAndExits(currentPanes, newPanes, i, j, ev);
             currentPanes = newPanes;
             for (let n = 0; n < currentPanes.length; n++) {
@@ -740,10 +739,10 @@ export interface Drawable {
 
 export function newDrawable(canvas: HTMLCanvasElement): Drawable {
     let contentPane: Pane = null;
-    let contentPrefSizeNotification = new Notification1<Size>();
-    let contentPrefSize = { w: <number>null, h: <number>null };
-    let contentViewport = newBoundsFromRect(0, 0, 0, 0);
-    let gl = requireGL(canvas);
+    const contentPrefSizeNotification = new Notification1<Size>();
+    const contentPrefSize = { w: <number>null, h: <number>null };
+    const contentViewport = newBoundsFromRect(0, 0, 0, 0);
+    const gl = requireGL(canvas);
     let pendingRequestId = <number>null;
     return {
         setContentPane: function (pane: Pane) {
@@ -756,10 +755,10 @@ export function newDrawable(canvas: HTMLCanvasElement): Drawable {
         redraw: function () {
             if (!hasval(pendingRequestId)) {
                 pendingRequestId = window.requestAnimationFrame(function () {
-                    let oldPrefSize = { w: <number>null, h: <number>null }
+                    let oldPrefSize = { w: <number>null, h: <number>null };
                     if (hasval(contentPane)) {
 
-                        let oldPrefSize = { w: contentPrefSize.w, h: contentPrefSize.h };
+                        oldPrefSize = { w: contentPrefSize.w, h: contentPrefSize.h };
 
                         contentPane.updatePrefSizes(contentPrefSize);
                         contentViewport.setRect(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);

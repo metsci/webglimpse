@@ -48,23 +48,23 @@ export interface XyLinePainterOptions {
  * Simple xy line painter which displays static data
  */
 export function newXyLinePainter(axis: Axis2D, xCoords: number[], yCoords: number[], options?: XyLinePainterOptions): Painter {
-    let thickness = (hasval(options) && hasval(options.thickness) ? options.thickness : 4);
-    let color = (hasval(options) && hasval(options.color) ? options.color : black);
-    let blend = (hasval(options) && hasval(options.blend) ? options.blend : false);
+    const thickness = (hasval(options) && hasval(options.thickness) ? options.thickness : 4);
+    const color = (hasval(options) && hasval(options.color) ? options.color : black);
+    const blend = (hasval(options) && hasval(options.blend) ? options.blend : false);
 
-    let program = new Program(modelview_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
+    const program = new Program(modelview_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
 
-    let coordArray = [];
+    const coordArray = [];
     for (let i = 0; i < xCoords.length; i++) {
         coordArray[2 * i] = xCoords[i];
         coordArray[2 * i + 1] = yCoords[i];
     }
-    let coordFloatArray = new Float32Array(coordArray);
-    let coordBuffer = newStaticBuffer(coordFloatArray);
-    let dim = 2;
-    let count = coordFloatArray.length / dim;
+    const coordFloatArray = new Float32Array(coordArray);
+    const coordBuffer = newStaticBuffer(coordFloatArray);
+    const dim = 2;
+    const count = coordFloatArray.length / dim;
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
@@ -100,7 +100,7 @@ export function newXyLinePainter(axis: Axis2D, xCoords: number[], yCoords: numbe
 
         coordBuffer.unbind(gl, GL.ARRAY_BUFFER);
         program.endUse(gl);
-    }
+    };
 }
 
 

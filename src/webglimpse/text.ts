@@ -36,7 +36,6 @@ import { Program, Uniform2f, Uniform1f, UniformSampler2D, Attribute } from './sh
 import { Buffer, newStaticBuffer } from './buffer';
 import { BoundsUnmodifiable } from './bounds';
 import { nearestPixel } from './misc';
-import { xFrac, yFrac } from './core';
 
 interface Dim2D {
     w: number;
@@ -44,9 +43,9 @@ interface Dim2D {
 }
 
 
-let textDim = (function () {
+const textDim = (function () {
     // Use div to figure out how big our texture needs to be
-    let div = document.createElement('div');
+    const div = document.createElement('div');
     div.style.setProperty('position', 'absolute');
     div.style.setProperty('padding', '0');
     div.style.setProperty('margin', '0');
@@ -59,8 +58,8 @@ let textDim = (function () {
         div.textContent = s;
 
         document.body.appendChild(div);
-        let width = div.clientWidth;
-        let height = div.clientHeight;
+        const width = div.clientWidth;
+        const height = div.clientHeight;
         document.body.removeChild(div);
 
         return { w: width, h: height };
@@ -80,13 +79,13 @@ function newFontMetricsCache(): Cache<FontMetrics> {
     return new Cache<FontMetrics>({
         create: function (font: string): FontMetrics {
 
-            let dim = textDim('fMgyj', font);
-            let w = dim.w;
-            let h = dim.h;
-            let canvas = document.createElement('canvas');
+            const dim = textDim('fMgyj', font);
+            const w = dim.w;
+            const h = dim.h;
+            const canvas = document.createElement('canvas');
             canvas.width = w;
             canvas.height = h;
-            let g = canvas.getContext('2d');
+            const g = canvas.getContext('2d');
 
             g.font = font;
             g.textAlign = 'left';
@@ -100,16 +99,20 @@ function newFontMetricsCache(): Cache<FontMetrics> {
             let jTop = -1;
             for (let j = 0; j < h && jTop < 0; j++) {
                 for (let i = 0; i < w && jTop < 0; i++) {
-                    let alpha = rgbaData[(j * w + i) * 4 + 3];
-                    if (alpha !== 0) jTop = j;
+                    const alpha = rgbaData[(j * w + i) * 4 + 3];
+                    if (alpha !== 0) {
+                        jTop = j;
+                    }
                 }
             }
 
             let jBaseline = -1;
             for (let j = h - 1; j >= 0 && jBaseline < 0; j--) {
                 for (let i = 0; i < w && jBaseline < 0; i++) {
-                    let alpha = rgbaData[(j * w + i) * 4 + 3];
-                    if (alpha !== 0) jBaseline = j;
+                    const alpha = rgbaData[(j * w + i) * 4 + 3];
+                    if (alpha !== 0) {
+                        jBaseline = j;
+                    }
                 }
             }
 
@@ -120,8 +123,10 @@ function newFontMetricsCache(): Cache<FontMetrics> {
             let jBottom = -1;
             for (let j = h - 1; j >= 0 && jBottom < 0; j--) {
                 for (let i = 0; i < w && jBottom < 0; i++) {
-                    let alpha = rgbaData[(j * w + i) * 4 + 3];
-                    if (alpha !== 0) jBottom = j;
+                    const alpha = rgbaData[(j * w + i) * 4 + 3];
+                    if (alpha !== 0) {
+                        jBottom = j;
+                    }
                 }
             }
 
@@ -132,19 +137,19 @@ function newFontMetricsCache(): Cache<FontMetrics> {
 }
 
 
-let getRawFontMetrics = (function () {
-    let cache = newFontMetricsCache();
+const getRawFontMetrics = (function () {
+    const cache = newFontMetricsCache();
     return function (font: string): FontMetrics {
         return cache.value(font);
     };
 })();
 
 
-let getTextWidth = (function () {
-    let canvas = document.createElement('canvas');
+const getTextWidth = (function () {
+    const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
-    let g = canvas.getContext('2d');
+    const g = canvas.getContext('2d');
     g.textAlign = 'left';
     g.textBaseline = 'top';
     return function (font: string, text: string): number {
@@ -169,15 +174,15 @@ export class TextTexture2D extends Texture2D {
         // a fraction of the way from the bottom of the baseline pixel up to the
         // top of the top pixel
         //
-        let bottom = this.jBaseline + 1;
-        let h = this.h;
+        const bottom = this.jBaseline + 1;
+        const h = this.h;
         return 1 - ((1 - textFrac) * bottom / h);
     }
 }
 
 
 export function newTextTextureCache(font: string, color: Color): Cache<TextTexture2D> {
-    let createTextTexture = createTextTextureFactory(font);
+    const createTextTexture = createTextTextureFactory(font);
     return new Cache<TextTexture2D>({
         create: function (text: string): TextTexture2D {
             return createTextTexture(color, text);
@@ -190,10 +195,10 @@ export function newTextTextureCache(font: string, color: Color): Cache<TextTextu
 
 
 export function newTextTextureCache2(font: string): TwoKeyCache<TextTexture2D> {
-    let createTextTexture = createTextTextureFactory(font);
+    const createTextTexture = createTextTextureFactory(font);
     return new TwoKeyCache<TextTexture2D>({
         create: function (rgbaString: string, text: string): TextTexture2D {
-            let color = parseRgba(rgbaString);
+            const color = parseRgba(rgbaString);
             return createTextTexture(color, text);
         },
         dispose: function (texture: Texture2D) {
@@ -206,8 +211,8 @@ export function newTextTextureCache2(font: string): TwoKeyCache<TextTexture2D> {
 export function newTextTextureCache3(): ThreeKeyCache<TextTexture2D> {
     return new ThreeKeyCache<TextTexture2D>({
         create: function (font: string, rgbaString: string, text: string): TextTexture2D {
-            let createTextTexture = createTextTextureFactory(font);
-            let color = parseRgba(rgbaString);
+            const createTextTexture = createTextTextureFactory(font);
+            const color = parseRgba(rgbaString);
             return createTextTexture(color, text);
         },
         dispose: function (texture: Texture2D) {
@@ -217,18 +222,16 @@ export function newTextTextureCache3(): ThreeKeyCache<TextTexture2D> {
 }
 
 
-export interface TextTextureFactory {
-    (color: Color, text: string): TextTexture2D;
-}
+export type TextTextureFactory = (color: Color, text: string) => TextTexture2D;
 
 
 export function createTextTextureFactory(font: string): TextTextureFactory {
-    let rawFontMetrics = getRawFontMetrics(font);
-    let jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
-    let h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
+    const rawFontMetrics = getRawFontMetrics(font);
+    const jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
+    const h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
 
     return function (color: Color, text: string): TextTexture2D {
-        let w = getTextWidth(font, text);
+        const w = getTextWidth(font, text);
 
         return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, function (g: CanvasRenderingContext2D) {
             // Some browsers use hinting for canvas fillText! This behaves poorly on a transparent
@@ -252,16 +255,16 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
             g.fillText(text, 0, 0);
             g.restore();
 
-            let r255 = 255 * color.r;
-            let g255 = 255 * color.g;
-            let b255 = 255 * color.b;
-            let aFactor = color.a / 3;
+            const r255 = 255 * color.r;
+            const g255 = 255 * color.g;
+            const b255 = 255 * color.b;
+            const aFactor = color.a / 3;
 
-            let pixels = g.getImageData(0, 0, w, h);
+            const pixels = g.getImageData(0, 0, w, h);
             for (let j = 0; j < pixels.height; j++) {
                 for (let i = 0; i < pixels.width; i++) {
-                    let pixelOffset = (j * pixels.width + i) * 4;
-                    let a255 = aFactor * (pixels.data[pixelOffset + 0] + pixels.data[pixelOffset + 1] + pixels.data[pixelOffset + 2]);
+                    const pixelOffset = (j * pixels.width + i) * 4;
+                    const a255 = aFactor * (pixels.data[pixelOffset + 0] + pixels.data[pixelOffset + 1] + pixels.data[pixelOffset + 2]);
 
                     pixels.data[pixelOffset + 0] = r255;
                     pixels.data[pixelOffset + 1] = g255;
@@ -272,7 +275,7 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
 
             g.putImageData(pixels, 0, 0);
         });
-    }
+    };
 }
 
 
@@ -283,22 +286,22 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
 
 
 export function newTextHintsCache(font: string): Cache<Texture2D> {
-    let rawFontMetrics = getRawFontMetrics(font);
-    let jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
-    let h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
+    const rawFontMetrics = getRawFontMetrics(font);
+    const jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
+    const h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
 
     return new Cache<Texture2D>({
 
         create: function (text: string): Texture2D {
-            let w = getTextWidth(font, text);
+            const w = getTextWidth(font, text);
 
             // XXX: For now, assuming subpixels are horizontal-RGB
 
             // Draw text triple-sized, to get an alpha for each r,g,b subpixel
-            let canvas3 = document.createElement('canvas');
+            const canvas3 = document.createElement('canvas');
             canvas3.width = 3 * w;
             canvas3.height = h;
-            let g3 = canvas3.getContext('2d');
+            const g3 = canvas3.getContext('2d');
             g3.fillStyle = 'black';
             g3.fillRect(0, 0, canvas3.width, canvas3.height);
 
@@ -311,16 +314,16 @@ export function newTextHintsCache(font: string): Cache<Texture2D> {
             g3.fillStyle = 'white';
             g3.fillText(text, 0, 0);
             g3.restore();
-            let srcRgba = g3.getImageData(0, 0, canvas3.width, canvas3.height).data;
+            const srcRgba = g3.getImageData(0, 0, canvas3.width, canvas3.height).data;
 
             return new Texture2D(w, h, GL.NEAREST, GL.NEAREST, function (g: CanvasRenderingContext2D) {
-                let destImage = g.createImageData(w, h);
-                let destRgba = destImage.data;
+                const destImage = g.createImageData(w, h);
+                const destRgba = destImage.data;
 
-                let weightLeft = 1;
-                let weightCenter = 2;
-                let weightRight = 1;
-                let weightNorm = 1 / (weightLeft + weightCenter + weightRight);
+                const weightLeft = 1;
+                const weightCenter = 2;
+                const weightRight = 1;
+                const weightNorm = 1 / (weightLeft + weightCenter + weightRight);
 
                 for (let j = 0; j < h; j++) {
                     for (let i = 0; i < w; i++) {
@@ -335,20 +338,20 @@ export function newTextHintsCache(font: string): Cache<Texture2D> {
                         // de-hinting it so that we can re-hint it ourselves later (during blending, when the
                         // background color is known).
                         //
-                        let srcPixelIndex = (j * 3 * w + 3 * i) * 4;
-                        let srcAlphaL = (i > 0 ? (srcRgba[srcPixelIndex - 4] + srcRgba[srcPixelIndex - 3] + srcRgba[srcPixelIndex - 2]) / (3 * 255) : 0);
-                        let srcAlpha0 = (srcRgba[srcPixelIndex + 0] + srcRgba[srcPixelIndex + 1] + srcRgba[srcPixelIndex + 2]) / (3 * 255);
-                        let srcAlpha1 = (srcRgba[srcPixelIndex + 4] + srcRgba[srcPixelIndex + 5] + srcRgba[srcPixelIndex + 6]) / (3 * 255);
-                        let srcAlpha2 = (srcRgba[srcPixelIndex + 8] + srcRgba[srcPixelIndex + 9] + srcRgba[srcPixelIndex + 10]) / (3 * 255);
-                        let srcAlphaR = (i < w - 1 ? (srcRgba[srcPixelIndex + 12] + srcRgba[srcPixelIndex + 13] + srcRgba[srcPixelIndex + 14]) / (3 * 255) : 0);
+                        const srcPixelIndex = (j * 3 * w + 3 * i) * 4;
+                        const srcAlphaL = (i > 0 ? (srcRgba[srcPixelIndex - 4] + srcRgba[srcPixelIndex - 3] + srcRgba[srcPixelIndex - 2]) / (3 * 255) : 0);
+                        const srcAlpha0 = (srcRgba[srcPixelIndex + 0] + srcRgba[srcPixelIndex + 1] + srcRgba[srcPixelIndex + 2]) / (3 * 255);
+                        const srcAlpha1 = (srcRgba[srcPixelIndex + 4] + srcRgba[srcPixelIndex + 5] + srcRgba[srcPixelIndex + 6]) / (3 * 255);
+                        const srcAlpha2 = (srcRgba[srcPixelIndex + 8] + srcRgba[srcPixelIndex + 9] + srcRgba[srcPixelIndex + 10]) / (3 * 255);
+                        const srcAlphaR = (i < w - 1 ? (srcRgba[srcPixelIndex + 12] + srcRgba[srcPixelIndex + 13] + srcRgba[srcPixelIndex + 14]) / (3 * 255) : 0);
 
                         // Weighted averages to find subpixel alphas
-                        let alphaLeft = weightNorm * (weightLeft * srcAlphaL + weightCenter * srcAlpha0 + weightRight * srcAlpha1);
-                        let alphaCenter = weightNorm * (weightLeft * srcAlpha0 + weightCenter * srcAlpha1 + weightRight * srcAlpha2);
-                        let alphaRight = weightNorm * (weightLeft * srcAlpha1 + weightCenter * srcAlpha2 + weightRight * srcAlphaR);
+                        const alphaLeft = weightNorm * (weightLeft * srcAlphaL + weightCenter * srcAlpha0 + weightRight * srcAlpha1);
+                        const alphaCenter = weightNorm * (weightLeft * srcAlpha0 + weightCenter * srcAlpha1 + weightRight * srcAlpha2);
+                        const alphaRight = weightNorm * (weightLeft * srcAlpha1 + weightCenter * srcAlpha2 + weightRight * srcAlphaR);
 
                         // Store subpixel alphas in dest-pixel
-                        let destPixelIndex = (j * w + i) * 4;
+                        const destPixelIndex = (j * w + i) * 4;
                         destRgba[destPixelIndex + 0] = Math.round(255 * alphaLeft);
                         destRgba[destPixelIndex + 1] = Math.round(255 * alphaCenter);
                         destRgba[destPixelIndex + 2] = Math.round(255 * alphaRight);
@@ -359,7 +362,7 @@ export function newTextHintsCache(font: string): Cache<Texture2D> {
                         // If alpha is 1, Firefox will interpret it as 100%. Causes some pixels that should be
                         // very dim to come out very bright. As a workaround, nudge them down to zero.
                         //
-                        let alphaAvg = Math.round(255 * (alphaLeft + alphaCenter + alphaRight) / 3);
+                        const alphaAvg = Math.round(255 * (alphaLeft + alphaCenter + alphaRight) / 3);
                         destRgba[destPixelIndex + 3] = (alphaAvg === 1 ? 0 : alphaAvg);
                     }
                 }
@@ -459,9 +462,9 @@ export class HintedTextRenderer {
         yAnchor?: number;
         color?: Color
     }) {
-        let xAnchor = (hasval(options) && hasval(options.xAnchor) ? options.xAnchor : 0.5);
-        let yAnchor = (hasval(options) && hasval(options.yAnchor) ? options.yAnchor : 0.5);
-        let color = (hasval(options) && hasval(options.color) ? options.color : black);
+        const xAnchor = (hasval(options) && hasval(options.xAnchor) ? options.xAnchor : 0.5);
+        const yAnchor = (hasval(options) && hasval(options.yAnchor) ? options.yAnchor : 0.5);
+        const color = (hasval(options) && hasval(options.color) ? options.color : black);
 
         // The hints texture stores subpixel alphas in its R,G,B components. For example, a red hint-pixel indicates
         // that, at that pixel, the final R component should be color.r (R_hint=1, so red is opaque), but the

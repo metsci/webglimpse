@@ -41,17 +41,17 @@ export class SortedMultimap<K, V> {
         this._idFn = idFn;
     }
 
-    private createContainerComparator<V>(comparator: Comparator<K>): Comparator<Container<K, V>> {
+    private createContainerComparator<U>(comparator: Comparator<K>): Comparator<Container<K, U>> {
         return {
-            compare: function (container1: Container<K, V>, container2: Container<K, V>): number {
+            compare: function (container1: Container<K, U>, container2: Container<K, U>): number {
                 return comparator.compare(container1.key, container2.key);
             }
-        }
+        };
     }
 
     // Inserts the value into the tree. Nothing is inserted if the value already exists
     insert(key: K, value: V) {
-        let wrappedKey = new Container<K, V>(key);
+        const wrappedKey = new Container<K, V>(key);
         let values: Container<K, V> = this._tree.getValue(wrappedKey);
 
         if (values === null) {
@@ -63,10 +63,12 @@ export class SortedMultimap<K, V> {
     }
 
     remove(key: K, value: V) {
-        let wrappedKey = new Container<K, V>(key);
-        let values: Container<K, V> = this._tree.getValue(wrappedKey);
+        const wrappedKey = new Container<K, V>(key);
+        const values: Container<K, V> = this._tree.getValue(wrappedKey);
 
-        if (values === null) return;
+        if (values === null) {
+            return;
+        }
 
         values.remove(value, this._idFn);
 
@@ -76,8 +78,8 @@ export class SortedMultimap<K, V> {
     }
 
     contains(key: K, value: V) {
-        let wrappedKey = new Container<K, V>(key);
-        let values: Container<K, V> = this._tree.getValue(wrappedKey);
+        const wrappedKey = new Container<K, V>(key);
+        const values: Container<K, V> = this._tree.getValue(wrappedKey);
 
         if (values === null) {
             return false;
@@ -119,9 +121,9 @@ export class SortedMultimap<K, V> {
 
     // Returns all elements between the provided values (sorted from low to high)
     subSet(low: K, high: K, lowInclusive: boolean = true, highInclusive: boolean = false): V[] {
-        let wrappedLow = new Container<K, V>(low);
-        let wrappedHigh = new Container<K, V>(high);
-        let values: Container<K, V>[] = this._tree.subSet(wrappedLow, wrappedHigh, lowInclusive, highInclusive);
+        const wrappedLow = new Container<K, V>(low);
+        const wrappedHigh = new Container<K, V>(high);
+        const values: Container<K, V>[] = this._tree.subSet(wrappedLow, wrappedHigh, lowInclusive, highInclusive);
         return this.unwrapArray(values);
     }
 
@@ -132,9 +134,9 @@ export class SortedMultimap<K, V> {
 
     iterator(): Iterator<V> {
 
-        let iter: Iterator<Container<K, V>> = this._tree.iterator();
+        const iter: Iterator<Container<K, V>> = this._tree.iterator();
         let currentArray: V[] = null;
-        let currentIndex: number = 0;
+        let currentIndex = 0;
 
         return {
             next: function (): V {
@@ -157,7 +159,7 @@ export class SortedMultimap<K, V> {
             hasNext: function (): boolean {
                 return iter.hasNext() || (currentArray != null && currentIndex < currentArray.length);
             }
-        }
+        };
     }
 
     private wrap(key: K): Container<K, V> {
@@ -174,10 +176,10 @@ export class SortedMultimap<K, V> {
     }
 
     private unwrapArray(values: Container<K, V>[]): V[] {
-        let unwrappedValues: V[] = new Array<V>();
+        const unwrappedValues: V[] = new Array<V>();
         values.forEach(function (value: Container<K, V>) {
-            value.toArray().forEach(function (value: V) {
-                unwrappedValues.push(value);
+            value.toArray().forEach(function (val: V) {
+                unwrappedValues.push(val);
             });
         });
 

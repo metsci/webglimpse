@@ -51,7 +51,7 @@ export function newDynamicBuffer(data: Float32Array = new Float32Array(0)): Dyna
 class BufferEntry {
     gl: WebGLRenderingContext;
     buffer: WebGLBuffer;
-    capacity: number = 0;
+    capacity = 0;
     marker: number = null;
 
     constructor(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
@@ -62,7 +62,7 @@ class BufferEntry {
 
 class AbstractBuffer implements Buffer {
     private buffers: StringMap<BufferEntry> = {};
-    private currentMarker: number = 0;
+    private currentMarker = 0;
 
     init(gl: WebGLRenderingContext, target: number): number {
         throw new Error('Method is abstract');
@@ -77,10 +77,12 @@ class AbstractBuffer implements Buffer {
     }
 
     bind(gl: WebGLRenderingContext, target: number) {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (this.buffers[glId] === undefined) {
-            let buffer = gl.createBuffer();
-            if (!hasval(buffer)) throw new Error('Failed to create buffer');
+            const buffer = gl.createBuffer();
+            if (!hasval(buffer)) {
+                throw new Error('Failed to create buffer');
+            }
             this.buffers[glId] = new BufferEntry(gl, buffer);
 
             gl.bindBuffer(target, this.buffers[glId].buffer);
@@ -103,9 +105,9 @@ class AbstractBuffer implements Buffer {
 
     dispose() {
         // XXX: Not sure this actually works ... may have to make each gl current or something
-        for (let glid in this.buffers) {
+        for (const glid in this.buffers) {
             if (this.buffers.hasOwnProperty(glid)) {
-                let en = this.buffers[glid];
+                const en = this.buffers[glid];
                 en.gl.deleteBuffer(en.buffer);
             }
         }

@@ -46,20 +46,20 @@ export interface TimeGridPainterOptions {
 
 
 export function newTimeGridPainter(timeAxis: TimeAxis1D, isVerticalAxis: boolean, timeZone: string, options?: TimeGridPainterOptions): Painter {
-    let tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
-    let gridColor = (hasval(options) && hasval(options.gridColor) ? options.gridColor : black);
-    let referenceDate_PMILLIS = (hasval(options) && hasval(options.referenceDate) ? parseTime_PMILLIS(options.referenceDate) : undefined);
+    const tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
+    const gridColor = (hasval(options) && hasval(options.gridColor) ? options.gridColor : black);
+    const referenceDate_PMILLIS = (hasval(options) && hasval(options.referenceDate) ? parseTime_PMILLIS(options.referenceDate) : undefined);
 
-    let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
 
     let xyFrac = new Float32Array(0);
-    let xyFracBuffer = newDynamicBuffer();
+    const xyFracBuffer = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
-        let tickTimes_PMILLIS = getTickTimes_PMILLIS(timeAxis, (isVerticalAxis ? viewport.h : viewport.w), tickSpacing, timeZone, referenceDate_PMILLIS);
-        let tickCount = tickTimes_PMILLIS.length;
+        const tickTimes_PMILLIS = getTickTimes_PMILLIS(timeAxis, (isVerticalAxis ? viewport.h : viewport.w), tickSpacing, timeZone, referenceDate_PMILLIS);
+        const tickCount = tickTimes_PMILLIS.length;
 
         program.use(gl);
         u_Color.setData(gl, gridColor);
@@ -92,7 +92,7 @@ export function newTimeGridPainter(timeAxis: TimeAxis1D, isVerticalAxis: boolean
 
         a_XyFrac.disable(gl);
         program.endUse(gl);
-    }
+    };
 }
 
 

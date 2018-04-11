@@ -34,9 +34,9 @@ import { Axis2D } from './plot/axis';
 // see: http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
 export function glOrtho(left: number, right: number, bottom: number, top: number, near: number, far: number): Float32Array {
 
-    let tx = (right + left) / (right - left);
-    let ty = (top + bottom) / (top - bottom);
-    let tz = (far + near) / (far - near);
+    const tx = (right + left) / (right - left);
+    const ty = (top + bottom) / (top - bottom);
+    const tz = (far + near) / (far - near);
 
     // GL ES (and therefore WebGL) requires matrices to be column-major
     return new Float32Array([

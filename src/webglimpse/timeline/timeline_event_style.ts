@@ -97,7 +97,7 @@ export class TimelineEventStyleUi {
     }
 
     private _setAttrs(style: TimelineEventStyle) {
-        this._icons = style.icons.map((icon) => { return new TimelineEventIconUi(icon); });
+        this._icons = style.icons.map((icon) => new TimelineEventIconUi(icon));
     }
 
     get numIcons(): number {

@@ -70,30 +70,32 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
 
         let textColor = (hasval(cursorOptions) && hasval(cursorOptions.textColor) ? cursorOptions.textColor : white);
         let lineColor = (hasval(cursorOptions) && hasval(cursorOptions.lineColor) ? cursorOptions.lineColor : white);
-        let font = (hasval(cursorOptions) && hasval(cursorOptions.font) ? cursorOptions.font : options.timelineFont);
-        let buffer_px = (hasval(cursorOptions) && hasval(cursorOptions.buffer_px) ? cursorOptions.buffer_px : 4);
-        let textDecimals = (hasval(cursorOptions) && hasval(cursorOptions.textDecimals) ? cursorOptions.textDecimals : 2);
-        let boxSize_px = (hasval(cursorOptions) && hasval(cursorOptions.boxSize_px) ? cursorOptions.boxSize_px : 8);
-        let crosshairThickness_px = (hasval(cursorOptions) && hasval(cursorOptions.crosshairThickness_px) ? cursorOptions.boxSize_px : 2);
-        let boxThickness_px = (hasval(cursorOptions) && hasval(cursorOptions.boxThickness_px) ? cursorOptions.boxSize_px : 2);
+        const font = (hasval(cursorOptions) && hasval(cursorOptions.font) ? cursorOptions.font : options.timelineFont);
+        const buffer_px = (hasval(cursorOptions) && hasval(cursorOptions.buffer_px) ? cursorOptions.buffer_px : 4);
+        const textDecimals = (hasval(cursorOptions) && hasval(cursorOptions.textDecimals) ? cursorOptions.textDecimals : 2);
+        const boxSize_px = (hasval(cursorOptions) && hasval(cursorOptions.boxSize_px) ? cursorOptions.boxSize_px : 8);
+        const crosshairThickness_px = (hasval(cursorOptions) && hasval(cursorOptions.crosshairThickness_px) ? cursorOptions.boxSize_px : 2);
+        const boxThickness_px = (hasval(cursorOptions) && hasval(cursorOptions.boxThickness_px) ? cursorOptions.boxSize_px : 2);
 
-        let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-        let u_Color = new UniformColor(program, 'u_Color');
-        let a_Position = new Attribute(program, 'a_XyFrac');
+        const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+        const u_Color = new UniformColor(program, 'u_Color');
+        const a_Position = new Attribute(program, 'a_XyFrac');
 
         let xys = new Float32Array(0);
         xys = ensureCapacityFloat32(xys, 4);
-        let xysBuffer = newDynamicBuffer();
+        const xysBuffer = newDynamicBuffer();
 
-        let textTextures = newTextTextureCache2(font);
-        let textureRenderer = new TextureRenderer();
+        const textTextures = newTextTextureCache2(font);
+        const textureRenderer = new TextureRenderer();
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
             // only draw a cursor if we are the current hovered row
-            let hoveredRow: TimelineRowModel = ui.selection.hoveredRow.value;
-            if (!hasval(hoveredRow) || hoveredRow.rowGuid !== rowModel.rowGuid) return;
+            const hoveredRow: TimelineRowModel = ui.selection.hoveredRow.value;
+            if (!hasval(hoveredRow) || hoveredRow.rowGuid !== rowModel.rowGuid) {
+                return;
+            }
 
             gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
             gl.enable(GL.BLEND);
@@ -101,23 +103,25 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
             let indexXys = 0;
             textTextures.resetTouches();
 
-            let time = ui.selection.hoveredTime_PMILLIS.value;
-            let y = ui.selection.hoveredY.value;
+            const time = ui.selection.hoveredTime_PMILLIS.value;
+            const y = ui.selection.hoveredY.value;
 
-            if (!hasval(time) || !hasval(y)) return;
+            if (!hasval(time) || !hasval(y)) {
+                return;
+            }
 
-            let wLine = crosshairThickness_px / viewport.w;
-            let hLine = crosshairThickness_px / viewport.h;
+            const wLine = crosshairThickness_px / viewport.w;
+            const hLine = crosshairThickness_px / viewport.h;
 
-            let wBoxLine = boxThickness_px / viewport.w;
-            let hBoxLine = boxThickness_px / viewport.h;
+            const wBoxLine = boxThickness_px / viewport.w;
+            const hBoxLine = boxThickness_px / viewport.h;
 
-            let wBox = boxSize_px / viewport.w;
-            let hBox = boxSize_px / viewport.h;
+            const wBox = boxSize_px / viewport.w;
+            const hBox = boxSize_px / viewport.h;
 
             if (hasval(time)) {
 
-                let cursorModel = model.cursor(rowModel.cursorGuid);
+                const cursorModel = model.cursor(rowModel.cursorGuid);
 
                 if (hasval(cursorModel)) {
                     if (hasval(cursorModel.lineColor)) {
@@ -130,22 +134,24 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
 
                     textureRenderer.begin(gl, viewport);
 
-                    let timeseriesCount = cursorModel.labeledTimeseriesGuids.length;
+                    const timeseriesCount = cursorModel.labeledTimeseriesGuids.length;
 
                     // 36 vertices for crosshairs, 48 vertices per timeseries intersection marker
                     xys = ensureCapacityFloat32(xys, 2 * (36 + timeseriesCount * 48));
 
                     for (let i = 0; i < cursorModel.labeledTimeseriesGuids.length; i++) {
 
-                        let timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt(i);
-                        let timeseries = model.timeseries(timeseriesGuid);
+                        const timeseriesGuid = cursorModel.labeledTimeseriesGuids.valueAt(i);
+                        const timeseries = model.timeseries(timeseriesGuid);
 
                         // if the row doesn't contain the timeseries, don't show cursor intersections
-                        if (!rowModel.timeseriesGuids.hasValue(timeseriesGuid)) continue;
+                        if (!rowModel.timeseriesGuids.hasValue(timeseriesGuid)) {
+                            continue;
+                        }
 
                         for (let j = 0; j < timeseries.fragmentGuids.length; j++) {
-                            let fragmentGuid: string = timeseries.fragmentGuids.valueAt(j);
-                            let fragment: TimelineTimeseriesFragmentModel = model.timeseriesFragment(fragmentGuid);
+                            const fragmentGuid: string = timeseries.fragmentGuids.valueAt(j);
+                            const fragment: TimelineTimeseriesFragmentModel = model.timeseriesFragment(fragmentGuid);
 
                             // fragments should not overlap
                             if (fragment.start_PMILLIS < time && fragment.end_PMILLIS > time) {
@@ -154,35 +160,35 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
 
                                 // bars are drawn starting at the point and continuing to the next point, so we don't interpolate them
                                 if (timeseries.uiHint === 'bars') {
-                                    let index: number = indexAtOrBefore(fragment.times_PMILLIS, time);
+                                    const index: number = indexAtOrBefore(fragment.times_PMILLIS, time);
                                     value = fragment.data[index];
                                 }
                                 else {
-                                    let index0: number = indexAtOrBefore(fragment.times_PMILLIS, time);
-                                    let index1: number = indexAtOrAfter(fragment.times_PMILLIS, time);
+                                    const index0: number = indexAtOrBefore(fragment.times_PMILLIS, time);
+                                    const index1: number = indexAtOrAfter(fragment.times_PMILLIS, time);
 
-                                    let value0 = fragment.data[index0];
-                                    let time0 = fragment.times_PMILLIS[index0];
+                                    const value0 = fragment.data[index0];
+                                    const time0 = fragment.times_PMILLIS[index0];
 
-                                    let value1 = fragment.data[index1];
-                                    let time1 = fragment.times_PMILLIS[index1];
+                                    const value1 = fragment.data[index1];
+                                    const time1 = fragment.times_PMILLIS[index1];
 
-                                    let diff = time1 - time0;
-                                    let diff0 = (time - time0) / diff;
-                                    let diff1 = 1 - diff0;
+                                    const diff = time1 - time0;
+                                    const diff0 = (time - time0) / diff;
+                                    const diff1 = 1 - diff0;
 
                                     value = value0 * diff1 + value1 * diff0;
                                 }
 
-                                let textTexture = textTextures.value(textColor.rgbaString, value.toFixed(textDecimals));
+                                const textTexture = textTextures.value(textColor.rgbaString, value.toFixed(textDecimals));
 
-                                let valueFracY = dataAxis.vFrac(value);
-                                let valueFracX = timeAxis.tFrac(time);
+                                const valueFracY = dataAxis.vFrac(value);
+                                const valueFracX = timeAxis.tFrac(time);
 
-                                let boxLeft = valueFracX - wBox / 2;
-                                let boxRight = valueFracX + wBox / 2;
-                                let boxTop = valueFracY + hBox / 2;
-                                let boxBottom = valueFracY - hBox / 2;
+                                const boxLeft = valueFracX - wBox / 2;
+                                const boxRight = valueFracX + wBox / 2;
+                                const boxTop = valueFracY + hBox / 2;
+                                const boxBottom = valueFracY - hBox / 2;
 
                                 // draw box at value location
 
@@ -204,17 +210,17 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
                     }
 
                     if (hasval(cursorModel.showCursorText) ? cursorModel.showCursorText : true) {
-                        let textTexture = textTextures.value(textColor.rgbaString, y.toFixed(textDecimals));
+                        const textTexture = textTextures.value(textColor.rgbaString, y.toFixed(textDecimals));
                         textureRenderer.draw(gl, textTexture, 1, dataAxis.vFrac(y) + buffer_px / viewport.h, { xAnchor: 1, yAnchor: 0 });
                     }
 
                     textureRenderer.end(gl);
                     textTextures.retainTouched();
 
-                    let xLeft = 0;
-                    let xRight = 1;
-                    let yMid = dataAxis.vFrac(y);
-                    let xMid = timeAxis.tFrac(time);
+                    const xLeft = 0;
+                    const xRight = 1;
+                    const yMid = dataAxis.vFrac(y);
+                    const xMid = timeAxis.tFrac(time);
 
                     // draw horizontal line
                     if (hasval(cursorModel.showHorizontalLine) ? cursorModel.showHorizontalLine : true) {
@@ -239,6 +245,6 @@ export function newTimeseriesCursorPainterFactory(cursorOptions?: TimeseriesCurs
                     program.endUse(gl);
                 }
             }
-        }
-    }
+        };
+    };
 }

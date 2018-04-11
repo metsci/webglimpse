@@ -54,31 +54,29 @@ export interface TimelineTimeseriesPainterOptions {
     rowBottomPadding: number;
 }
 
-export interface TimelineTimeseriesPainterFactory {
-    (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi, options: TimelineTimeseriesPainterOptions): Painter;
-}
+export type TimelineTimeseriesPainterFactory = (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi, options: TimelineTimeseriesPainterOptions) => Painter;
 
 export interface TimelineTimeseriesRowPaneOptions {
     rowHeight?: number;
     rowTopPadding?: number;
     rowBottomPadding?: number;
     axisOptions?: EdgeAxisPainterOptions;
-    axisWidth?: number
+    axisWidth?: number;
     painterFactories?: TimelineTimeseriesPainterFactory[];
 }
 
 export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPaneOptions): TimelineRowPaneFactory {
     return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, row: TimelineRowModel, ui: TimelineUi, options: TimelineRowPaneOptions): Pane {
 
-        let rowTopPadding = (hasval(rowOptions) && hasval(rowOptions.rowTopPadding) ? rowOptions.rowTopPadding : 6);
-        let rowBottomPadding = (hasval(rowOptions) && hasval(rowOptions.rowBottomPadding) ? rowOptions.rowBottomPadding : 6);
-        let axisWidth = (hasval(rowOptions) && hasval(rowOptions.axisWidth) ? rowOptions.axisWidth : 60);
-        let painterFactories = (hasval(rowOptions) && hasval(rowOptions.painterFactories) ? rowOptions.painterFactories : []);
-        let axisOptions = (hasval(rowOptions) && hasval(rowOptions.axisOptions) ? rowOptions.axisOptions : {});
+        const rowTopPadding = (hasval(rowOptions) && hasval(rowOptions.rowTopPadding) ? rowOptions.rowTopPadding : 6);
+        const rowBottomPadding = (hasval(rowOptions) && hasval(rowOptions.rowBottomPadding) ? rowOptions.rowBottomPadding : 6);
+        const axisWidth = (hasval(rowOptions) && hasval(rowOptions.axisWidth) ? rowOptions.axisWidth : 60);
+        const painterFactories = (hasval(rowOptions) && hasval(rowOptions.painterFactories) ? rowOptions.painterFactories : []);
+        const axisOptions = (hasval(rowOptions) && hasval(rowOptions.axisOptions) ? rowOptions.axisOptions : {});
 
-        let keyPrefix = options.isMaximized ? 'maximized-' : '';
+        const keyPrefix = options.isMaximized ? 'maximized-' : '';
 
-        let getRowHeight = function () {
+        const getRowHeight = function () {
             // maximized rows do not specifiy a height (they should fill available space)
             if (options.isMaximized) {
                 return null;
@@ -95,52 +93,62 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             else {
                 return 135;
             }
+        };
+
+        const rowHeight: number = getRowHeight();
+
+        const timelineFont = options.timelineFont;
+        const timelineFgColor = options.timelineFgColor;
+        const draggableEdgeWidth = options.draggableEdgeWidth;
+        const snapToDistance = options.snapToDistance;
+
+        const rowUi = ui.rowUi(row.rowGuid);
+        const input = ui.input;
+        const selection = ui.selection;
+
+        if (!hasval(axisOptions.font)) {
+            axisOptions.font = timelineFont;
+        }
+        if (!hasval(axisOptions.tickColor)) {
+            axisOptions.tickColor = timelineFgColor;
+        }
+        if (!hasval(axisOptions.textColor)) {
+            axisOptions.textColor = timelineFgColor;
+        }
+        if (!hasval(axisOptions.showLabel)) {
+            axisOptions.showLabel = true;
+        }
+        if (!hasval(axisOptions.shortenLabels)) {
+            axisOptions.shortenLabels = false;
         }
 
-        let rowHeight: number = getRowHeight();
-
-        let timelineFont = options.timelineFont;
-        let timelineFgColor = options.timelineFgColor;
-        let draggableEdgeWidth = options.draggableEdgeWidth;
-        let snapToDistance = options.snapToDistance;
-
-        let rowUi = ui.rowUi(row.rowGuid);
-        let input = ui.input;
-        let selection = ui.selection;
-
-        if (!hasval(axisOptions.font)) axisOptions.font = timelineFont;
-        if (!hasval(axisOptions.tickColor)) axisOptions.tickColor = timelineFgColor;
-        if (!hasval(axisOptions.textColor)) axisOptions.textColor = timelineFgColor;
-        if (!hasval(axisOptions.showLabel)) axisOptions.showLabel = true;
-        if (!hasval(axisOptions.shortenLabels)) axisOptions.shortenLabels = false;
-
-        let redraw = function () {
+        const redraw = function () {
             drawable.redraw();
         };
 
         // setup pane for data (y) axis painter and mouse listener
-        let yAxisPane = new Pane(<Layout>{ updatePrefSize: fixedSize(axisWidth, rowHeight) });
+        const yAxisPane = new Pane(<Layout>{ updatePrefSize: fixedSize(axisWidth, rowHeight) });
         dataAxis.limitsChanged.on(redraw);
         attachAxisMouseListeners1D(yAxisPane, dataAxis, true);
 
         // add listener to update the height of the row if the rowHeight attribute changes
-        let updateRowHeight = function () {
+        const updateRowHeight = function () {
             yAxisPane.layout = <Layout>{ updatePrefSize: fixedSize(axisWidth, getRowHeight()) };
         };
         row.attrsChanged.on(updateRowHeight);
 
-        let isDragMode: Mask2D = function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
-            let fragment = getNearestFragment(viewport, i, j).fragment;
+        const isDragMode: Mask2D = function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
+            const fragment = getNearestFragment(viewport, i, j).fragment;
             return hasval(fragment);
         };
 
-        let rowContentPane = new Pane(newColumnLayout(), true, isDragMode);
-        let underlayPane = new Pane(newOverlayLayout(), false);
-        let overlayPane = new Pane(null, false);
+        const rowContentPane = new Pane(newColumnLayout(), true, isDragMode);
+        const underlayPane = new Pane(newOverlayLayout(), false);
+        const overlayPane = new Pane(null, false);
 
-        let painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, timelineThickness: 1, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding };
+        const painterOptions = { timelineFont: timelineFont, timelineFgColor: timelineFgColor, timelineThickness: 1, rowTopPadding: rowTopPadding, rowBottomPadding: rowBottomPadding };
         for (let n = 0; n < painterFactories.length; n++) {
-            let createPainter = painterFactories[n];
+            const createPainter = painterFactories[n];
             rowContentPane.addPainter(createPainter(drawable, timeAxis, dataAxis, model, row, ui, painterOptions));
         }
 
@@ -158,18 +166,18 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         row.timeseriesGuids.valueMoved.on(redraw);
         row.timeseriesGuids.valueRemoved.on(redraw);
 
-        let addFragmentRedraw = function (fragmentGuid: string) {
-            let fragment = model.timeseriesFragment(fragmentGuid);
+        const addFragmentRedraw = function (fragmentGuid: string) {
+            const fragment = model.timeseriesFragment(fragmentGuid);
             fragment.dataChanged.on(redraw);
-        }
+        };
 
-        let removeFragmentRedraw = function (fragmentGuid: string) {
-            let fragment = model.timeseriesFragment(fragmentGuid);
+        const removeFragmentRedraw = function (fragmentGuid: string) {
+            const fragment = model.timeseriesFragment(fragmentGuid);
             fragment.dataChanged.off(redraw);
-        }
+        };
 
-        let addRedraw = function (timeseriesGuid: string) {
-            let timeseries = model.timeseries(timeseriesGuid);
+        const addRedraw = function (timeseriesGuid: string) {
+            const timeseries = model.timeseries(timeseriesGuid);
             timeseries.attrsChanged.on(redraw);
             timeseries.fragmentGuids.valueAdded.on(redraw);
             timeseries.fragmentGuids.valueRemoved.on(redraw);
@@ -181,8 +189,8 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         row.timeseriesGuids.forEach(addRedraw);
         row.timeseriesGuids.valueAdded.on(addRedraw);
 
-        let removeRedraw = function (timeseriesGuid: string) {
-            let timeseries = model.timeseries(timeseriesGuid);
+        const removeRedraw = function (timeseriesGuid: string) {
+            const timeseries = model.timeseries(timeseriesGuid);
             timeseries.attrsChanged.off(redraw);
             timeseries.fragmentGuids.valueAdded.off(redraw);
             timeseries.fragmentGuids.valueRemoved.off(redraw);
@@ -190,11 +198,11 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         };
         row.timeseriesGuids.valueRemoved.on(removeRedraw);
 
-        let timeAtCoords_PMILLIS = function (viewport: BoundsUnmodifiable, i: number): number {
+        const timeAtCoords_PMILLIS = function (viewport: BoundsUnmodifiable, i: number): number {
             return timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
         };
 
-        let timeAtPointer_PMILLIS = function (ev: PointerEvent): number {
+        const timeAtPointer_PMILLIS = function (ev: PointerEvent): number {
             return timeAtCoords_PMILLIS(ev.paneViewport, ev.i);
         };
 
@@ -225,9 +233,9 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             recentMouseMove = null;
         });
 
-        let uiMillisPerPxChanged = function () {
+        const uiMillisPerPxChanged = function () {
             if (!hasval(timeseriesDragMode) && recentMouseMove != null) {
-                let ev = recentMouseMove;
+                const ev = recentMouseMove;
                 input.timeHover.fire(timeAtPointer_PMILLIS(ev), ev);
             }
         };
@@ -251,39 +259,39 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         // Begin annotation selection
         //
 
-        let getNearestAnnotation = function (viewport: BoundsUnmodifiable, i: number, j: number) {
+        const getNearestAnnotation = function (viewport: BoundsUnmodifiable, i: number, j: number) {
             // maximum number of pixels away from a point the mouse can be to select it
-            let pickBuffer_PIXEL: number = 10;
+            const pickBuffer_PIXEL = 10;
             // value per pixel in x and y directions
-            let vppx: number = ui.millisPerPx.value;
-            let vppy: number = dataAxis.vSize / rowContentPane.viewport.h;
-            let pickBuffer_PMILLIS: number = pickBuffer_PIXEL * vppx;
+            const vppx: number = ui.millisPerPx.value;
+            const vppy: number = dataAxis.vSize / rowContentPane.viewport.h;
+            const pickBuffer_PMILLIS: number = pickBuffer_PIXEL * vppx;
 
-            let ev_time: number = timeAtCoords_PMILLIS(viewport, i);
-            let ev_value: number = dataAxis.vAtFrac(viewport.yFrac(j));
+            const ev_time: number = timeAtCoords_PMILLIS(viewport, i);
+            const ev_value: number = dataAxis.vAtFrac(viewport.yFrac(j));
 
             let bestAnnotation: TimelineAnnotationModel = null;
             let best_PIXEL: number = null;
 
             if (ev_time) {
-                for (let i = 0; i < row.annotationGuids.length; i++) {
-                    let annotationGuid: string = row.annotationGuids.valueAt(i);
-                    let annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
-                    let styleGuid: string = annotation.styleGuid;
-                    let style: TimelineAnnotationStyleUi = ui.annotationStyle(styleGuid);
+                for (let annotationIdx = 0; annotationIdx < row.annotationGuids.length; annotationIdx++) {
+                    const annotationGuid: string = row.annotationGuids.valueAt(annotationIdx);
+                    const annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
+                    const styleGuid: string = annotation.styleGuid;
+                    const style: TimelineAnnotationStyleUi = ui.annotationStyle(styleGuid);
 
-                    let dy_PIXEL = Math.abs(annotation.y - ev_value) / vppy;
-                    let dx_PIXEL = Math.abs(annotation.time_PMILLIS - ev_time) / vppx;
+                    const dy_PIXEL = Math.abs(annotation.y - ev_value) / vppy;
+                    const dx_PIXEL = Math.abs(annotation.time_PMILLIS - ev_time) / vppx;
 
-                    let d_PIXEL: number = 0;
+                    let d_PIXEL = 0;
                     if (style.uiHint === 'point') {
-                        let d_PIXEL = Math.sqrt(dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL);
+                        d_PIXEL = Math.sqrt(dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL);
                     }
                     else if (style.uiHint === 'horizontal-line') {
-                        let d_PIXEL = dy_PIXEL;
+                        d_PIXEL = dy_PIXEL;
                     }
                     else if (style.uiHint === 'vertical-line') {
-                        let d_PIXEL = dx_PIXEL;
+                        d_PIXEL = dx_PIXEL;
                     }
 
                     if (d_PIXEL < pickBuffer_PIXEL) {
@@ -296,19 +304,19 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             }
 
             return bestAnnotation;
-        }
+        };
 
-        let getNearestAnnotationEvent = function (ev: PointerEvent) {
+        const getNearestAnnotationEvent = function (ev: PointerEvent) {
             return getNearestAnnotation(ev.paneViewport, ev.i, ev.j);
-        }
+        };
 
         overlayPane.mouseMove.on(function (ev: PointerEvent) {
             // update selection.hoveredYValue
-            let y: number = dataAxis.vAtFrac(yFrac(ev));
+            const y: number = dataAxis.vAtFrac(yFrac(ev));
             selection.hoveredY.value = y;
 
             // update selection.hoveredAnnotation
-            let result = getNearestAnnotationEvent(ev);
+            const result = getNearestAnnotationEvent(ev);
             selection.hoveredAnnotation.value = result;
         });
         selection.hoveredAnnotation.changed.on(redraw);
@@ -321,7 +329,7 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         // Begin timeseries-drag
         //
 
-        function chooseTimeseriesDragMode(ui: TimelineUi, hoveredTimeseriesFragment: TimelineTimeseriesFragmentModel): string {
+        function chooseTimeseriesDragMode(timelineUi: TimelineUi, hoveredTimeseriesFragment: TimelineTimeseriesFragmentModel): string {
             if (!hasval(hoveredTimeseriesFragment)) {
                 return null;
             }
@@ -331,51 +339,51 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             }
         }
 
-        let updateCursor = function () {
+        const updateCursor = function () {
             if (!timeseriesDragMode) {
-                let mouseCursors = { 'xy': 'move', 'y': 'ns-resize' };
+                const mouseCursors = { 'xy': 'move', 'y': 'ns-resize' };
                 rowContentPane.mouseCursor = mouseCursors[chooseTimeseriesDragMode(ui, selection.hoveredTimeseries.fragment)];
             }
         };
         ui.millisPerPx.changed.on(updateCursor);
         selection.hoveredTimeseries.changed.on(updateCursor);
 
-        let getNearestFragment = function (viewport: BoundsUnmodifiable, i: number, j: number) {
+        const getNearestFragment = function (viewport: BoundsUnmodifiable, i: number, j: number) {
             // maximum number of pixels away from a point the mouse can be to select it
-            let pickBuffer_PIXEL: number = 10;
+            const pickBuffer_PIXEL = 10;
             // value per pixel in x and y directions
-            let vppx: number = ui.millisPerPx.value;
-            let vppy: number = dataAxis.vSize / rowContentPane.viewport.h;
-            let pickBuffer_PMILLIS: number = pickBuffer_PIXEL * vppx;
+            const vppx: number = ui.millisPerPx.value;
+            const vppy: number = dataAxis.vSize / rowContentPane.viewport.h;
+            const pickBuffer_PMILLIS: number = pickBuffer_PIXEL * vppx;
 
             let bestFragment: TimelineTimeseriesFragmentModel;
             let bestIndex: number;
             let best_PIXEL: number;
 
-            let ev_time: number = timeAtCoords_PMILLIS(viewport, i);
-            let ev_value: number = dataAxis.vAtFrac(viewport.yFrac(j));
+            const ev_time: number = timeAtCoords_PMILLIS(viewport, i);
+            const ev_value: number = dataAxis.vAtFrac(viewport.yFrac(j));
 
             if (ev_time) {
-                for (let i = 0; i < row.timeseriesGuids.length; i++) {
-                    let timeseriesGuid: string = row.timeseriesGuids.valueAt(i);
-                    let timeseries: TimelineTimeseriesModel = model.timeseries(timeseriesGuid);
+                for (let timeseriesIdx = 0; timeseriesIdx < row.timeseriesGuids.length; timeseriesIdx++) {
+                    const timeseriesGuid: string = row.timeseriesGuids.valueAt(timeseriesIdx);
+                    const timeseries: TimelineTimeseriesModel = model.timeseries(timeseriesGuid);
 
-                    for (let j = 0; j < timeseries.fragmentGuids.length; j++) {
-                        let fragmentGuid: string = timeseries.fragmentGuids.valueAt(j);
-                        let fragment: TimelineTimeseriesFragmentModel = model.timeseriesFragment(fragmentGuid);
+                    for (let fragmentIdx = 0; fragmentIdx < timeseries.fragmentGuids.length; fragmentIdx++) {
+                        const fragmentGuid: string = timeseries.fragmentGuids.valueAt(fragmentIdx);
+                        const fragment: TimelineTimeseriesFragmentModel = model.timeseriesFragment(fragmentGuid);
 
                         // fragments should not overlap
                         if (fragment.start_PMILLIS - pickBuffer_PMILLIS < ev_time && fragment.end_PMILLIS + pickBuffer_PMILLIS > ev_time) {
                             // bars are drawn starting at the point and continuing to the next point, so we need to choose the closest index differently
-                            let index: number = timeseries.uiHint === 'bars' ? indexAtOrBefore(fragment.times_PMILLIS, ev_time) : indexNearest(fragment.times_PMILLIS, ev_time);
-                            let value = fragment.data[index];
-                            let time = fragment.times_PMILLIS[index];
+                            const index: number = timeseries.uiHint === 'bars' ? indexAtOrBefore(fragment.times_PMILLIS, ev_time) : indexNearest(fragment.times_PMILLIS, ev_time);
+                            const value = fragment.data[index];
+                            const time = fragment.times_PMILLIS[index];
 
-                            let dy_PIXEL = (value - ev_value) / vppy;
-                            let dx_PIXEL = (time - ev_time) / vppx;
-                            let d_PIXEL = Math.sqrt(dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL);
+                            const dy_PIXEL = (value - ev_value) / vppy;
+                            const dx_PIXEL = (time - ev_time) / vppx;
+                            const d_PIXEL = Math.sqrt(dx_PIXEL * dx_PIXEL + dy_PIXEL * dy_PIXEL);
 
-                            let filter = function (): boolean {
+                            const filter = function (): boolean {
                                 if (timeseries.uiHint === 'bars') {
                                     return (timeseries.baseline < ev_value && ev_value < value) ||
                                         (timeseries.baseline > ev_value && ev_value > value);
@@ -383,7 +391,7 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
                                 else {
                                     return d_PIXEL < pickBuffer_PIXEL;
                                 }
-                            }
+                            };
 
                             if ((!best_PIXEL || d_PIXEL < best_PIXEL) && filter()) {
                                 best_PIXEL = d_PIXEL;
@@ -398,14 +406,14 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             return { fragment: bestFragment, index: bestIndex };
         };
 
-        let getNearestFragmentEvent = function (ev: PointerEvent) {
+        const getNearestFragmentEvent = function (ev: PointerEvent) {
             return getNearestFragment(ev.paneViewport, ev.i, ev.j);
-        }
+        };
 
         // choose the closest data point to the mouse cursor position and fire an event when it changes
         rowContentPane.mouseMove.on(function (ev: PointerEvent) {
             if (!hasval(timeseriesDragMode)) {
-                let result = getNearestFragmentEvent(ev);
+                const result = getNearestFragmentEvent(ev);
                 selection.hoveredTimeseries.setValue(result.fragment, result.index);
             }
         });
@@ -424,17 +432,17 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         rowContentPane.mouseMove.on(function (ev: PointerEvent) {
 
             if (hasval(timeseriesDragMode)) {
-                let x: number = timeAtPointer_PMILLIS(ev);
-                let y: number = dataAxis.vAtFrac(yFrac(ev));
+                const x: number = timeAtPointer_PMILLIS(ev);
+                const y: number = dataAxis.vAtFrac(yFrac(ev));
 
-                let fragment = selection.hoveredTimeseries.fragment;
-                let fragment_time = fragment.times_PMILLIS;
+                const fragment = selection.hoveredTimeseries.fragment;
+                const fragment_time = fragment.times_PMILLIS;
 
                 if (timeseriesDragMode === 'y') {
                     fragment.setData(selection.hoveredTimeseries.index, y);
                 }
                 else if (timeseriesDragMode === 'xy') {
-                    let index = fragment.setData(selection.hoveredTimeseries.index, y, x);
+                    const index = fragment.setData(selection.hoveredTimeseries.index, y, x);
                     if (index !== selection.hoveredTimeseries.index) {
                         selection.hoveredTimeseries.setValue(fragment, index);
                     }
@@ -470,7 +478,7 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
             row.attrsChanged.off(updateRowHeight);
 
             row.timeseriesGuids.forEach(function (timeseriesGuid: string) {
-                let timeseries = model.timeseries(timeseriesGuid);
+                const timeseries = model.timeseries(timeseriesGuid);
                 timeseries.attrsChanged.off(redraw);
                 timeseries.fragmentGuids.valueAdded.off(redraw);
                 timeseries.fragmentGuids.valueRemoved.off(redraw);
@@ -478,18 +486,18 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
         });
 
         return underlayPane;
-    }
+    };
 }
 
 export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterOptions): TimelineTimeseriesPainterFactory {
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi): Painter {
 
-        let selection: TimelineSelectionModel = ui.selection;
-        let defaultColor = hasval(options) && hasval(options.timelineFgColor) ? options.timelineFgColor : white;
-        let defaultThickness = hasval(options) && hasval(options.timelineThickness) ? options.timelineThickness : 1;
+        const selection: TimelineSelectionModel = ui.selection;
+        const defaultColor = hasval(options) && hasval(options.timelineFgColor) ? options.timelineFgColor : white;
+        const defaultThickness = hasval(options) && hasval(options.timelineThickness) ? options.timelineThickness : 1;
 
-        let modelview_line_VERTSHADER = concatLines(
+        const modelview_line_VERTSHADER = concatLines(
             '    uniform mat4 u_modelViewMatrix;                       ',
             '    attribute vec4 a_Position;                            ',
             '    attribute float a_Distance;                           ',
@@ -504,7 +512,7 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
             '                                                          '
         );
 
-        let modelview_pointsize_VERTSHADER = concatLines(
+        const modelview_pointsize_VERTSHADER = concatLines(
             '    uniform mat4 u_modelViewMatrix;                       ',
             '    attribute vec4 a_Position;                            ',
             '    uniform float u_PointSize;                            ',
@@ -516,27 +524,27 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
             '                                                          '
         );
 
-        let program = new Program(modelview_pointsize_VERTSHADER, solid_FRAGSHADER);
+        const program = new Program(modelview_pointsize_VERTSHADER, solid_FRAGSHADER);
 
-        let u_Color = new UniformColor(program, 'u_Color');
-        let u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
-        let a_Position = new Attribute(program, 'a_Position');
-        let u_PointSize = new Uniform1f(program, 'u_PointSize');
+        const u_Color = new UniformColor(program, 'u_Color');
+        const u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
+        const a_Position = new Attribute(program, 'a_Position');
+        const u_PointSize = new Uniform1f(program, 'u_PointSize');
 
-        let lineProgram = new Program(modelview_line_VERTSHADER, dash_FRAGSHADER);
-        let u_lpColor = new UniformColor(lineProgram, 'u_Color');
-        let u_lpmodelViewMatrix = new UniformMatrix4f(lineProgram, 'u_modelViewMatrix');
-        let a_lpPosition = new Attribute(lineProgram, 'a_Position');
-        let u_lpPointSize = new Uniform1f(lineProgram, 'u_PointSize');
-        let a_lpDistance = new Attribute(lineProgram, 'a_Distance');
-        let u_lpDash = new Uniform1f(lineProgram, 'u_Dash');
+        const lineProgram = new Program(modelview_line_VERTSHADER, dash_FRAGSHADER);
+        const u_lpColor = new UniformColor(lineProgram, 'u_Color');
+        const u_lpmodelViewMatrix = new UniformMatrix4f(lineProgram, 'u_modelViewMatrix');
+        const a_lpPosition = new Attribute(lineProgram, 'a_Position');
+        const u_lpPointSize = new Uniform1f(lineProgram, 'u_PointSize');
+        const a_lpDistance = new Attribute(lineProgram, 'a_Distance');
+        const u_lpDash = new Uniform1f(lineProgram, 'u_Dash');
 
-        let axis = new Axis2D(timeAxis, dataAxis);
+        const axis = new Axis2D(timeAxis, dataAxis);
 
         let xys = new Float32Array(0);
         let dists = new Float32Array(0);
-        let xysBuffer = newDynamicBuffer();
-        let distBuffer = newDynamicBuffer();
+        const xysBuffer = newDynamicBuffer();
+        const distBuffer = newDynamicBuffer();
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -544,22 +552,22 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
             gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
             gl.enable(GL.BLEND);
 
-            let baseline: number = 0;
+            let baseline = 0;
 
             for (let i = 0; i < rowModel.timeseriesGuids.length; i++) {
                 // collect fragments and sort them by time
                 let totalSize = 0;
-                let sortedFragments = new Array<TimelineTimeseriesFragmentModel>();
-                let timeseriesGuid = rowModel.timeseriesGuids.valueAt(i);
-                let timeseries = model.timeseries(timeseriesGuid);
+                const sortedFragments = new Array<TimelineTimeseriesFragmentModel>();
+                const timeseriesGuid = rowModel.timeseriesGuids.valueAt(i);
+                const timeseries = model.timeseries(timeseriesGuid);
                 for (let j = 0; j < timeseries.fragmentGuids.length; j++) {
-                    let timeseriesFragmentGuid = timeseries.fragmentGuids.valueAt(j);
-                    let fragment = model.timeseriesFragment(timeseriesFragmentGuid);
+                    const timeseriesFragmentGuid = timeseries.fragmentGuids.valueAt(j);
+                    const fragment = model.timeseriesFragment(timeseriesFragmentGuid);
 
                     sortedFragments.push(fragment);
                     totalSize += fragment.times_PMILLIS.length;
                 }
-                sortedFragments.sort((a, b) => { return a.start_PMILLIS - b.start_PMILLIS; });
+                sortedFragments.sort((a, b) => a.start_PMILLIS - b.start_PMILLIS);
 
                 if (timeseries.uiHint === 'lines' || timeseries.uiHint === 'points' || timeseries.uiHint === 'lines-and-points' || timeseries.uiHint === undefined) {
 
@@ -567,23 +575,23 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                     lineProgram.use(gl);
 
                     u_lpmodelViewMatrix.setData(gl, glOrthoAxis(axis));
-                    let size = totalSize * 2;
+                    const size = totalSize * 2;
 
                     xys = ensureCapacityFloat32(xys, size);
                     dists = ensureCapacityFloat32(dists, totalSize);
 
                     let index = 0;
                     for (let j = 0; j < sortedFragments.length; j++) {
-                        let fragment = sortedFragments[j];
-                        let data: number[] = fragment.data;
-                        let times_PMILLIS: number[] = fragment.times_PMILLIS;
+                        const fragment = sortedFragments[j];
+                        const data: number[] = fragment.data;
+                        const times_PMILLIS: number[] = fragment.times_PMILLIS;
 
                         for (let k = 0; k < data.length; k++ , index += 2) {
                             xys[index] = timeAxis.vAtTime(times_PMILLIS[k]);
                             xys[index + 1] = data[k];
                             if (k !== 0) {
-                                let x = (timeAxis.vAtTime(times_PMILLIS[k]) - timeAxis.vAtTime(times_PMILLIS[k - 1]));
-                                let y = data[k] - data[k - 1];
+                                const x = (timeAxis.vAtTime(times_PMILLIS[k]) - timeAxis.vAtTime(times_PMILLIS[k - 1]));
+                                const y = data[k] - data[k - 1];
                                 dists[k] = dists[k - 1] + Math.sqrt(x * x + y * y);
                             }
                             else {
@@ -592,13 +600,13 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                         }
                     }
 
-                    let lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
+                    const lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
                     u_lpColor.setData(gl, lineColor);
 
-                    let dash = hasval(timeseries.dash) ? timeseries.dash : 0;
+                    const dash = hasval(timeseries.dash) ? timeseries.dash : 0;
                     u_lpDash.setData(gl, dash);
 
-                    let lineThickness = hasval(timeseries.lineThickness) ? timeseries.lineThickness : defaultThickness;
+                    const lineThickness = hasval(timeseries.lineThickness) ? timeseries.lineThickness : defaultThickness;
                     gl.lineWidth(lineThickness);
 
                     xysBuffer.setData(xys.subarray(0, index));
@@ -616,7 +624,7 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                     // VERTEX_PROGRAM_POINT_SIZE and POINT_SMOOTH aren't defined
                     if (timeseries.uiHint === 'points' || timeseries.uiHint === 'lines-and-points') {
 
-                        let pointColor = hasval(timeseries.pointColor) ? timeseries.pointColor : defaultColor;
+                        const pointColor = hasval(timeseries.pointColor) ? timeseries.pointColor : defaultColor;
                         u_Color.setData(gl, pointColor);
 
                         u_PointSize.setData(gl, timeseries.pointSize);
@@ -633,29 +641,29 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                     // but it does not have its own bar drawn, so we need at
                     // least 2 data points to draw any bars
                     if (totalSize >= 2) {
-                        let baseline: number = timeseries.baseline;
+                        baseline = timeseries.baseline;
 
-                        let size = (totalSize - 1) * 12;
+                        const size = (totalSize - 1) * 12;
                         xys = ensureCapacityFloat32(xys, size);
 
                         let index = 0;
                         for (let j = 0; j < sortedFragments.length; j++) {
-                            let fragment = sortedFragments[j];
-                            let data: number[] = fragment.data;
-                            let times_PMILLIS: number[] = fragment.times_PMILLIS;
+                            const fragment = sortedFragments[j];
+                            const data: number[] = fragment.data;
+                            const times_PMILLIS: number[] = fragment.times_PMILLIS;
 
                             for (let k = 0; k < data.length - 1; k++) {
-                                let x1 = timeAxis.vAtTime(times_PMILLIS[k]);
-                                let y1 = data[k];
+                                const x1 = timeAxis.vAtTime(times_PMILLIS[k]);
+                                const y1 = data[k];
 
-                                let x2 = timeAxis.vAtTime(times_PMILLIS[k + 1]);
-                                let y2 = data[k + 1];
+                                const x2 = timeAxis.vAtTime(times_PMILLIS[k + 1]);
+                                const y2 = data[k + 1];
 
                                 index = putQuadXys(xys, index, x1, x2, y1, baseline);
                             }
                         }
 
-                        let lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
+                        const lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
                         u_Color.setData(gl, lineColor);
 
                         xysBuffer.setData(xys.subarray(0, index));
@@ -670,9 +678,9 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                     program.use(gl);
                     u_modelViewMatrix.setData(gl, glOrthoAxis(axis));
 
-                    let baseline: number = timeseries.baseline;
+                    baseline = timeseries.baseline;
 
-                    let size = totalSize * 4;
+                    const size = totalSize * 4;
 
                     // the last data point defines the right edge of the bar
                     // but it does not have its own bar drawn
@@ -680,13 +688,13 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
 
                     let index = 0;
                     for (let j = 0; j < sortedFragments.length; j++) {
-                        let fragment = sortedFragments[j];
-                        let data: number[] = fragment.data;
-                        let times_PMILLIS: number[] = fragment.times_PMILLIS;
+                        const fragment = sortedFragments[j];
+                        const data: number[] = fragment.data;
+                        const times_PMILLIS: number[] = fragment.times_PMILLIS;
 
                         for (let k = 0; k < data.length; k++ , index += 4) {
-                            let x1 = timeAxis.vAtTime(times_PMILLIS[k]);
-                            let y1 = data[k];
+                            const x1 = timeAxis.vAtTime(times_PMILLIS[k]);
+                            const y1 = data[k];
 
                             xys[index] = x1;
                             xys[index + 1] = baseline;
@@ -696,7 +704,7 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                         }
                     }
 
-                    let lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
+                    const lineColor = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
                     u_Color.setData(gl, lineColor);
 
                     xysBuffer.setData(xys.subarray(0, index));
@@ -714,27 +722,27 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                     u_modelViewMatrix.setData(gl, glOrthoAxis(axis));
 
                     if (timeseries.uiHint === 'area' || timeseries.uiHint === 'lines' || timeseries.uiHint === 'points' || timeseries.uiHint === 'lines-and-points' || timeseries.uiHint === undefined) {
-                        let size = 8;
+                        const size = 8;
                         xys = ensureCapacityFloat32(xys, size);
 
-                        let vppx: number = timeAxis.vSize / viewport.w;
-                        let vppy: number = dataAxis.vSize / viewport.h;
+                        const vppx: number = timeAxis.vSize / viewport.w;
+                        const vppy: number = dataAxis.vSize / viewport.h;
 
-                        let highlightSize = hasval(timeseries.pointSize) ? timeseries.pointSize : 5;
+                        const highlightSize = hasval(timeseries.pointSize) ? timeseries.pointSize : 5;
 
-                        let bufferx = (highlightSize / 2) * vppx;
-                        let buffery = (highlightSize / 2) * vppy;
+                        const bufferx = (highlightSize / 2) * vppx;
+                        const buffery = (highlightSize / 2) * vppy;
 
-                        let fragment = selection.hoveredTimeseries.fragment;
-                        let y = selection.hoveredTimeseries.data;
-                        let x = timeAxis.vAtTime(selection.hoveredTimeseries.times_PMILLIS);
+                        const fragment = selection.hoveredTimeseries.fragment;
+                        const y = selection.hoveredTimeseries.data;
+                        const x = timeAxis.vAtTime(selection.hoveredTimeseries.times_PMILLIS);
 
                         xys[0] = x - bufferx; xys[1] = y - buffery;
                         xys[2] = x + bufferx; xys[3] = y - buffery;
                         xys[4] = x + bufferx; xys[5] = y + buffery;
                         xys[6] = x - bufferx; xys[7] = y + buffery;
 
-                        let color = hasval(timeseries.pointColor) ? timeseries.pointColor : defaultColor;
+                        const color = hasval(timeseries.pointColor) ? timeseries.pointColor : defaultColor;
                         u_Color.setData(gl, darker(color, 0.8));
 
                         xysBuffer.setData(xys.subarray(0, size));
@@ -743,25 +751,25 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
                         gl.drawArrays(GL.LINE_LOOP, 0, size / 2);
                     }
                     else if (timeseries.uiHint === 'bars') {
-                        let size = 8;
+                        const size = 8;
                         xys = ensureCapacityFloat32(xys, size);
 
-                        let fragment = selection.hoveredTimeseries.fragment;
-                        let index = selection.hoveredTimeseries.index;
+                        const fragment = selection.hoveredTimeseries.fragment;
+                        const index = selection.hoveredTimeseries.index;
 
                         if (index < fragment.data.length) {
-                            let x1 = timeAxis.vAtTime(fragment.times_PMILLIS[index]);
-                            let y1 = fragment.data[index];
+                            const x1 = timeAxis.vAtTime(fragment.times_PMILLIS[index]);
+                            const y1 = fragment.data[index];
 
-                            let x2 = timeAxis.vAtTime(fragment.times_PMILLIS[index + 1]);
-                            let y2 = fragment.data[index + 1];
+                            const x2 = timeAxis.vAtTime(fragment.times_PMILLIS[index + 1]);
+                            const y2 = fragment.data[index + 1];
 
                             xys[0] = x1; xys[1] = y1;
                             xys[2] = x2; xys[3] = y1;
                             xys[4] = x2; xys[5] = baseline;
                             xys[6] = x1; xys[7] = baseline;
 
-                            let color = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
+                            const color = hasval(timeseries.lineColor) ? timeseries.lineColor : defaultColor;
                             u_Color.setData(gl, darker(color, 0.8));
 
                             xysBuffer.setData(xys.subarray(0, size));
@@ -777,7 +785,7 @@ export function newTimeseriesPainterFactory(options?: TimelineTimeseriesPainterO
             // disable shader and attribute buffers
             a_Position.disable(gl);
             a_lpDistance.disable(gl);
-        }
-    }
+        };
+    };
 }
 

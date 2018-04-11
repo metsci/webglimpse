@@ -40,13 +40,13 @@ import { hasval, isNumber } from '../util/util';
 // This layout is essentially a generalization of timeline_layout.ts. If you use a row_layout with the center element set to pref-max
 // you get the same effect as timeline_layout).
 function childHeight(child: LayoutEntry): number {
-    let usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' || child.layoutOptions.height === 'pref-max');
+    const usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref' || child.layoutOptions.height === 'pref-max');
     return (usePrefHeight ? child.prefSize.h : child.layoutOptions.height);
 }
 
 // see above, like childHeight( ) but don't count 'pref-max'
 function childHeightOverfull(child: LayoutEntry): number {
-    let usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref');
+    const usePrefHeight = (!hasval(child.layoutOptions) || child.layoutOptions.height === undefined || child.layoutOptions.height === 'pref');
 
     if (usePrefHeight) {
         return child.prefSize.h;
@@ -67,11 +67,11 @@ interface FlexData {
     childHeight: (child: LayoutEntry) => number;
 }
 
-function calculateFlexData(childrenToPlace: LayoutEntry[], parentViewport: BoundsUnmodifiable, childHeight: (child: LayoutEntry) => number): FlexData {
+function calculateFlexData(childrenToPlace: LayoutEntry[], parentViewport: BoundsUnmodifiable, getChildHeight: (child: LayoutEntry) => number): FlexData {
     let numFlexible = 0;
     let totalHeight = 0;
     for (let c = 0; c < childrenToPlace.length; c++) {
-        let h = childHeight(childrenToPlace[c]);
+        const h = getChildHeight(childrenToPlace[c]);
         if (hasval(h)) {
             totalHeight += h;
         }
@@ -79,9 +79,9 @@ function calculateFlexData(childrenToPlace: LayoutEntry[], parentViewport: Bound
             numFlexible++;
         }
     }
-    let totalFlexHeight = parentViewport.h - totalHeight;
-    let flexHeight = totalFlexHeight / numFlexible;
-    return { numFlexible: numFlexible, totalHeight: totalHeight, flexHeight: flexHeight, totalFlexHeight: totalFlexHeight, childHeight: childHeight };
+    const totalFlexHeight = parentViewport.h - totalHeight;
+    const flexHeight = totalFlexHeight / numFlexible;
+    return { numFlexible: numFlexible, totalHeight: totalHeight, flexHeight: flexHeight, totalFlexHeight: totalFlexHeight, childHeight: getChildHeight };
 }
 
 export function newRowLayout(topToBottom: boolean = true): Layout {
@@ -90,9 +90,9 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
 
 
         updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
-            let childrenToPlace = <LayoutEntry[]>[];
+            const childrenToPlace = <LayoutEntry[]>[];
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
                     childrenToPlace.push(child);
                 }
@@ -101,11 +101,11 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
             let wMax = 0;
             let hSum = 0;
             for (let c = 0; c < childrenToPlace.length; c++) {
-                let child = childrenToPlace[c];
+                const child = childrenToPlace[c];
 
-                let honorChildWidth = !(child.layoutOptions && child.layoutOptions.ignoreWidth);
+                const honorChildWidth = !(child.layoutOptions && child.layoutOptions.ignoreWidth);
                 if (honorChildWidth) {
-                    let w = child.prefSize.w;
+                    const w = child.prefSize.w;
                     if (hasval(wMax) && hasval(w)) {
                         wMax = Math.max(wMax, w);
                     }
@@ -114,7 +114,7 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
                     }
                 }
 
-                let h = childHeight(child);
+                const h = childHeight(child);
                 if (hasval(hSum) && hasval(h)) {
                     hSum += h;
                 }
@@ -128,10 +128,10 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
 
 
         updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
-            let childrenToPlace = <LayoutEntry[]>[];
-            let childrenToHide = <LayoutEntry[]>[];
+            const childrenToPlace = <LayoutEntry[]>[];
+            const childrenToHide = <LayoutEntry[]>[];
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
                     childrenToPlace.push(child);
                 }
@@ -141,14 +141,14 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
             }
 
             // Use the original index to make the sort stable
-            let indexProp = 'webglimpse_rowLayout_index';
+            const indexProp = 'webglimpse_rowLayout_index';
             for (let c = 0; c < childrenToPlace.length; c++) {
-                let child = childrenToPlace[c];
+                const child = childrenToPlace[c];
                 child[indexProp] = c;
             }
 
             childrenToPlace.sort(function (a: LayoutEntry, b: LayoutEntry) {
-                let orderDiff = a.layoutArg - b.layoutArg;
+                const orderDiff = a.layoutArg - b.layoutArg;
                 return (orderDiff !== 0 ? orderDiff : (a[indexProp] - b[indexProp]));
             });
 
@@ -161,20 +161,20 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
             }
 
             if (topToBottom) {
-                let iStart = parentViewport.iStart;
-                let iEnd = parentViewport.iEnd;
+                const iStart = parentViewport.iStart;
+                const iEnd = parentViewport.iEnd;
                 let jEnd = parentViewport.jEnd;
                 let jRemainder = 0;
                 for (let c = 0; c < childrenToPlace.length; c++) {
-                    let child = childrenToPlace[c];
+                    const child = childrenToPlace[c];
 
                     let jStart: number;
-                    let h = flexData.childHeight(child);
+                    const h = flexData.childHeight(child);
                     if (hasval(h)) {
                         jStart = jEnd - h;
                     }
                     else {
-                        let jStart0 = jEnd - flexData.flexHeight - jRemainder;
+                        const jStart0 = jEnd - flexData.flexHeight - jRemainder;
                         jStart = Math.round(jStart0);
                         jRemainder = jStart - jStart0;
                     }
@@ -184,20 +184,20 @@ export function newRowLayout(topToBottom: boolean = true): Layout {
                 }
             }
             else {
-                let iStart = parentViewport.iStart;
-                let iEnd = parentViewport.iEnd;
+                const iStart = parentViewport.iStart;
+                const iEnd = parentViewport.iEnd;
                 let jStart = parentViewport.jStart;
                 let jRemainder = 0;
                 for (let c = 0; c < childrenToPlace.length; c++) {
-                    let child = childrenToPlace[c];
+                    const child = childrenToPlace[c];
 
                     let jEnd: number;
-                    let h = flexData.childHeight(child);
+                    const h = flexData.childHeight(child);
                     if (hasval(h)) {
                         jEnd = jStart + h;
                     }
                     else {
-                        let jEnd0 = jStart + flexData.flexHeight + jRemainder;
+                        const jEnd0 = jStart + flexData.flexHeight + jRemainder;
                         jEnd = Math.round(jEnd0);
                         jRemainder = jEnd0 - jEnd;
                     }

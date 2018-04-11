@@ -46,32 +46,44 @@ export interface BorderOptions {
 
 
 export function newBorderPainter(color: Color, options?: BorderOptions): Painter {
-    if (!hasval(options)) options = {};
-    if (!hasval(options.drawTop)) options.drawTop = true;
-    if (!hasval(options.drawLeft)) options.drawLeft = true;
-    if (!hasval(options.drawRight)) options.drawRight = true;
-    if (!hasval(options.drawBottom)) options.drawBottom = true;
-    if (!hasval(options.thickness)) options.thickness = 1;
+    if (!hasval(options)) {
+        options = {};
+    }
+    if (!hasval(options.drawTop)) {
+        options.drawTop = true;
+    }
+    if (!hasval(options.drawLeft)) {
+        options.drawLeft = true;
+    }
+    if (!hasval(options.drawRight)) {
+        options.drawRight = true;
+    }
+    if (!hasval(options.drawBottom)) {
+        options.drawBottom = true;
+    }
+    if (!hasval(options.thickness)) {
+        options.thickness = 1;
+    }
 
-    let simple = (options.thickness === 1 && color.a >= 1);
+    const simple = (options.thickness === 1 && color.a >= 1);
     return (simple ? newSimpleBorderPainter(color, options) : newFullBorderPainter(color, options));
 }
 
 
 function newFullBorderPainter(color: Color, options: BorderOptions): Painter {
-    let drawTop = options.drawTop;
-    let drawLeft = options.drawLeft;
-    let drawRight = options.drawRight;
-    let drawBottom = options.drawBottom;
-    let thickness = options.thickness;
+    const drawTop = options.drawTop;
+    const drawLeft = options.drawLeft;
+    const drawRight = options.drawRight;
+    const drawBottom = options.drawBottom;
+    const thickness = options.thickness;
 
-    let program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let a_XyNdc = new Attribute(program, 'a_XyNdc');
+    const program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyNdc = new Attribute(program, 'a_XyNdc');
 
-    let numVertices = (drawTop ? 6 : 0) + (drawLeft ? 6 : 0) + (drawRight ? 6 : 0) + (drawBottom ? 6 : 0);
-    let xy_NDC = new Float32Array(2 * numVertices);
-    let xyBuffer_NDC = newDynamicBuffer();
+    const numVertices = (drawTop ? 6 : 0) + (drawLeft ? 6 : 0) + (drawRight ? 6 : 0) + (drawBottom ? 6 : 0);
+    const xy_NDC = new Float32Array(2 * numVertices);
+    const xyBuffer_NDC = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
         if (color.a >= 1) {
@@ -85,13 +97,21 @@ function newFullBorderPainter(color: Color, options: BorderOptions): Painter {
         program.use(gl);
         u_Color.setData(gl, color);
 
-        let w_NDC = 2 * thickness / viewport.w;
-        let h_NDC = 2 * thickness / viewport.h;
+        const w_NDC = 2 * thickness / viewport.w;
+        const h_NDC = 2 * thickness / viewport.h;
         let index = 0;
-        if (drawTop) index = putQuadXys(xy_NDC, index, -1, (drawRight ? +1 - w_NDC : +1), +1, +1 - h_NDC);
-        if (drawRight) index = putQuadXys(xy_NDC, index, +1 - w_NDC, +1, +1, (drawBottom ? -1 + h_NDC : -1));
-        if (drawBottom) index = putQuadXys(xy_NDC, index, (drawLeft ? -1 + w_NDC : -1), +1, -1 + h_NDC, -1);
-        if (drawLeft) index = putQuadXys(xy_NDC, index, -1, -1 + w_NDC, (drawTop ? +1 - h_NDC : +1), -1);
+        if (drawTop) {
+            index = putQuadXys(xy_NDC, index, -1, (drawRight ? +1 - w_NDC : +1), +1, +1 - h_NDC);
+        }
+        if (drawRight) {
+            index = putQuadXys(xy_NDC, index, +1 - w_NDC, +1, +1, (drawBottom ? -1 + h_NDC : -1));
+        }
+        if (drawBottom) {
+            index = putQuadXys(xy_NDC, index, (drawLeft ? -1 + w_NDC : -1), +1, -1 + h_NDC, -1);
+        }
+        if (drawLeft) {
+            index = putQuadXys(xy_NDC, index, -1, -1 + w_NDC, (drawTop ? +1 - h_NDC : +1), -1);
+        }
 
         xyBuffer_NDC.setData(xy_NDC);
         a_XyNdc.setDataAndEnable(gl, xyBuffer_NDC, 2, GL.FLOAT);
@@ -105,18 +125,18 @@ function newFullBorderPainter(color: Color, options: BorderOptions): Painter {
 
 
 function newSimpleBorderPainter(color: Color, options: BorderOptions): Painter {
-    let drawTop = options.drawTop;
-    let drawLeft = options.drawLeft;
-    let drawRight = options.drawRight;
-    let drawBottom = options.drawBottom;
+    const drawTop = options.drawTop;
+    const drawLeft = options.drawLeft;
+    const drawRight = options.drawRight;
+    const drawBottom = options.drawBottom;
 
-    let program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let a_XyNdc = new Attribute(program, 'a_XyNdc');
+    const program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyNdc = new Attribute(program, 'a_XyNdc');
 
-    let numVertices = (drawTop ? 2 : 0) + (drawLeft ? 2 : 0) + (drawRight ? 2 : 0) + (drawBottom ? 2 : 0);
-    let xy_NDC = new Float32Array(2 * numVertices);
-    let xyBuffer_NDC = newDynamicBuffer();
+    const numVertices = (drawTop ? 2 : 0) + (drawLeft ? 2 : 0) + (drawRight ? 2 : 0) + (drawBottom ? 2 : 0);
+    const xy_NDC = new Float32Array(2 * numVertices);
+    const xyBuffer_NDC = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
         gl.disable(GL.BLEND);
@@ -124,10 +144,10 @@ function newSimpleBorderPainter(color: Color, options: BorderOptions): Painter {
         program.use(gl);
         u_Color.setData(gl, color);
 
-        let left_NDC = fracToNdc(0.5 / viewport.w);
-        let bottom_NDC = fracToNdc(0.5 / viewport.h);
-        let right_NDC = fracToNdc((viewport.w - 0.5) / viewport.w);
-        let top_NDC = fracToNdc((viewport.h - 0.5) / viewport.h);
+        const left_NDC = fracToNdc(0.5 / viewport.w);
+        const bottom_NDC = fracToNdc(0.5 / viewport.h);
+        const right_NDC = fracToNdc((viewport.w - 0.5) / viewport.w);
+        const top_NDC = fracToNdc((viewport.h - 0.5) / viewport.h);
 
         let n = 0;
         if (drawTop) {

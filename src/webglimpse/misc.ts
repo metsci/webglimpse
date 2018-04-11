@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-import { Painter, xFrac, yFrac, Pane } from './core';
+import { Painter, Pane } from './core';
 import { BoundsUnmodifiable, Size } from './bounds';
 import { Color, sameColor } from './color';
 import { Program, UniformColor, Attribute } from './shader';
@@ -47,13 +47,13 @@ export function newGroupPainter(...painters: Painter[]): Painter {
 
 export function newBlendingBackgroundPainter(color: Color): Painter {
 
-    let program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let a_XyNdc = new Attribute(program, 'a_XyNdc');
+    const program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyNdc = new Attribute(program, 'a_XyNdc');
 
-    let numVertices = 4;
-    let xy_NDC = new Float32Array(2 * numVertices);
-    let xyBuffer_NDC = newDynamicBuffer();
+    const numVertices = 4;
+    const xy_NDC = new Float32Array(2 * numVertices);
+    const xyBuffer_NDC = newDynamicBuffer();
 
     return <Painter>function (gl: WebGLRenderingContext): void {
         if (color.a >= 1) {
@@ -105,7 +105,7 @@ export class Background {
     }
 
     newPainter() {
-        let background: Background = this;
+        const background: Background = this;
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
             if (hasval(background.color)) {
                 gl.clearColor(background.color.r, background.color.g, background.color.b, background.color.a);
@@ -125,7 +125,7 @@ export function newBackgroundPainter(color: Color): Painter {
 
 
 export function newTexturePainter(texture: Texture2D, xFrac: number, yFrac: number, options: TextureDrawOptions) {
-    let textureRenderer = new TextureRenderer();
+    const textureRenderer = new TextureRenderer();
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
         textureRenderer.begin(gl, viewport);
         textureRenderer.draw(gl, texture, xFrac, yFrac, options);
@@ -135,7 +135,7 @@ export function newTexturePainter(texture: Texture2D, xFrac: number, yFrac: numb
 
 
 export function newSolidPane(color: Color): Pane {
-    let pane = new Pane(null);
+    const pane = new Pane(null);
     pane.addPainter(newBackgroundPainter(color));
     return pane;
 }
@@ -261,7 +261,7 @@ export function fracToNdc(frac: number): number {
 
 
 export function nearestPixel(viewportFrac: number, viewportSize: number, imageAnchor: number, imageSize: number): number {
-    let anchor = (imageAnchor * imageSize) % 1.0;
+    const anchor = (imageAnchor * imageSize) % 1.0;
     return (Math.floor(viewportFrac * viewportSize - anchor + 0.5 + 1e-4) + anchor) / viewportSize;
 }
 
@@ -325,7 +325,7 @@ export function putRgbas(rgbas: Float32Array, index: number, color: Color, count
 
 
 export function clearSelection() {
-    let selection = window.getSelection();
+    const selection = window.getSelection();
     if (selection) {
         if (selection['removeAllRanges']) {
             selection['removeAllRanges']();

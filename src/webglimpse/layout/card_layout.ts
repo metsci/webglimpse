@@ -48,8 +48,8 @@ export function newCardLayout(): Layout {
             let activeChild: LayoutEntry;
 
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
-                let isActive = child.layoutArg;
+                const child = children[c];
+                const isActive = child.layoutArg;
                 if (isActive) {
                     activeChild = child;
                 }
@@ -57,9 +57,9 @@ export function newCardLayout(): Layout {
 
             if (hasval(activeChild)) {
 
-                let childPrefSize = activeChild.prefSize;
+                const childPrefSize = activeChild.prefSize;
 
-                let childPrefWidth = childPrefSize.w;
+                const childPrefWidth = childPrefSize.w;
                 if (hasval(childPrefWidth)) {
                     parentPrefSize.w = childPrefWidth;
                 }
@@ -67,7 +67,7 @@ export function newCardLayout(): Layout {
                     parentPrefSize.w = null;
                 }
 
-                let childPrefHeight = childPrefSize.h;
+                const childPrefHeight = childPrefSize.h;
                 if (hasval(childPrefHeight)) {
                     parentPrefSize.h = childPrefHeight;
                 }
@@ -85,8 +85,8 @@ export function newCardLayout(): Layout {
             let activeChildIndex: number;
 
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
-                let isActive = child.layoutArg;
+                const child = children[c];
+                const isActive = child.layoutArg;
                 if (isActive) {
                     activeChildIndex = c;
                 }

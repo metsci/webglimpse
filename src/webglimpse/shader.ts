@@ -33,23 +33,27 @@ import { Texture } from './texture';
 import { Buffer } from './buffer';
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, glsl: string): WebGLShader {
-    let shader = gl.createShader(shaderType);
+    const shader = gl.createShader(shaderType);
     gl.shaderSource(shader, glsl);
 
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, GL.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+    if (!gl.getShaderParameter(shader, GL.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(shader));
+    }
 
     return shader;
 }
 
 function linkProgram(gl: WebGLRenderingContext, shaders: WebGLShader[]): WebGLProgram {
-    let program = gl.createProgram();
+    const program = gl.createProgram();
     for (let i = 0; i < shaders.length; i++) {
         gl.attachShader(program, shaders[i]);
     }
     try {
         gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, GL.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+        if (!gl.getProgramParameter(program, GL.LINK_STATUS)) {
+            throw new Error(gl.getProgramInfoLog(program));
+        }
         return program;
     }
     finally {
@@ -64,7 +68,7 @@ function linkProgram(gl: WebGLRenderingContext, shaders: WebGLShader[]): WebGLPr
 }
 
 function createProgram(gl: WebGLRenderingContext, vertShaderSource: string, fragShaderSource: string): WebGLProgram {
-    let shaders = [];
+    const shaders = [];
     try {
         shaders.push(compileShader(gl, GL.VERTEX_SHADER, vertShaderSource));
         shaders.push(compileShader(gl, GL.FRAGMENT_SHADER, fragShaderSource));
@@ -104,9 +108,9 @@ export class Program {
 
     // XXX: Would be nice if this weren't public
     _program(gl: WebGLRenderingContext): WebGLProgram {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (this.programs[glId] === undefined) {
-            let program = createProgram(gl, this.vertShaderSource, this.fragShaderSource);
+            const program = createProgram(gl, this.vertShaderSource, this.fragShaderSource);
             this.programs[glId] = new ProgramEntry(gl, program);
         }
         return this.programs[glId].program;
@@ -122,9 +126,9 @@ export class Program {
 
     dispose() {
         // XXX: Not sure this actually works ... may have to make each gl current or something
-        for (let glid in this.programs) {
+        for (const glid in this.programs) {
             if (this.programs.hasOwnProperty(glid)) {
-                let en = this.programs[glid];
+                const en = this.programs[glid];
                 en.gl.deleteProgram(en.program);
             }
         }
@@ -147,10 +151,12 @@ export class Uniform {
 
     // XXX: Would be nice if this weren't public
     _location(gl: WebGLRenderingContext): WebGLUniformLocation {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (this.locations[glId] === undefined) {
-            let location = gl.getUniformLocation(this.program._program(gl), this.name);
-            if (!this.optional && !hasval(location)) throw new Error('Uniform \'' + this.name + '\' not found');
+            const location = gl.getUniformLocation(this.program._program(gl), this.name);
+            if (!this.optional && !hasval(location)) {
+                throw new Error('Uniform \'' + this.name + '\' not found');
+            }
             this.locations[glId] = location;
         }
         return this.locations[glId];
@@ -164,8 +170,10 @@ export class Uniform1f extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform1f(location, x);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform1f(location, x);
+        }
     }
 }
 
@@ -175,8 +183,10 @@ export class Uniform2f extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform2f(location, x, y);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform2f(location, x, y);
+        }
     }
 }
 
@@ -186,8 +196,10 @@ export class Uniform3f extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number, z: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform3f(location, x, y, z);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform3f(location, x, y, z);
+        }
     }
 }
 
@@ -197,8 +209,10 @@ export class Uniform4f extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number, z: number, w: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform4f(location, x, y, z, w);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform4f(location, x, y, z, w);
+        }
     }
 }
 
@@ -208,8 +222,10 @@ export class UniformMatrix4f extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, value: Float32Array, transpose: boolean = false) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniformMatrix4fv(location, transpose, value);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniformMatrix4fv(location, transpose, value);
+        }
     }
 }
 
@@ -219,8 +235,10 @@ export class Uniform1i extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform1i(location, x);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform1i(location, x);
+        }
     }
 }
 
@@ -230,8 +248,10 @@ export class Uniform2i extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform2i(location, x, y);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform2i(location, x, y);
+        }
     }
 }
 
@@ -241,8 +261,10 @@ export class Uniform3i extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number, z: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform3i(location, x, y, z);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform3i(location, x, y, z);
+        }
     }
 }
 
@@ -252,8 +274,10 @@ export class Uniform4i extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, x: number, y: number, z: number, w: number) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform4i(location, x, y, z, w);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform4i(location, x, y, z, w);
+        }
     }
 }
 
@@ -263,8 +287,10 @@ export class UniformColor extends Uniform {
     }
 
     setData(gl: WebGLRenderingContext, color: Color) {
-        let location = this._location(gl);
-        if (hasval(location)) gl.uniform4f(location, color.r, color.g, color.b, color.a);
+        const location = this._location(gl);
+        if (hasval(location)) {
+            gl.uniform4f(location, color.r, color.g, color.b, color.a);
+        }
     }
 }
 
@@ -277,7 +303,7 @@ export class UniformSampler2D extends Uniform {
     }
 
     setDataAndBind(gl: WebGLRenderingContext, textureUnit: number, texture: Texture) {
-        let location = this._location(gl);
+        const location = this._location(gl);
         if (hasval(location)) {
             texture.bind(gl, textureUnit);
             gl.uniform1i(location, textureUnit);
@@ -306,17 +332,19 @@ export class Attribute {
 
     // XXX: Would be nice if this weren't public
     _location(gl: WebGLRenderingContext): number {
-        let glId = getObjectId(gl);
+        const glId = getObjectId(gl);
         if (this.locations[glId] === undefined) {
-            let location = gl.getAttribLocation(this.program._program(gl), this.name);
-            if (location === -1) throw new Error('Attribute "' + this.name + '" not found');
+            const location = gl.getAttribLocation(this.program._program(gl), this.name);
+            if (location === -1) {
+                throw new Error('Attribute "' + this.name + '" not found');
+            }
             this.locations[glId] = location;
         }
         return this.locations[glId];
     }
 
     setDataAndEnable(gl: WebGLRenderingContext, buffer: Buffer, size: number, type: number, normalized: boolean = false, stride: number = 0, offset: number = 0) {
-        let location = this._location(gl);
+        const location = this._location(gl);
         gl.enableVertexAttribArray(location);
         buffer.bind(gl, GL.ARRAY_BUFFER);
         gl.vertexAttribPointer(location, size, type, normalized, stride, offset);

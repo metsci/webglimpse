@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import { TimelineTimeseriesPainterFactory } from './timeline_timeseries_row';
-import { Drawable, Painter, xFrac, yFrac } from '../core';
+import { Drawable, Painter } from '../core';
 import { TimeAxis1D } from './time_axis';
 import { Axis1D } from '../plot/axis';
 import { TimelineModel, TimelineRowModel, TimelineAnnotationModel } from './timeline_model';
@@ -47,16 +47,16 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi): Painter {
 
-        let textTextures = newTextTextureCache3();
-        let textureRenderer = new TextureRenderer();
+        const textTextures = newTextTextureCache3();
+        const textureRenderer = new TextureRenderer();
 
-        let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-        let u_Color = new UniformColor(program, 'u_Color');
-        let a_Position = new Attribute(program, 'a_XyFrac');
+        const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+        const u_Color = new UniformColor(program, 'u_Color');
+        const a_Position = new Attribute(program, 'a_XyFrac');
 
         let xys = new Float32Array(0);
         xys = ensureCapacityFloat32(xys, 4);
-        let xysBuffer = newDynamicBuffer();
+        const xysBuffer = newDynamicBuffer();
 
         // Painter
         return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
@@ -65,26 +65,26 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
 
             textTextures.resetTouches();
 
-            let xFrac: number = 0;
-            let yFrac: number = 0;
+            let xFrac = 0;
+            let yFrac = 0;
 
             for (let i = 0; i < rowModel.annotationGuids.length; i++) {
-                let annotationGuid: string = rowModel.annotationGuids.valueAt(i);
-                let annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
-                let annotationStyle: TimelineAnnotationStyleUi = ui.annotationStyle(annotation.styleGuid);
+                const annotationGuid: string = rowModel.annotationGuids.valueAt(i);
+                const annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
+                const annotationStyle: TimelineAnnotationStyleUi = ui.annotationStyle(annotation.styleGuid);
 
-                let font = hasval(annotationStyle.font) ? annotationStyle.font : '11px verdana,sans-serif';
-                let color = hasval(annotationStyle.color) ? annotationStyle.color : white;
+                const font = hasval(annotationStyle.font) ? annotationStyle.font : '11px verdana,sans-serif';
+                const color = hasval(annotationStyle.color) ? annotationStyle.color : white;
 
-                let hTextOffset = hasval(annotationStyle.hTextOffset) ? annotationStyle.hTextOffset : 0;
-                let vTextOffset = hasval(annotationStyle.vTextOffset) ? annotationStyle.vTextOffset : 0;
+                const hTextOffset = hasval(annotationStyle.hTextOffset) ? annotationStyle.hTextOffset : 0;
+                const vTextOffset = hasval(annotationStyle.vTextOffset) ? annotationStyle.vTextOffset : 0;
 
                 // draw line
                 if (annotationStyle.uiHint === 'horizontal-line' || annotationStyle.uiHint === 'vertical-line') {
 
                     if (annotationStyle.uiHint === 'horizontal-line') {
-                        let xFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
-                        let yFrac = dataAxis.vFrac(annotation.y);
+                        xFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
+                        yFrac = dataAxis.vFrac(annotation.y);
 
                         xys[0] = 0;
                         xys[1] = yFrac;
@@ -92,8 +92,8 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
                         xys[3] = yFrac;
                     }
                     else if (annotationStyle.uiHint === 'vertical-line') {
-                        let xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
-                        let yFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
+                        xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
+                        yFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
 
                         xys[0] = xFrac;
                         xys[1] = 0;
@@ -113,22 +113,22 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
                     program.endUse(gl);
                 }
                 else {
-                    let xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
-                    let yFrac = dataAxis.vFrac(annotation.y);
+                    xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
+                    yFrac = dataAxis.vFrac(annotation.y);
                 }
 
                 textureRenderer.begin(gl, viewport);
 
                 // draw icons
                 for (let n = 0; n < annotationStyle.numIcons; n++) {
-                    let icon: TimelineAnnotationIcon = annotationStyle.icon(n);
+                    const icon: TimelineAnnotationIcon = annotationStyle.icon(n);
 
-                    let xFracOffset = xFrac + (hasval(icon.hOffset) ? icon.hOffset : 0) / viewport.w;
-                    let yFracOffset = yFrac + (hasval(icon.vOffset) ? icon.vOffset : 0) / viewport.h;
+                    const xFracOffset = xFrac + (hasval(icon.hOffset) ? icon.hOffset : 0) / viewport.w;
+                    const yFracOffset = yFrac + (hasval(icon.vOffset) ? icon.vOffset : 0) / viewport.h;
 
-                    let iconTexture = ui.loadImage(icon.url, function () { drawable.redraw(); });
+                    const iconTexture = ui.loadImage(icon.url, function () { drawable.redraw(); });
                     if (iconTexture) {
-                        let options = {
+                        const options = {
                             xAnchor: (hasval(icon.hAlign) ? icon.hAlign : 0.5),
                             yAnchor: (hasval(icon.hAlign) ? icon.hAlign : 0.5),
                             width: icon.displayWidth,
@@ -143,13 +143,13 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
                 // draw text label
                 if (hasval(annotation.label)) {
 
-                    let textTexture = textTextures.value(font, color.rgbaString, annotation.label);
+                    const textTexture = textTextures.value(font, color.rgbaString, annotation.label);
 
-                    let xFracOffset = xFrac + hTextOffset / viewport.w;
-                    let yFracOffset = yFrac + vTextOffset / viewport.h;
+                    const xFracOffset = xFrac + hTextOffset / viewport.w;
+                    const yFracOffset = yFrac + vTextOffset / viewport.h;
 
-                    let xAnchor = hasval(annotationStyle.hTextAlign) ? annotationStyle.hTextAlign : 0;
-                    let yAnchor = textTexture.yAnchor(hasval(annotationStyle.vTextAlign) ? annotationStyle.vTextAlign : 0.5);
+                    const xAnchor = hasval(annotationStyle.hTextAlign) ? annotationStyle.hTextAlign : 0;
+                    const yAnchor = textTexture.yAnchor(hasval(annotationStyle.vTextAlign) ? annotationStyle.vTextAlign : 0.5);
 
                     textureRenderer.draw(gl, textTexture, xFracOffset, yFracOffset, { xAnchor: xAnchor, yAnchor: yAnchor });
                 }

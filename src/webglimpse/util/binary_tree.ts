@@ -120,28 +120,28 @@ export class BinaryTree<V> {
 
     // Returns all elements greater than (or equal to, if inclusive is true) the provided value (sorted from low to high)
     headSet(value: V, inclusive: boolean = true): V[] {
-        let results: V[] = new Array<V>();
+        const results: V[] = new Array<V>();
         this.head0(value, inclusive, this._root, results);
         return results;
     }
 
     // Returns all elements less than ( or equal to, if inclusive is true) the provided value (sorted from low to high)
     tailSet(value: V, inclusive: boolean = false): V[] {
-        let results: V[] = new Array<V>();
+        const results: V[] = new Array<V>();
         this.tail0(value, inclusive, this._root, results);
         return results;
     }
 
     // Returns all elements between the provided values (sorted from low to high)
     subSet(low: V, high: V, lowInclusive: boolean = true, highInclusive: boolean = false): V[] {
-        let results: V[] = new Array<V>();
+        const results: V[] = new Array<V>();
         this.sub0(low, high, lowInclusive, highInclusive, this._root, results);
         return results;
     }
 
     // Returns all elements in the tree (sorted from low to high)
     toArray(): V[] {
-        let results: V[] = new Array<V>();
+        const results: V[] = new Array<V>();
         this.addAll0(this._root, results);
         return results;
     }
@@ -151,7 +151,7 @@ export class BinaryTree<V> {
         // find the first node by traversing left links down the tree
         let node: TreeNode<V> = this._root;
         let down: boolean;
-        let stack: TreeNode<V>[] = new Array<TreeNode<V>>();
+        const stack: TreeNode<V>[] = new Array<TreeNode<V>>();
         while (node != null && node.left != null) {
             stack.push(node);
             node = node.left;
@@ -160,7 +160,7 @@ export class BinaryTree<V> {
 
         return {
             next: function (): V {
-                let value = node.value;
+                const value = node.value;
 
                 // down indicates we should follow the right link
                 if (down && node != null && node.right != null) {
@@ -182,7 +182,7 @@ export class BinaryTree<V> {
             hasNext: function (): boolean {
                 return node != null;
             }
-        }
+        };
     }
 
     compare(node1: V, node2: V): number {
@@ -194,7 +194,7 @@ export class BinaryTree<V> {
             return null;
         }
 
-        let comp: number = this.compare(value, node.value);
+        const comp: number = this.compare(value, node.value);
         if (comp > 0) {
             return this.contains0(value, node.right);
         }
@@ -223,7 +223,9 @@ export class BinaryTree<V> {
             //   * return this node's value if lower
             //   * otherwise return null
             candidate = this.lower0(value, node.left, inclusive);
-            if (candidate == null) candidate = node.value;
+            if (candidate == null) {
+                candidate = node.value;
+            }
             comp = this.compare(value, candidate);
             return comp > 0 || (inclusive && comp === 0) ? candidate : null;
         }
@@ -250,7 +252,9 @@ export class BinaryTree<V> {
             //   * return this node's value if higher
             //   * otherwise return null
             candidate = this.higher0(value, node.right, inclusive);
-            if (candidate == null) candidate = node.value;
+            if (candidate == null) {
+                candidate = node.value;
+            }
             comp = this.compare(value, candidate);
             return comp < 0 || (inclusive && comp === 0) ? candidate : null;
         }
@@ -266,13 +270,13 @@ export class BinaryTree<V> {
         }
 
         // low end of range is above node value
-        let compLow: number = this.compare(low, node.value);
+        const compLow: number = this.compare(low, node.value);
         if (compLow > 0 || (compLow === 0 && !lowInclusive)) {
             return this.sub0(low, high, lowInclusive, highInclusive, node.right, results);
         }
 
         // high end of range is below node value
-        let compHigh: number = this.compare(high, node.value);
+        const compHigh: number = this.compare(high, node.value);
         if (compHigh < 0 || (compHigh === 0 && !highInclusive)) {
             return this.sub0(low, high, lowInclusive, highInclusive, node.left, results);
         }
@@ -288,7 +292,7 @@ export class BinaryTree<V> {
             return;
         }
 
-        let comp: number = this.compare(value, node.value);
+        const comp: number = this.compare(value, node.value);
         if (comp < 0 || (comp === 0 && inclusive)) {
             this.head0(value, inclusive, node.left, results);
             results.push(node.value);
@@ -304,7 +308,7 @@ export class BinaryTree<V> {
             return;
         }
 
-        let comp: number = this.compare(value, node.value);
+        const comp: number = this.compare(value, node.value);
         if (comp > 0 || (comp === 0 && inclusive)) {
             this.addAll0(node.left, results);
             results.push(node.value);
@@ -336,7 +340,7 @@ export class BinaryTree<V> {
         }
 
         // find and remove the node
-        let comp: number = this.compare(value, node.value);
+        const comp: number = this.compare(value, node.value);
         if (comp < 0) {
             node.left = this.remove0(value, node.left);
         }
@@ -348,12 +352,12 @@ export class BinaryTree<V> {
                 return null;
             }
             else if (node.left == null) {
-                let lower = node.getSuccessor();
+                const lower = node.getSuccessor();
                 node.right = this.remove0(lower.value, node.right);
                 node.value = lower.value;
             }
             else {
-                let lower = node.getPredecessor();
+                const lower = node.getPredecessor();
                 node.left = this.remove0(lower.value, node.left);
                 node.value = lower.value;
             }
@@ -387,7 +391,7 @@ export class BinaryTree<V> {
 
     // lower the level of nodes which violate invariants 1, 2, and/or 3
     private decreaseLevel0(node: TreeNode<V>): TreeNode<V> {
-        let correctLevel = Math.min(this.level0(node.left), this.level0(node.right)) + 1;
+        const correctLevel = Math.min(this.level0(node.left), this.level0(node.right)) + 1;
 
         if (correctLevel < node.level) {
             node.level = correctLevel;
@@ -409,7 +413,7 @@ export class BinaryTree<V> {
         }
 
         // find the appropriate spot and insert the node
-        let comp: number = this.compare(value, node.value);
+        const comp: number = this.compare(value, node.value);
         if (comp < 0) {
             node.left = this.insert0(value, node.left);
         }
@@ -438,7 +442,7 @@ export class BinaryTree<V> {
         }
         else if (node.left.level === node.level) {
             // swap the pointers of the horizontal (same level value) left links
-            let left = node.left;
+            const left = node.left;
             node.left = left.right;
             left.right = node;
             return left;
@@ -458,7 +462,7 @@ export class BinaryTree<V> {
         else if (node.level === node.right.right.level) {
             // two horizontal (same level value) right links
             // take the middle node, elevate it, and return it
-            let right = node.right;
+            const right = node.right;
             node.right = right.left;
             right.left = node;
             right.level = right.level + 1;

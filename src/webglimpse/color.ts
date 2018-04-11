@@ -77,15 +77,19 @@ export function rgb(r: number, g: number, b: number): Color {
 
 
 export function sameColor(c1: Color, c2: Color): boolean {
-    if (c1 === c2) return true;
-    if (!hasval(c1) || !hasval(c2)) return false;
+    if (c1 === c2) {
+        return true;
+    }
+    if (!hasval(c1) || !hasval(c2)) {
+        return false;
+    }
     return (c1.r === c2.r && c1.g === c2.g && c1.b === c2.b && c1.a === c2.a);
 }
 
 
 export function parseRgba(rgbaString: string): Color {
-    let tokens = rgbaString.split(',', 4);
-    return new Color(parseInt(tokens[0]) / 255, parseInt(tokens[1]) / 255, parseInt(tokens[2]) / 255, parseInt(tokens[3]) / 255);
+    const tokens = rgbaString.split(',', 4);
+    return new Color(parseInt(tokens[0], 10) / 255, parseInt(tokens[1], 10) / 255, parseInt(tokens[2], 10) / 255, parseInt(tokens[3], 10) / 255);
 }
 
 
@@ -102,22 +106,22 @@ export function parseRgba(rgbaString: string): Color {
  *
  */
 export let parseCssColor = (function () {
-    let canvas = document.createElement('canvas');
+    const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
-    let g = canvas.getContext('2d');
+    const g = canvas.getContext('2d');
     return function (cssColorString: string): Color {
         g.clearRect(0, 0, 1, 1);
         g.fillStyle = cssColorString;
         g.fillRect(0, 0, 1, 1);
 
-        let rgbaData = g.getImageData(0, 0, 1, 1).data;
-        let R = rgbaData[0] / 255;
-        let G = rgbaData[1] / 255;
-        let B = rgbaData[2] / 255;
-        let A = rgbaData[3] / 255;
+        const rgbaData = g.getImageData(0, 0, 1, 1).data;
+        const R = rgbaData[0] / 255;
+        const G = rgbaData[1] / 255;
+        const B = rgbaData[2] / 255;
+        const A = rgbaData[3] / 255;
         return rgba(R, G, B, A);
-    }
+    };
 })();
 
 

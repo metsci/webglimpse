@@ -97,17 +97,25 @@ export class Axis1D {
 
 
 export function getTickInterval(axis: Axis1D, approxNumTicks: number): number {
-    let vMin = Math.min(axis.vMin, axis.vMax);
-    let vMax = Math.max(axis.vMin, axis.vMax);
-    let approxTickInterval = (vMax - vMin) / approxNumTicks;
-    let prelimTickInterval = Math.pow(10, Math.round(log10(approxTickInterval)));
-    let prelimNumTicks = (vMax - vMin) / prelimTickInterval;
+    const vMin = Math.min(axis.vMin, axis.vMax);
+    const vMax = Math.max(axis.vMin, axis.vMax);
+    const approxTickInterval = (vMax - vMin) / approxNumTicks;
+    const prelimTickInterval = Math.pow(10, Math.round(log10(approxTickInterval)));
+    const prelimNumTicks = (vMax - vMin) / prelimTickInterval;
 
-    if (prelimNumTicks >= 5 * approxNumTicks) return (prelimTickInterval * 5);
-    if (prelimNumTicks >= 2 * approxNumTicks) return (prelimTickInterval * 2);
+    if (prelimNumTicks >= 5 * approxNumTicks) {
+        return (prelimTickInterval * 5);
+    }
+    if (prelimNumTicks >= 2 * approxNumTicks) {
+        return (prelimTickInterval * 2);
+    }
 
-    if (5 * prelimNumTicks <= approxNumTicks) return (prelimTickInterval / 5);
-    if (2 * prelimNumTicks <= approxNumTicks) return (prelimTickInterval / 2);
+    if (5 * prelimNumTicks <= approxNumTicks) {
+        return (prelimTickInterval / 5);
+    }
+    if (2 * prelimNumTicks <= approxNumTicks) {
+        return (prelimTickInterval / 2);
+    }
 
     return prelimTickInterval;
 }
@@ -119,10 +127,10 @@ export function getTickCount(axis: Axis1D, tickInterval: number): number {
 
 
 export function getTickPositions(axis: Axis1D, tickInterval: number, tickCount: number, result: Float32Array) {
-    let vMin = Math.min(axis.vMin, axis.vMax);
-    let vMax = Math.max(axis.vMin, axis.vMax);
+    const vMin = Math.min(axis.vMin, axis.vMax);
+    const vMax = Math.max(axis.vMin, axis.vMax);
 
-    let minTickNumber = Math.floor(vMin / tickInterval);
+    const minTickNumber = Math.floor(vMin / tickInterval);
 
     for (let i = 0; i < tickCount; i++) {
         result[i] = (minTickNumber + i) * tickInterval;
@@ -131,7 +139,7 @@ export function getTickPositions(axis: Axis1D, tickInterval: number, tickCount: 
     if (axis.vMin > axis.vMax) {
         // XXX: Need floor() on tickCount/2?
         for (let i = 0; i < tickCount / 2; i++) {
-            let temp = result[i];
+            const temp = result[i];
             result[i] = result[tickCount - 1 - i];
             result[tickCount - 1 - i] = temp;
         }
@@ -204,7 +212,7 @@ export function attachAxisMouseListeners1D(pane: Pane, axis: Axis1D, isVertical:
     });
 
     pane.mouseWheel.on(function (ev: PointerEvent) {
-        let zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
+        const zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
         axis.zoom(zoomFactor, axis.vAtFrac(isVertical ? yFrac(ev) : xFrac(ev)));
     });
 }
@@ -233,7 +241,7 @@ export function attachAxisMouseListeners2D(pane: Pane, axis: Axis2D) {
     });
 
     pane.mouseWheel.on(function (ev: PointerEvent) {
-        let zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
+        const zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
         axis.zoom(zoomFactor, axis.xAtFrac(xFrac(ev)), axis.yAtFrac(yFrac(ev)));
     });
 }

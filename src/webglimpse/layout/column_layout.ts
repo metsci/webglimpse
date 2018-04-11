@@ -33,7 +33,7 @@ import { hasval, isNumber } from '../util/util';
 
 
 function childWidth(child: LayoutEntry): number {
-    let usePrefWidth = (!hasval(child.layoutOptions) || child.layoutOptions.width === undefined || child.layoutOptions.width === 'pref');
+    const usePrefWidth = (!hasval(child.layoutOptions) || child.layoutOptions.width === undefined || child.layoutOptions.width === 'pref');
     return (usePrefWidth ? child.prefSize.w : child.layoutOptions.width);
 }
 
@@ -44,9 +44,9 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
 
 
         updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
-            let childrenToPlace = <LayoutEntry[]>[];
+            const childrenToPlace = <LayoutEntry[]>[];
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
                     childrenToPlace.push(child);
                 }
@@ -55,11 +55,11 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
             let hMax = 0;
             let wSum = 0;
             for (let c = 0; c < childrenToPlace.length; c++) {
-                let child = childrenToPlace[c];
+                const child = childrenToPlace[c];
 
-                let honorChildHeight = !(child.layoutOptions && child.layoutOptions.ignoreHeight);
+                const honorChildHeight = !(child.layoutOptions && child.layoutOptions.ignoreHeight);
                 if (honorChildHeight) {
-                    let h = child.prefSize.h;
+                    const h = child.prefSize.h;
                     if (hasval(hMax) && hasval(h)) {
                         hMax = Math.max(hMax, h);
                     }
@@ -68,7 +68,7 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
                     }
                 }
 
-                let w = childWidth(child);
+                const w = childWidth(child);
                 if (hasval(wSum) && hasval(w)) {
                     wSum += w;
                 }
@@ -82,10 +82,10 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
 
 
         updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
-            let childrenToPlace = <LayoutEntry[]>[];
-            let childrenToHide = <LayoutEntry[]>[];
+            const childrenToPlace = <LayoutEntry[]>[];
+            const childrenToHide = <LayoutEntry[]>[];
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
+                const child = children[c];
                 if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
                     childrenToPlace.push(child);
                 }
@@ -95,21 +95,21 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
             }
 
             // Use the original index to make the sort stable
-            let indexProp = 'webglimpse_columnLayout_index';
+            const indexProp = 'webglimpse_columnLayout_index';
             for (let c = 0; c < childrenToPlace.length; c++) {
-                let child = childrenToPlace[c];
+                const child = childrenToPlace[c];
                 child[indexProp] = c;
             }
 
             childrenToPlace.sort(function (a: LayoutEntry, b: LayoutEntry) {
-                let orderDiff = a.layoutArg - b.layoutArg;
+                const orderDiff = a.layoutArg - b.layoutArg;
                 return (orderDiff !== 0 ? orderDiff : (a[indexProp] - b[indexProp]));
             });
 
             let numFlexible = 0;
             let totalFlexWidth = parentViewport.w;
             for (let c = 0; c < childrenToPlace.length; c++) {
-                let w = childWidth(childrenToPlace[c]);
+                const w = childWidth(childrenToPlace[c]);
                 if (hasval(w)) {
                     totalFlexWidth -= w;
                 }
@@ -117,23 +117,23 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
                     numFlexible++;
                 }
             }
-            let flexWidth = totalFlexWidth / numFlexible;
+            const flexWidth = totalFlexWidth / numFlexible;
 
             if (leftToRight) {
-                let jStart = parentViewport.jStart;
-                let jEnd = parentViewport.jEnd;
+                const jStart = parentViewport.jStart;
+                const jEnd = parentViewport.jEnd;
                 let iStart = parentViewport.iStart;
                 let iRemainder = 0;
                 for (let c = 0; c < childrenToPlace.length; c++) {
-                    let child = childrenToPlace[c];
+                    const child = childrenToPlace[c];
 
                     let iEnd: number;
-                    let w = childWidth(child);
+                    const w = childWidth(child);
                     if (hasval(w)) {
                         iEnd = iStart + w;
                     }
                     else {
-                        let iEnd0 = iStart + flexWidth + iRemainder;
+                        const iEnd0 = iStart + flexWidth + iRemainder;
                         iEnd = Math.round(iEnd0);
                         iRemainder = iEnd0 - iEnd;
                     }
@@ -143,20 +143,20 @@ export function newColumnLayout(leftToRight: boolean = true): Layout {
                 }
             }
             else {
-                let jStart = parentViewport.jStart;
-                let jEnd = parentViewport.jEnd;
+                const jStart = parentViewport.jStart;
+                const jEnd = parentViewport.jEnd;
                 let iEnd = parentViewport.iEnd;
                 let iRemainder = 0;
                 for (let c = 0; c < childrenToPlace.length; c++) {
-                    let child = childrenToPlace[c];
+                    const child = childrenToPlace[c];
 
                     let iStart: number;
-                    let w = childWidth(child);
+                    const w = childWidth(child);
                     if (hasval(w)) {
                         iStart = iEnd - w;
                     }
                     else {
-                        let iStart0 = iEnd - flexWidth - iRemainder;
+                        const iStart0 = iEnd - flexWidth - iRemainder;
                         iStart = Math.round(iStart0);
                         iRemainder = iStart - iStart0;
                     }

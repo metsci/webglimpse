@@ -30,51 +30,29 @@
 import { OrderedSet } from './ordered_set';
 import { getObjectId } from './util';
 
-export interface Listener {
-    /**
-     * A truthy return value indicates the event was consumed by the listener and no other listeners should be notified
-     */
-    (): any;
-}
+export type Listener = () => any;
 
 
-export interface Listener1<A> {
-    /**
-     * A truthy return value indicates the event was consumed by the listener and no other listeners should be notified
-     */
-    (a: A): any;
-}
+export type Listener1<A> = (a: A) => any;
 
 
-export interface Listener2<A, B> {
-    /**
-     * A truthy return value indicates the event was consumed by the listener and no other listeners should be notified
-     */
-    (a: A, b: B): any;
-}
+export type Listener2<A, B> = (a: A, b: B) => any;
 
 
-export interface Listener3<A, B, C> {
-    /**
-     * A truthy return value indicates the event was consumed by the listener and no other listeners should be notified
-     */
-    (a: A, b: B, c: C): any;
-}
+export type Listener3<A, B, C> = (a: A, b: B, c: C) => any;
 
 
-interface Action {
-    (): void;
-}
+type Action = () => void;
 
 
 export class Notification {
     private _listeners: OrderedSet<Listener> = new OrderedSet<Listener>([], getObjectId, false);
-    private _deferring: boolean = false;
+    private _deferring = false;
     private _deferred: Action[] = [];
 
     on(listener: Listener) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.add(listener); });
         }
         else {
@@ -84,7 +62,7 @@ export class Notification {
 
     off(listener: Listener) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.removeValue(listener); });
         }
         else {
@@ -100,8 +78,10 @@ export class Notification {
         this._deferring = true;
         try {
             for (let n = 0; n < this._listeners.length; n++) {
-                let consumed = this._listeners.valueAt(n)();
-                if (consumed) return consumed;
+                const consumed = this._listeners.valueAt(n)();
+                if (consumed) {
+                    return consumed;
+                }
             }
             return false;
         }
@@ -120,12 +100,12 @@ export class Notification {
 
 export class Notification1<A> {
     private _listeners: OrderedSet<Listener1<A>> = new OrderedSet<Listener1<A>>([], getObjectId, false);
-    private _deferring: boolean = false;
+    private _deferring = false;
     private _deferred: Action[] = [];
 
     on(listener: Listener1<A>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.add(listener); });
         }
         else {
@@ -135,7 +115,7 @@ export class Notification1<A> {
 
     off(listener: Listener1<A>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.removeValue(listener); });
         }
         else {
@@ -151,8 +131,10 @@ export class Notification1<A> {
         this._deferring = true;
         try {
             for (let n = 0; n < this._listeners.length; n++) {
-                let consumed = this._listeners.valueAt(n)(a);
-                if (consumed) return consumed;
+                const consumed = this._listeners.valueAt(n)(a);
+                if (consumed) {
+                    return consumed;
+                }
             }
             return false;
         }
@@ -171,12 +153,12 @@ export class Notification1<A> {
 
 export class Notification2<A, B> {
     private _listeners: OrderedSet<Listener2<A, B>> = new OrderedSet<Listener2<A, B>>([], getObjectId, false);
-    private _deferring: boolean = false;
+    private _deferring = false;
     private _deferred: Action[] = [];
 
     on(listener: Listener2<A, B>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.add(listener); });
         }
         else {
@@ -186,7 +168,7 @@ export class Notification2<A, B> {
 
     off(listener: Listener2<A, B>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.removeValue(listener); });
         }
         else {
@@ -202,8 +184,10 @@ export class Notification2<A, B> {
         this._deferring = true;
         try {
             for (let n = 0; n < this._listeners.length; n++) {
-                let consumed = this._listeners.valueAt(n)(a, b);
-                if (consumed) return consumed;
+                const consumed = this._listeners.valueAt(n)(a, b);
+                if (consumed) {
+                    return consumed;
+                }
             }
             return false;
         }
@@ -222,12 +206,12 @@ export class Notification2<A, B> {
 
 export class Notification3<A, B, C> {
     private _listeners: OrderedSet<Listener3<A, B, C>> = new OrderedSet<Listener3<A, B, C>>([], getObjectId, false);
-    private _deferring: boolean = false;
+    private _deferring = false;
     private _deferred: Action[] = [];
 
     on(listener: Listener3<A, B, C>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.add(listener); });
         }
         else {
@@ -237,7 +221,7 @@ export class Notification3<A, B, C> {
 
     off(listener: Listener3<A, B, C>) {
         if (this._deferring) {
-            let self = this;
+            const self = this;
             this._deferred.push(function () { self._listeners.removeValue(listener); });
         }
         else {
@@ -253,8 +237,10 @@ export class Notification3<A, B, C> {
         this._deferring = true;
         try {
             for (let n = 0; n < this._listeners.length; n++) {
-                let consumed = this._listeners.valueAt(n)(a, b, c);
-                if (consumed) return consumed;
+                const consumed = this._listeners.valueAt(n)(a, b, c);
+                if (consumed) {
+                    return consumed;
+                }
             }
             return false;
         }

@@ -102,7 +102,7 @@ export function ensureCapacityFloat32(buffer: Float32Array, minNewCapacity: numb
         return buffer;
     }
     else {
-        let newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
+        const newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
         return new Float32Array(newCapacity);
     }
 }
@@ -114,7 +114,7 @@ export function ensureCapacityUint32(buffer: Uint32Array, minNewCapacity: number
         return buffer;
     }
     else {
-        let newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
+        const newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
         return new Uint32Array(newCapacity);
     }
 }
@@ -126,7 +126,7 @@ export function ensureCapacityUint16(buffer: Uint16Array, minNewCapacity: number
         return buffer;
     }
     else {
-        let newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
+        const newCapacity = Math.max(minNewCapacity, 2 * buffer.length);
         return new Uint16Array(newCapacity);
     }
 }
@@ -136,13 +136,11 @@ export interface StringMap<V> {
     [key: string]: V;
 }
 
-export interface IdFunction<V> {
-    (value: V): string;
-}
+export type IdFunction<V> = (value: V) => string;
 
 
 export let getObjectId = (function () {
-    let keyName = 'webglimpse_ObjectId';
+    const keyName = 'webglimpse_ObjectId';
     let nextValue = 0;
     return function (obj: any): string {
         let value = obj[keyName];
@@ -188,16 +186,24 @@ export function parseTime_PMILLIS(time_ISO8601: string): number {
     //
 
     let m = moment(time_ISO8601, 'YYYY-MM-DDTHH:mm:ssZZ', true);
-    if (m.isValid()) return m.valueOf();
+    if (m.isValid()) {
+        return m.valueOf();
+    }
 
     m = moment(time_ISO8601, 'YYYY-MM-DDTHH:mm:ss.SSSZZ', true);
-    if (m.isValid()) return m.valueOf();
+    if (m.isValid()) {
+        return m.valueOf();
+    }
 
     m = moment(time_ISO8601, 'YYYY-MM-DDTHH:mm:ss.SSZZ', true);
-    if (m.isValid()) return m.valueOf();
+    if (m.isValid()) {
+        return m.valueOf();
+    }
 
     m = moment(time_ISO8601, 'YYYY-MM-DDTHH:mm:ss.SZZ', true);
-    if (m.isValid()) return m.valueOf();
+    if (m.isValid()) {
+        return m.valueOf();
+    }
 
     throw new Error('Failed to parse time-string: \'' + time_ISO8601 + '\'');
 }

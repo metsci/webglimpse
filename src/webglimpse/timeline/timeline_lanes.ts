@@ -59,7 +59,7 @@ export class TimelineLaneArray {
         this._laneNums = {};
         this._eventAttrsListeners = {};
 
-        let self = this;
+        const self = this;
 
         function findAvailableLaneNum(event: TimelineEventModel, startLaneNum: number, endLaneNum: number): number {
             for (let n = startLaneNum; n < endLaneNum; n++) {
@@ -71,7 +71,7 @@ export class TimelineLaneArray {
         }
 
         function firstAvailableLaneNum(event: TimelineEventModel): number {
-            let laneNum = findAvailableLaneNum(event, 0, self._lanes.length);
+            const laneNum = findAvailableLaneNum(event, 0, self._lanes.length);
             return (hasval(laneNum) ? laneNum : self._lanes.length);
         }
 
@@ -84,12 +84,12 @@ export class TimelineLaneArray {
         }
 
         function fillVacancy(vacancyLaneNum: number, vacancyEdges_PMILLIS: number[]) {
-            let vacancyLane = self._lanes[vacancyLaneNum];
+            const vacancyLane = self._lanes[vacancyLaneNum];
             for (let n = vacancyLaneNum + 1; n < self._lanes.length; n++) {
-                let lane = self._lanes[n];
-                let possibleTenants = lane.collisionsWithInterval(vacancyEdges_PMILLIS[0], vacancyEdges_PMILLIS[1]);
+                const lane = self._lanes[n];
+                const possibleTenants = lane.collisionsWithInterval(vacancyEdges_PMILLIS[0], vacancyEdges_PMILLIS[1]);
                 for (let p = 0; p < possibleTenants.length; p++) {
-                    let event = possibleTenants[p];
+                    const event = possibleTenants[p];
                     if (vacancyLane.couldFitEvent(event)) {
                         lane.remove(event);
                         addEventToLane(event, vacancyLaneNum);
@@ -115,8 +115,8 @@ export class TimelineLaneArray {
             if (hasval(self._laneNums[eventGuid])) {
                 throw new Error('Lanes-array already contains this event: row-guid = ' + row.rowGuid + ', lane = ' + self._laneNums[eventGuid] + ', event-guid = ' + eventGuid);
             }
-            let event = model.event(eventGuid);
-            let laneNum = firstAvailableLaneNum(event);
+            const event = model.event(eventGuid);
+            const laneNum = firstAvailableLaneNum(event);
             addEventToLane(event, laneNum);
         };
 
@@ -126,15 +126,15 @@ export class TimelineLaneArray {
         // attaches listeners to event, should be called only once
         // when an event is first added to the row model
         this._newEvent = function (eventGuid: string) {
-            let event = model.event(eventGuid);
+            const event = model.event(eventGuid);
             let oldEdges_PMILLIS = effectiveEdges_PMILLIS(ui, event);
-            let updateLaneAssignment = function () {
-                let newEdges_PMILLIS = effectiveEdges_PMILLIS(ui, event);
+            const updateLaneAssignment = function () {
+                const newEdges_PMILLIS = effectiveEdges_PMILLIS(ui, event);
                 if (newEdges_PMILLIS[0] !== oldEdges_PMILLIS[0] || newEdges_PMILLIS[1] !== oldEdges_PMILLIS[1]) {
-                    let oldLaneNum = self._laneNums[event.eventGuid];
-                    let oldLane = self._lanes[oldLaneNum];
+                    const oldLaneNum = self._laneNums[event.eventGuid];
+                    const oldLane = self._lanes[oldLaneNum];
 
-                    let betterLaneNum = findAvailableLaneNum(event, 0, oldLaneNum);
+                    const betterLaneNum = findAvailableLaneNum(event, 0, oldLaneNum);
                     if (hasval(betterLaneNum)) {
                         // Move to a better lane
                         oldLane.remove(event);
@@ -147,7 +147,9 @@ export class TimelineLaneArray {
                     else {
                         // Take whatever lane we can get
                         let newLaneNum = findAvailableLaneNum(event, oldLaneNum + 1, self._lanes.length);
-                        if (!hasval(newLaneNum)) newLaneNum = self._lanes.length;
+                        if (!hasval(newLaneNum)){
+                            newLaneNum = self._lanes.length;
+                        }
                         oldLane.remove(event);
                         addEventToLane(event, newLaneNum);
                     }
@@ -166,9 +168,9 @@ export class TimelineLaneArray {
         row.eventGuids.valueAdded.on(this._newEvent);
 
         this._removeEvent = function (eventGuid: string) {
-            let event = model.event(eventGuid);
+            const event = model.event(eventGuid);
 
-            let oldLaneNum = self._laneNums[eventGuid];
+            const oldLaneNum = self._laneNums[eventGuid];
             delete self._laneNums[eventGuid];
 
             self._lanes[oldLaneNum].remove(event);
@@ -177,41 +179,43 @@ export class TimelineLaneArray {
 
             event.attrsChanged.off(self._eventAttrsListeners[eventGuid]);
             delete self._eventAttrsListeners[eventGuid];
-        }
+        };
         row.eventGuids.valueRemoved.on(this._removeEvent);
 
         self._rebuildLanes = function () {
-            let oldLanes = self._lanes;
+            const oldLanes = self._lanes;
             self._lanes = [];
             self._laneNums = {};
 
             for (let l = 0; l < oldLanes.length; l++) {
-                let lane = oldLanes[l];
+                const lane = oldLanes[l];
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
+                    const event = lane.event(e);
                     self._addEvent(event.eventGuid);
                 }
             }
         };
 
-        let hasIcons = function () {
-            let oldLanes = self._lanes;
+        const hasIcons = function () {
+            const oldLanes = self._lanes;
             for (let l = 0; l < oldLanes.length; l++) {
-                let lane = oldLanes[l];
+                const lane = oldLanes[l];
                 for (let e = 0; e < lane.length; e++) {
-                    let event = lane.event(e);
-                    let style = ui.eventStyle(event.styleGuid);
-                    if (event.labelIcon || style.numIcons > 0) return true;
+                    const event = lane.event(e);
+                    const style = ui.eventStyle(event.styleGuid);
+                    if (event.labelIcon || style.numIcons > 0) {
+                        return true;
+                    }
                 }
             }
             return false;
-        }
+        };
 
         self._rebuildLanesMouseWheel = function () {
             if (hasIcons()) {
                 self._rebuildLanes();
             }
-        }
+        };
 
         ui.millisPerPx.changed.on(self._rebuildLanesMouseWheel);
         ui.eventStyles.valueAdded.on(self._rebuildLanes);
@@ -231,7 +235,7 @@ export class TimelineLaneArray {
     }
 
     eventAt(laneNum: number, time_PMILLIS: number): TimelineEventModel {
-        let lane = this._lanes[laneNum];
+        const lane = this._lanes[laneNum];
         return (lane && lane.eventAtTime(time_PMILLIS));
     }
 
@@ -244,11 +248,13 @@ export class TimelineLaneArray {
         this._ui.eventStyles.valueAdded.off(this._rebuildLanes);
         this._ui.eventStyles.valueRemoved.off(this._rebuildLanes);
 
-        for (let eventGuid in this._eventAttrsListeners) {
+        for (const eventGuid in this._eventAttrsListeners) {
             if (this._eventAttrsListeners.hasOwnProperty(eventGuid)) {
-                let listener = this._eventAttrsListeners[eventGuid];
-                let event = this._model.event(eventGuid);
-                if (listener && event) event.attrsChanged.off(listener);
+                const listener = this._eventAttrsListeners[eventGuid];
+                const event = this._model.event(eventGuid);
+                if (listener && event) {
+                    event.attrsChanged.off(listener);
+                }
             }
         }
     }
@@ -260,13 +266,13 @@ export function effectiveEdges_PMILLIS(ui: TimelineUi, event: TimelineEventModel
     let start_PMILLIS = event.start_PMILLIS;
     let end_PMILLIS = event.end_PMILLIS;
 
-    let millisPerPx = ui.millisPerPx.value;
-    let eventStyle = ui.eventStyle(event.styleGuid);
+    const millisPerPx = ui.millisPerPx.value;
+    const eventStyle = ui.eventStyle(event.styleGuid);
     for (let n = 0; n < eventStyle.numIcons; n++) {
-        let icon = eventStyle.icon(n);
-        let iconTime_PMILLIS = event.start_PMILLIS + icon.hPos * (event.end_PMILLIS - event.start_PMILLIS);
-        let iconStart_PMILLIS = iconTime_PMILLIS - (millisPerPx * icon.hAlign * icon.displayWidth);
-        let iconEnd_PMILLIS = iconTime_PMILLIS + (millisPerPx * (1 - icon.hAlign) * icon.displayWidth);
+        const icon = eventStyle.icon(n);
+        const iconTime_PMILLIS = event.start_PMILLIS + icon.hPos * (event.end_PMILLIS - event.start_PMILLIS);
+        const iconStart_PMILLIS = iconTime_PMILLIS - (millisPerPx * icon.hAlign * icon.displayWidth);
+        const iconEnd_PMILLIS = iconTime_PMILLIS + (millisPerPx * (1 - icon.hAlign) * icon.displayWidth);
 
         start_PMILLIS = Math.min(start_PMILLIS, iconStart_PMILLIS);
         end_PMILLIS = Math.max(end_PMILLIS, iconEnd_PMILLIS);
@@ -320,19 +326,19 @@ export class TimelineLaneStack implements TimelineLane {
     eventAtTime(time_PMILLIS: number): TimelineEventModel {
         if (hasval(time_PMILLIS)) {
             // Check the first event ending after time
-            let iFirst = indexAfter(this._ends_PMILLIS, time_PMILLIS);
+            const iFirst = indexAfter(this._ends_PMILLIS, time_PMILLIS);
             if (iFirst < this._events.length) {
-                let eventFirst = this._events[iFirst];
-                let startFirst_PMILLIS = effectiveEdges_PMILLIS(this._ui, eventFirst)[0];
+                const eventFirst = this._events[iFirst];
+                const startFirst_PMILLIS = effectiveEdges_PMILLIS(this._ui, eventFirst)[0];
                 if (time_PMILLIS >= startFirst_PMILLIS) {
                     return eventFirst;
                 }
             }
             // Check the previous event, in case we're in its icon-slop
-            let iPrev = iFirst - 1;
+            const iPrev = iFirst - 1;
             if (iPrev >= 0) {
-                let eventPrev = this._events[iPrev];
-                let endPrev_PMILLIS = effectiveEdges_PMILLIS(this._ui, eventPrev)[1];
+                const eventPrev = this._events[iPrev];
+                const endPrev_PMILLIS = effectiveEdges_PMILLIS(this._ui, eventPrev)[1];
                 if (time_PMILLIS < endPrev_PMILLIS) {
                     return eventPrev;
                 }
@@ -342,11 +348,15 @@ export class TimelineLaneStack implements TimelineLane {
     }
 
     add(event: TimelineEventModel) {
-        let eventGuid = event.eventGuid;
-        if (hasval(this._indices[eventGuid])) throw new Error('Lane already contains this event: event = ' + formatEvent(event));
+        const eventGuid = event.eventGuid;
+        if (hasval(this._indices[eventGuid])) {
+            throw new Error('Lane already contains this event: event = ' + formatEvent(event));
+        }
 
-        let i = indexAfter(this._starts_PMILLIS, event.start_PMILLIS);
-        if (!this._eventFitsBetween(event, i - 1, i)) throw new Error('New event does not fit between existing events: new = ' + formatEvent(event) + ', before = ' + formatEvent(this._events[i - 1]) + ', after = ' + formatEvent(this._events[i]));
+        const i = indexAfter(this._starts_PMILLIS, event.start_PMILLIS);
+        if (!this._eventFitsBetween(event, i - 1, i)) {
+            throw new Error('New event does not fit between existing events: new = ' + formatEvent(event) + ', before = ' + formatEvent(this._events[i - 1]) + ', after = ' + formatEvent(this._events[i]));
+        }
 
         this._events.splice(i, 0, event);
         this._starts_PMILLIS.splice(i, 0, event.start_PMILLIS);
@@ -359,9 +369,11 @@ export class TimelineLaneStack implements TimelineLane {
     }
 
     remove(event: TimelineEventModel) {
-        let eventGuid = event.eventGuid;
-        let i = this._indices[eventGuid];
-        if (!hasval(i)) throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        const eventGuid = event.eventGuid;
+        const i = this._indices[eventGuid];
+        if (!hasval(i)) {
+            throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        }
 
         this._events.splice(i, 1);
         this._starts_PMILLIS.splice(i, 1);
@@ -374,15 +386,19 @@ export class TimelineLaneStack implements TimelineLane {
     }
 
     eventStillFits(event: TimelineEventModel): boolean {
-        let i = this._indices[event.eventGuid];
-        if (!hasval(i)) throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        const i = this._indices[event.eventGuid];
+        if (!hasval(i)) {
+            throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        }
 
         return this._eventFitsBetween(event, i - 1, i + 1);
     }
 
     update(event: TimelineEventModel) {
-        let i = this._indices[event.eventGuid];
-        if (!hasval(i)) throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        const i = this._indices[event.eventGuid];
+        if (!hasval(i)) {
+            throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        }
 
         this._starts_PMILLIS[i] = event.start_PMILLIS;
         this._ends_PMILLIS[i] = event.end_PMILLIS;
@@ -391,18 +407,18 @@ export class TimelineLaneStack implements TimelineLane {
     collisionsWithInterval(start_PMILLIS: number, end_PMILLIS: number): TimelineEventModel[] {
         // Find the first event ending after start
         let iFirst = indexAfter(this._ends_PMILLIS, start_PMILLIS);
-        let iPrev = iFirst - 1;
+        const iPrev = iFirst - 1;
         if (iPrev >= 0) {
-            let endPrev_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iPrev])[1];
+            const endPrev_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iPrev])[1];
             if (start_PMILLIS < endPrev_PMILLIS) {
                 iFirst = iPrev;
             }
         }
         // Find the last event starting before end
         let iLast = indexBefore(this._starts_PMILLIS, end_PMILLIS);
-        let iPost = iLast + 1;
+        const iPost = iLast + 1;
         if (iPost < this._events.length) {
-            let startPost_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iPost])[0];
+            const startPost_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iPost])[0];
             if (end_PMILLIS > startPost_PMILLIS) {
                 iLast = iPost;
             }
@@ -412,17 +428,17 @@ export class TimelineLaneStack implements TimelineLane {
     }
 
     couldFitEvent(event: TimelineEventModel): boolean {
-        let iAfter = indexAfter(this._starts_PMILLIS, event.start_PMILLIS);
-        let iBefore = iAfter - 1;
+        const iAfter = indexAfter(this._starts_PMILLIS, event.start_PMILLIS);
+        const iBefore = iAfter - 1;
         return this._eventFitsBetween(event, iBefore, iAfter);
     }
 
     _eventFitsBetween(event: TimelineEventModel, iBefore: number, iAfter: number): boolean {
-        let edges_PMILLIS = effectiveEdges_PMILLIS(this._ui, event);
+        const edges_PMILLIS = effectiveEdges_PMILLIS(this._ui, event);
 
         if (iBefore >= 0) {
             // Comparing one start-time (inclusive) and one end-time (exclusive), so equality means no collision
-            let edgesBefore_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iBefore]);
+            const edgesBefore_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iBefore]);
             if (edges_PMILLIS[0] < edgesBefore_PMILLIS[1]) {
                 return false;
             }
@@ -430,7 +446,7 @@ export class TimelineLaneStack implements TimelineLane {
 
         if (iAfter < this._events.length) {
             // Comparing one start-time (inclusive) and one end-time (exclusive), so equality means no collision
-            let edgesAfter_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iAfter]);
+            const edgesAfter_PMILLIS = effectiveEdges_PMILLIS(this._ui, this._events[iAfter]);
             if (edges_PMILLIS[1] > edgesAfter_PMILLIS[0]) {
                 return false;
             }
@@ -481,9 +497,9 @@ export class TimelineLaneSimple implements TimelineLane {
         // favors events drawn on top (in cases where events are unordered
         // those that happen to be at end end of the list are drawn last
         for (let n = this._events.length - 1; n >= 0; n--) {
-            let event: TimelineEventModel = this._events[n];
+            const event: TimelineEventModel = this._events[n];
 
-            let eventEdges_PMILLIS = effectiveEdges_PMILLIS(this._ui, event);
+            const eventEdges_PMILLIS = effectiveEdges_PMILLIS(this._ui, event);
 
             if (time_PMILLIS > eventEdges_PMILLIS[0] &&
                 time_PMILLIS < eventEdges_PMILLIS[1] &&
@@ -496,25 +512,29 @@ export class TimelineLaneSimple implements TimelineLane {
     }
 
     add(event: TimelineEventModel) {
-        let eventGuid = event.eventGuid;
-        if (hasval(this._ids[eventGuid])) throw new Error('Lane already contains this event: event = ' + formatEvent(event));
+        const eventGuid = event.eventGuid;
+        if (hasval(this._ids[eventGuid])) {
+            throw new Error('Lane already contains this event: event = ' + formatEvent(event));
+        }
 
         // for events with undefined order, replace with largest possible negative order so sort is correct
-        let order = hasval(event.order) ? event.order : Number.NEGATIVE_INFINITY;
+        const orderVal = hasval(event.order) ? event.order : Number.NEGATIVE_INFINITY;
 
-        let i: number = indexAtOrAfter(this._orders, order);
+        const i: number = indexAtOrAfter(this._orders, orderVal);
 
         this._ids[eventGuid] = eventGuid;
-        this._orders.splice(i, 0, order);
+        this._orders.splice(i, 0, orderVal);
         this._events.splice(i, 0, event);
     }
 
     remove(event: TimelineEventModel) {
-        let eventGuid = event.eventGuid;
-        if (!hasval(this._ids[eventGuid])) throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        const eventGuid = event.eventGuid;
+        if (!hasval(this._ids[eventGuid])) {
+            throw new Error('Event not found in this lane: event = ' + formatEvent(event));
+        }
 
         delete this._ids[eventGuid];
-        let i: number = this._getIndex(event);
+        const i: number = this._getIndex(event);
         this._orders.splice(i, 1);
         this._events.splice(i, 1);
     }
@@ -526,10 +546,10 @@ export class TimelineLaneSimple implements TimelineLane {
 
     collisionsWithInterval(start_PMILLIS: number, end_PMILLIS: number): TimelineEventModel[] {
 
-        let results = [];
+        const results = [];
 
         for (let n = 0; n < this._events.length; n++) {
-            let event: TimelineEventModel = this._events[n];
+            const event: TimelineEventModel = this._events[n];
 
             if (!(start_PMILLIS > event.end_PMILLIS || end_PMILLIS < event.start_PMILLIS)) {
                 results.push(event);
@@ -551,7 +571,7 @@ export class TimelineLaneSimple implements TimelineLane {
 
     _getIndex(queryEvent: TimelineEventModel): number {
         for (let n = 0; n < this._events.length; n++) {
-            let event: TimelineEventModel = this._events[n];
+            const event: TimelineEventModel = this._events[n];
             if (queryEvent.eventGuid === event.eventGuid) {
                 return n;
             }

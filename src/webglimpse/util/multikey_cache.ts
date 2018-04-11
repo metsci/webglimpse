@@ -39,7 +39,7 @@ export interface MultiKeyCacheHelper<V> {
 class MultiKeyCacheEntry<V> {
     keyParts: string[];
     value: V;
-    touched: boolean = false;
+    touched = false;
 
     constructor(keyParts: string[], value: V) {
         this.keyParts = keyParts;
@@ -58,12 +58,12 @@ export class MultiKeyCache<V> {
     }
 
     private combineKeyParts(keyParts: string[]): string {
-        let esc = '\\';
-        let sep = ';';
-        let escapedEsc = esc + esc;
-        let escapedSep = esc + sep;
+        const esc = '\\';
+        const sep = ';';
+        const escapedEsc = esc + esc;
+        const escapedSep = esc + sep;
 
-        let escapedParts = <string[]>[];
+        const escapedParts = <string[]>[];
         for (let n = 0; n < keyParts.length; n++) {
             escapedParts[n] = keyParts[n].replace(esc, escapedEsc).replace(sep, escapedSep);
         }
@@ -71,35 +71,35 @@ export class MultiKeyCache<V> {
     }
 
     value(...keyParts: string[]): V {
-        let key = this.combineKeyParts(keyParts);
+        const key = this.combineKeyParts(keyParts);
         if (!this.map.hasOwnProperty(key)) {
             this.map[key] = new MultiKeyCacheEntry<V>(keyParts, this.helper.create(keyParts));
         }
-        let en = this.map[key];
+        const en = this.map[key];
 
         en.touched = true;
         return en.value;
     }
 
     remove(...keyParts: string[]) {
-        let key = this.combineKeyParts(keyParts);
+        const key = this.combineKeyParts(keyParts);
         if (this.map.hasOwnProperty(key)) {
-            let en = this.map[key];
+            const en = this.map[key];
             this.helper.dispose(en.value, en.keyParts);
             delete this.map[key];
         }
     }
 
     retain(...keyParts: string[]) {
-        let newMap: { [k: string]: MultiKeyCacheEntry<V>; } = {};
-        let retainKey = this.combineKeyParts(keyParts);
+        const newMap: { [k: string]: MultiKeyCacheEntry<V>; } = {};
+        const retainKey = this.combineKeyParts(keyParts);
         if (this.map.hasOwnProperty(retainKey)) {
             newMap[retainKey] = this.map[retainKey];
             delete this.map[retainKey];
         }
-        for (let key in this.map) {
+        for (const key in this.map) {
             if (this.map.hasOwnProperty(key)) {
-                let en = this.map[key];
+                const en = this.map[key];
                 this.helper.dispose(en.value, en.keyParts);
             }
         }
@@ -107,7 +107,7 @@ export class MultiKeyCache<V> {
     }
 
     resetTouches() {
-        for (let key in this.map) {
+        for (const key in this.map) {
             if (this.map.hasOwnProperty(key)) {
                 this.map[key].touched = false;
             }
@@ -115,10 +115,10 @@ export class MultiKeyCache<V> {
     }
 
     retainTouched() {
-        let newMap: { [key: string]: MultiKeyCacheEntry<V>; } = {};
-        for (let key in this.map) {
+        const newMap: { [key: string]: MultiKeyCacheEntry<V>; } = {};
+        for (const key in this.map) {
             if (this.map.hasOwnProperty(key)) {
-                let en = this.map[key];
+                const en = this.map[key];
                 if (en.touched) {
                     newMap[key] = this.map[key];
                 }
@@ -131,9 +131,9 @@ export class MultiKeyCache<V> {
     }
 
     clear() {
-        for (let key in this.map) {
+        for (const key in this.map) {
             if (this.map.hasOwnProperty(key)) {
-                let en = this.map[key];
+                const en = this.map[key];
                 this.helper.dispose(en.value, en.keyParts);
             }
         }

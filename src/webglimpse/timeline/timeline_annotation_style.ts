@@ -130,7 +130,7 @@ export class TimelineAnnotationStyleUi {
         this._vTextAlign = style.vTextAlign;
         this._align = style.align;
         this._uiHint = style.uiHint;
-        this._icons = hasval(style.color) ? style.icons.map((icon) => { return new TimelineAnnotationIconUi(icon); }) : [];
+        this._icons = hasval(style.color) ? style.icons.map((icon) => new TimelineAnnotationIconUi(icon)) : [];
     }
 
     get numIcons(): number {

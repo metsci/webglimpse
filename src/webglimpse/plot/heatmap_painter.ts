@@ -99,16 +99,16 @@ export let heatmap_FRAGSHADER = concatLines(
  */
 export function newHeatmapPainter(axis: Axis2D, colorAxis: Axis1D, data: HeatMapData, colorTexture: Texture, options?: HeatmapPainterOptions): Painter {
 
-    let blend = (hasval(options) && hasval(options.blend) ? options.blend : false);
+    const blend = (hasval(options) && hasval(options.blend) ? options.blend : false);
 
     // only GL_RGBA is supported with GL_FLOAT texture type in webgl (see texture.ts)
     // we we currently need an array 4 times bigger than necessary in order to use FLOATS
     // to store the matrix data in a texture
-    let array = new Float32Array(data.xSize * data.ySize * 4);
+    const array = new Float32Array(data.xSize * data.ySize * 4);
     for (let x = 0; x < data.xSize; x++) {
         for (let y = 0; y < data.ySize; y++) {
-            let index = x * data.ySize + y;
-            let value = data.array[index];
+            const index = x * data.ySize + y;
+            const value = data.array[index];
 
             array[4 * index] = value;
             array[4 * index + 1] = value;
@@ -118,29 +118,29 @@ export function newHeatmapPainter(axis: Axis2D, colorAxis: Axis1D, data: HeatMap
     }
     data.array = array;
 
-    let program = new Program(heatmap_VERTSHADER, heatmap_FRAGSHADER);
-    let u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
-    let u_dataTexture = new UniformSampler2D(program, 'u_dataTex');
-    let u_colorTexture = new UniformSampler2D(program, 'u_colorTex');
-    let u_dataMin = new Uniform1f(program, 'u_dataMin');
-    let u_dataMax = new Uniform1f(program, 'u_dataMax');
-    let a_vertCoord = new Attribute(program, 'a_vertCoord');
-    let a_texCoord = new Attribute(program, 'a_texCoord');
+    const program = new Program(heatmap_VERTSHADER, heatmap_FRAGSHADER);
+    const u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
+    const u_dataTexture = new UniformSampler2D(program, 'u_dataTex');
+    const u_colorTexture = new UniformSampler2D(program, 'u_colorTex');
+    const u_dataMin = new Uniform1f(program, 'u_dataMin');
+    const u_dataMax = new Uniform1f(program, 'u_dataMax');
+    const a_vertCoord = new Attribute(program, 'a_vertCoord');
+    const a_texCoord = new Attribute(program, 'a_texCoord');
 
-    let texture = new FloatDataTexture2D(data.xSize, data.ySize, data.array);
+    const texture = new FloatDataTexture2D(data.xSize, data.ySize, data.array);
 
     // points in triangle strip
-    let vertCoordArray = [data.xMin, data.yMax, data.xMax, data.yMax, data.xMin, data.yMin, data.xMax, data.yMin];
-    let vertCoordFloatArray = new Float32Array(vertCoordArray);
-    let vertCoordBuffer = newStaticBuffer(vertCoordFloatArray);
+    const vertCoordArray = [data.xMin, data.yMax, data.xMax, data.yMax, data.xMin, data.yMin, data.xMax, data.yMin];
+    const vertCoordFloatArray = new Float32Array(vertCoordArray);
+    const vertCoordBuffer = newStaticBuffer(vertCoordFloatArray);
 
     // texture coordinates
-    let texCoordArray = [0, 1, 1, 1, 0, 0, 1, 0];
-    let texCoordFloatArray = new Float32Array(texCoordArray);
-    let texCoordBuffer = newStaticBuffer(texCoordFloatArray);
+    const texCoordArray = [0, 1, 1, 1, 0, 0, 1, 0];
+    const texCoordFloatArray = new Float32Array(texCoordArray);
+    const texCoordBuffer = newStaticBuffer(texCoordFloatArray);
 
-    let dim = 2;
-    let vertexCount = 4;
+    const dim = 2;
+    const vertexCount = 4;
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 

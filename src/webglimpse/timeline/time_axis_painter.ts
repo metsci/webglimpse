@@ -30,7 +30,7 @@
 import { Color, black } from '../color';
 import { TimeAxis1D } from './time_axis';
 import { Side, solid_FRAGSHADER } from '../misc';
-import { Painter, yFrac, xFrac } from '../core';
+import { Painter } from '../core';
 import { Program, Uniform1f, Uniform2f, UniformColor, Attribute } from '../shader';
 import { edgeMarks_VERTSHADER } from '../plot/edge_axis_painter';
 import { newDynamicBuffer } from '../buffer';
@@ -38,7 +38,7 @@ import { Cache } from '../util/cache';
 import { TextTexture2D, newTextTextureCache } from '../text';
 import { TextureRenderer, TextureDrawOptions } from '../texture';
 import { BoundsUnmodifiable } from '../bounds';
-import { ensureCapacityFloat32, GL, log10, order, hasval, parseTime_PMILLIS, clamp } from '../util/util';
+import { ensureCapacityFloat32, GL, hasval, parseTime_PMILLIS, clamp } from '../util/util';
 import { minutesToMillis, millisToDays, hoursToMillis, daysToMillis, millisToHours, secondsToMillis } from '../time';
 import { Axis1D, getTickInterval, getTickCount, getTickPositions } from '../plot/axis';
 import * as momentNs from 'moment';
@@ -78,40 +78,42 @@ export interface TimeAxisPainterOptions {
 
 
 export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displayTimeZone: string, tickTimeZone: string, options?: TimeAxisPainterOptions): Painter {
-    let tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
-    let font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
-    let textColor = (hasval(options) && hasval(options.textColor) ? options.textColor : black);
-    let tickColor = (hasval(options) && hasval(options.tickColor) ? options.tickColor : black);
-    let tickSize = (hasval(options) && hasval(options.tickSize) ? options.tickSize : 6);
-    let labelAlign = (hasval(options) && hasval(options.labelAlign) ? options.labelAlign : 0.5);
-    let referenceDate_PMILLIS = (hasval(options) && hasval(options.referenceDate) ? parseTime_PMILLIS(options.referenceDate) : undefined);
-    let isFuturePositive = (hasval(options) && hasval(options.isFuturePositive) ? options.isFuturePositive : true);
-    let timeAxisFormat = (hasval(options) && hasval(options.timeAxisFormat) ? options.timeAxisFormat : undefined);
+    const tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
+    const font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
+    const textColor = (hasval(options) && hasval(options.textColor) ? options.textColor : black);
+    const tickColor = (hasval(options) && hasval(options.tickColor) ? options.tickColor : black);
+    const tickSize = (hasval(options) && hasval(options.tickSize) ? options.tickSize : 6);
+    const labelAlign = (hasval(options) && hasval(options.labelAlign) ? options.labelAlign : 0.5);
+    const referenceDate_PMILLIS = (hasval(options) && hasval(options.referenceDate) ? parseTime_PMILLIS(options.referenceDate) : undefined);
+    const isFuturePositive = (hasval(options) && hasval(options.isFuturePositive) ? options.isFuturePositive : true);
+    const timeAxisFormat = (hasval(options) && hasval(options.timeAxisFormat) ? options.timeAxisFormat : undefined);
 
-    let marksProgram = new Program(edgeMarks_VERTSHADER(labelSide), solid_FRAGSHADER);
-    let marksProgram_u_VMin = new Uniform1f(marksProgram, 'u_VMin');
-    let marksProgram_u_VSize = new Uniform1f(marksProgram, 'u_VSize');
-    let marksProgram_u_ViewportSize = new Uniform2f(marksProgram, 'u_ViewportSize');
-    let marksProgram_u_MarkSize = new Uniform1f(marksProgram, 'u_MarkSize');
-    let marksProgram_u_Color = new UniformColor(marksProgram, 'u_Color');
-    let marksProgram_a_VCoord = new Attribute(marksProgram, 'a_VCoord');
+    const marksProgram = new Program(edgeMarks_VERTSHADER(labelSide), solid_FRAGSHADER);
+    const marksProgram_u_VMin = new Uniform1f(marksProgram, 'u_VMin');
+    const marksProgram_u_VSize = new Uniform1f(marksProgram, 'u_VSize');
+    const marksProgram_u_ViewportSize = new Uniform2f(marksProgram, 'u_ViewportSize');
+    const marksProgram_u_MarkSize = new Uniform1f(marksProgram, 'u_MarkSize');
+    const marksProgram_u_Color = new UniformColor(marksProgram, 'u_Color');
+    const marksProgram_a_VCoord = new Attribute(marksProgram, 'a_VCoord');
 
     let markCoords = new Float32Array(0);
-    let markCoordsBuffer = newDynamicBuffer();
+    const markCoordsBuffer = newDynamicBuffer();
 
-    let textTextures = <Cache<TextTexture2D>>newTextTextureCache(font, textColor);
-    let textureRenderer = new TextureRenderer();
-    let hTickLabels = textTextures.value('-0123456789:.').h;
-    let isVerticalAxis = (labelSide === Side.LEFT || labelSide === Side.RIGHT);
+    const textTextures = <Cache<TextTexture2D>>newTextTextureCache(font, textColor);
+    const textureRenderer = new TextureRenderer();
+    const hTickLabels = textTextures.value('-0123456789:.').h;
+    const isVerticalAxis = (labelSide === Side.LEFT || labelSide === Side.RIGHT);
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
-        let sizePixels = isVerticalAxis ? viewport.h : viewport.w;
-        if (sizePixels === 0) return;
+        const sizePixels = isVerticalAxis ? viewport.h : viewport.w;
+        if (sizePixels === 0) {
+            return;
+        }
 
-        let tickTimes_PMILLIS = getTickTimes_PMILLIS(timeAxis, sizePixels, tickSpacing, tickTimeZone, referenceDate_PMILLIS);
-        let tickInterval_MILLIS = getTickInterval_MILLIS(tickTimes_PMILLIS);
-        let tickCount = tickTimes_PMILLIS.length;
+        const tickTimes_PMILLIS = getTickTimes_PMILLIS(timeAxis, sizePixels, tickSpacing, tickTimeZone, referenceDate_PMILLIS);
+        const tickInterval_MILLIS = getTickInterval_MILLIS(tickTimes_PMILLIS);
+        const tickCount = tickTimes_PMILLIS.length;
 
 
         // Tick marks
@@ -126,7 +128,7 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
 
         markCoords = ensureCapacityFloat32(markCoords, 4 * tickCount);
         for (let n = 0; n < tickCount; n++) {
-            let v = timeAxis.vAtTime(tickTimes_PMILLIS[n]);
+            const v = timeAxis.vAtTime(tickTimes_PMILLIS[n]);
             markCoords[(4 * n + 0)] = v;
             markCoords[(4 * n + 1)] = 0;
             markCoords[(4 * n + 2)] = v;
@@ -149,25 +151,27 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
         // Tick labels
         //
 
-        let ticks: TickDisplayData = getTickDisplayData(tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone, isFuturePositive, timeAxisFormat);
+        const ticks: TickDisplayData = getTickDisplayData(tickInterval_MILLIS, referenceDate_PMILLIS, displayTimeZone, isFuturePositive, timeAxisFormat);
 
         textTextures.resetTouches();
         textureRenderer.begin(gl, viewport);
 
         for (let n = 0; n < tickCount; n++) {
-            let tickTime_PMILLIS = tickTimes_PMILLIS[n];
-            let tFrac = timeAxis.tFrac(tickTime_PMILLIS);
-            if (tFrac < 0 || tFrac >= 1) continue;
+            const tickTime_PMILLIS = tickTimes_PMILLIS[n];
+            const tFrac = timeAxis.tFrac(tickTime_PMILLIS);
+            if (tFrac < 0 || tFrac >= 1) {
+                continue;
+            }
 
-            let tickLabel: string = ticks.tickFormat(tickTime_PMILLIS);
-            let textTexture = textTextures.value(tickLabel);
+            const tickLabel: string = ticks.tickFormat(tickTime_PMILLIS);
+            const textTexture = textTextures.value(tickLabel);
 
             let xFrac: number;
             let yFrac: number;
             if (labelSide === Side.LEFT || labelSide === Side.RIGHT) {
-                let yAnchor = textTexture.yAnchor(0.43);
-                let j0 = (tFrac * viewport.h) - yAnchor * textTexture.h;
-                let j = clamp(0, viewport.h - textTexture.h, j0);
+                const yAnchor = textTexture.yAnchor(0.43);
+                const j0 = (tFrac * viewport.h) - yAnchor * textTexture.h;
+                const j = clamp(0, viewport.h - textTexture.h, j0);
                 yFrac = j / viewport.h;
 
                 if (labelSide === Side.LEFT) {
@@ -178,9 +182,9 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
                 }
             }
             else {
-                let xAnchor = 0.45;
-                let i0 = (tFrac * viewport.w) - xAnchor * (textTexture.w);
-                let i = clamp(0, viewport.w - textTexture.w, i0);
+                const xAnchor = 0.45;
+                const i0 = (tFrac * viewport.w) - xAnchor * (textTexture.w);
+                const i = clamp(0, viewport.w - textTexture.w, i0);
                 xFrac = i / viewport.w;
 
                 if (labelSide === Side.BOTTOM) {
@@ -198,24 +202,26 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
         //
 
         if (ticks.timeStructFactory) {
-            let timeStructs = createTimeStructs(timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign);
+            const timeStructs = createTimeStructs(timeAxis, ticks.timeStructFactory, tickTimeZone, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign);
             for (let n = 0; n < timeStructs.length; n++) {
-                let timeStruct = timeStructs[n];
-                let text = ticks.prefixFormat(timeStruct);
-                let textTexture = textTextures.value(text);
+                const timeStruct = timeStructs[n];
+                const text = ticks.prefixFormat(timeStruct);
+                const textTexture = textTextures.value(text);
 
-                let halfTextFrac = 0.5 * textTexture.w / viewport.w;
-                let minFrac = timeAxis.tFrac(timeStruct.start_PMILLIS) - halfTextFrac;
-                let maxFrac = timeAxis.tFrac(timeStruct.end_PMILLIS) + halfTextFrac;
-                let tFrac = clamp(minFrac, maxFrac, timeAxis.tFrac(timeStruct.textCenter_PMILLIS));
-                if (tFrac - halfTextFrac < 0 || tFrac + halfTextFrac > 1) continue;
+                const halfTextFrac = 0.5 * textTexture.w / viewport.w;
+                const minFrac = timeAxis.tFrac(timeStruct.start_PMILLIS) - halfTextFrac;
+                const maxFrac = timeAxis.tFrac(timeStruct.end_PMILLIS) + halfTextFrac;
+                const tFrac = clamp(minFrac, maxFrac, timeAxis.tFrac(timeStruct.textCenter_PMILLIS));
+                if (tFrac - halfTextFrac < 0 || tFrac + halfTextFrac > 1) {
+                    continue;
+                }
 
                 let xFrac: number;
                 let yFrac: number;
                 let textOpts: TextureDrawOptions;
                 if (labelSide === Side.LEFT || labelSide === Side.RIGHT) {
                     // Using hTickLabels here works out about right, even though the tick-label text is horizontal
-                    let xFrac0 = 0.5 * (viewport.w - tickSize - 2 - hTickLabels) / viewport.w;
+                    const xFrac0 = 0.5 * (viewport.w - tickSize - 2 - hTickLabels) / viewport.w;
                     xFrac = (labelSide === Side.LEFT ? xFrac0 : 1 - xFrac0);
                     yFrac = tFrac;
                     textOpts = {
@@ -225,7 +231,7 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
                     };
                 }
                 else {
-                    let yFrac0 = 0.5 * (viewport.h - tickSize - 2 - hTickLabels) / viewport.h;
+                    const yFrac0 = 0.5 * (viewport.h - tickSize - 2 - hTickLabels) / viewport.h;
                     yFrac = (labelSide === Side.BOTTOM ? yFrac0 : 1 - yFrac0);
                     xFrac = tFrac;
                     textOpts = {
@@ -244,7 +250,7 @@ export function newTimeAxisPainter(timeAxis: TimeAxis1D, labelSide: Side, displa
 
         textureRenderer.end(gl);
         textTextures.retainTouched();
-    }
+    };
 }
 
 function getTickDisplayData(tickInterval_MILLIS: number, referenceDate_PMILLIS: number, displayTimeZone: string, isFuturePositive: boolean, timeAxisFormat: TimeAxisFormatOptions): TickDisplayData {
@@ -260,17 +266,16 @@ function getTickDisplayDataRelative(tickInterval_MILLIS: number, referenceDate_P
     let tickFormat: TickFormat = null;
     let prefixFormat: PrefixFormat = null;
     let timeStructFactory: TimeStructFactory = null;
-
     if (tickInterval_MILLIS <= minutesToMillis(1)) {
-        let tickFormat: TickFormat = function (tickTime_PMILLIS: number): string {
-            let elapsedTime_MILLIS = Math.abs(tickTime_PMILLIS - referenceDate_PMILLIS);
-            let elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
-            let elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
-            let elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
-            let elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
-            let elapsedTime_MIN = (elapsedTime_HOURS - elapsedTime_HOURS_WHOLE) * 60;
+        tickFormat = function (tickTime_PMILLIS: number): string {
+            const elapsedTime_MILLIS = Math.abs(tickTime_PMILLIS - referenceDate_PMILLIS);
+            const elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
+            const elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
+            const elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
+            const elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
+            const elapsedTime_MIN = (elapsedTime_HOURS - elapsedTime_HOURS_WHOLE) * 60;
             let elapsedTime_MIN_WHOLE = Math.floor(elapsedTime_MIN);
-            let elapsedTime_SEC = (elapsedTime_MIN - elapsedTime_MIN_WHOLE) * 60;
+            const elapsedTime_SEC = (elapsedTime_MIN - elapsedTime_MIN_WHOLE) * 60;
             // use round() here instead of floor() because we always expect ticks to be on even second
             // boundaries but rounding error will cause us to be somewhat unpredictably above or below
             // the nearest even second boundary
@@ -284,37 +289,37 @@ function getTickDisplayDataRelative(tickInterval_MILLIS: number, referenceDate_P
                 elapsedTime_MIN_WHOLE = 0;
             }
 
-            let min: string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
-            let sec: string = elapsedTime_SEC_WHOLE < 10 ? '0' + elapsedTime_SEC_WHOLE : '' + elapsedTime_SEC_WHOLE;
+            const min: string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
+            const sec: string = elapsedTime_SEC_WHOLE < 10 ? '0' + elapsedTime_SEC_WHOLE : '' + elapsedTime_SEC_WHOLE;
 
             return min + ':' + sec;
         };
 
-        let prefixFormat: PrefixFormat = function (timeStruct: TimeStruct): string {
-            let center_PMILLIS = (timeStruct.end_PMILLIS - timeStruct.start_PMILLIS) / 2 + timeStruct.start_PMILLIS;
+        prefixFormat = function (timeStruct: TimeStruct): string {
+            const center_PMILLIS = (timeStruct.end_PMILLIS - timeStruct.start_PMILLIS) / 2 + timeStruct.start_PMILLIS;
             let elapsedTime_MILLIS = center_PMILLIS - referenceDate_PMILLIS;
-            let negative = (elapsedTime_MILLIS < 0);
-            let signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? "-" : "";
+            const negative = (elapsedTime_MILLIS < 0);
+            const signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? '-' : '';
             elapsedTime_MILLIS = Math.abs(elapsedTime_MILLIS);
 
-            let elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
-            let elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
-            let elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
-            let elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
+            const elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
+            const elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
+            const elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
+            const elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
 
             return 'Day ' + signString + elapsedTime_DAYS_WHOLE + ' Hour ' + signString + elapsedTime_HOURS_WHOLE;
         };
 
-        let timeStructFactory = function (): TimeStruct { return new TimeStruct() };
+        timeStructFactory = function (): TimeStruct { return new TimeStruct(); };
     }
     else if (tickInterval_MILLIS <= hoursToMillis(12)) {
-        let tickFormat: TickFormat = function (tickTime_PMILLIS: number): string {
-            let elapsedTime_MILLIS = Math.abs(tickTime_PMILLIS - referenceDate_PMILLIS);
-            let elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
-            let elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
-            let elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
+        tickFormat = function (tickTime_PMILLIS: number): string {
+            const elapsedTime_MILLIS = Math.abs(tickTime_PMILLIS - referenceDate_PMILLIS);
+            const elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
+            const elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
+            const elapsedTime_HOURS = (elapsedTime_DAYS - elapsedTime_DAYS_WHOLE) * 24;
             let elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
-            let elapsedTime_MIN = (elapsedTime_HOURS - elapsedTime_HOURS_WHOLE) * 60;
+            const elapsedTime_MIN = (elapsedTime_HOURS - elapsedTime_HOURS_WHOLE) * 60;
             // use round() here instead of floor() because we always expect ticks to be on even minute
             // boundaries but rounding error will cause us to be somewhat unpredictably above or below
             // the nearest even minute boundary
@@ -328,31 +333,31 @@ function getTickDisplayDataRelative(tickInterval_MILLIS: number, referenceDate_P
                 elapsedTime_HOURS_WHOLE = 0;
             }
 
-            let hour: string = elapsedTime_HOURS_WHOLE < 10 ? '0' + elapsedTime_HOURS_WHOLE : '' + elapsedTime_HOURS_WHOLE;
-            let min: string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
+            const hour: string = elapsedTime_HOURS_WHOLE < 10 ? '0' + elapsedTime_HOURS_WHOLE : '' + elapsedTime_HOURS_WHOLE;
+            const min: string = elapsedTime_MIN_WHOLE < 10 ? '0' + elapsedTime_MIN_WHOLE : '' + elapsedTime_MIN_WHOLE;
 
             return hour + ':' + min;
         };
 
-        let prefixFormat: PrefixFormat = function (timeStruct: TimeStruct): string {
-            let center_PMILLIS = (timeStruct.end_PMILLIS - timeStruct.start_PMILLIS) / 2 + timeStruct.start_PMILLIS;
+        prefixFormat = function (timeStruct: TimeStruct): string {
+            const center_PMILLIS = (timeStruct.end_PMILLIS - timeStruct.start_PMILLIS) / 2 + timeStruct.start_PMILLIS;
             let elapsedTime_MILLIS = center_PMILLIS - referenceDate_PMILLIS;
-            let negative = (elapsedTime_MILLIS < 0);
-            let signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? "-" : "";
+            const negative = (elapsedTime_MILLIS < 0);
+            const signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? '-' : '';
             elapsedTime_MILLIS = Math.abs(elapsedTime_MILLIS);
-            let elapsedTime_DAYS = Math.floor(millisToDays(elapsedTime_MILLIS));
+            const elapsedTime_DAYS = Math.floor(millisToDays(elapsedTime_MILLIS));
             return 'Day ' + signString + elapsedTime_DAYS;
         };
 
-        let timeStructFactory = function (): TimeStruct { return new TimeStruct() };
+        timeStructFactory = function (): TimeStruct { return new TimeStruct(); };
     }
     else {
-        let tickFormat: TickFormat = function (tickTime_PMILLIS: number): string {
+        tickFormat = function (tickTime_PMILLIS: number): string {
             let elapsedTime_MILLIS = tickTime_PMILLIS - referenceDate_PMILLIS;
-            let negative = (elapsedTime_MILLIS < 0);
-            let signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? "-" : "";
+            const negative = (elapsedTime_MILLIS < 0);
+            const signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? '-' : '';
             elapsedTime_MILLIS = Math.abs(elapsedTime_MILLIS);
-            let elapsedTime_DAYS = Math.floor(millisToDays(elapsedTime_MILLIS));
+            const elapsedTime_DAYS = Math.floor(millisToDays(elapsedTime_MILLIS));
             return elapsedTime_DAYS === 0 ? '' + elapsedTime_DAYS : signString + elapsedTime_DAYS;
         };
     }
@@ -365,39 +370,39 @@ function getTickDisplayDataAbsolute(tickInterval_MILLIS: number, displayTimeZone
     let tickFormat: TickFormat = null;
     let prefixFormat: PrefixFormat = null;
     let timeStructFactory: TimeStructFactory = null;
-    let defaultTickFormat = function (format: string): TickFormat { return function (tickTime_PMILLIS: number): string { return moment(tickTime_PMILLIS).zone(displayTimeZone).format(format) } };
-    let defaultPrefixFormat = function (format: string): PrefixFormat { return function (timeStruct: TimeStruct): string { return moment(timeStruct.textCenter_PMILLIS).zone(displayTimeZone).format(format) } };
+    const defaultTickFormat = function (format: string): TickFormat { return function (tickTime_PMILLIS: number): string { return moment(tickTime_PMILLIS).zone(displayTimeZone).format(format); }; };
+    const defaultPrefixFormat = function (format: string): PrefixFormat { return function (timeStruct: TimeStruct): string { return moment(timeStruct.textCenter_PMILLIS).zone(displayTimeZone).format(format); }; };
 
     if (tickInterval_MILLIS <= minutesToMillis(1)) {
-        let formatOptions = new FormatOptions('mm:ss', 'D MMM HH:00');
-        let hour = (hasval(timeAxisFormat) && hasval(timeAxisFormat.hour) ? timeAxisFormat.hour : formatOptions);
-        let tickFormat = defaultTickFormat((hasval(hour.tickFormat) && hour.tickFormat !== '' ? hour.tickFormat : formatOptions.tickFormat));
-        let prefixFormat = defaultPrefixFormat((hasval(hour.prefixFormat) && hour.prefixFormat !== '' ? hour.prefixFormat : formatOptions.prefixFormat));
-        let timeStructFactory = function (): TimeStruct { return new HourStruct() };
+        const formatOptions = new FormatOptions('mm:ss', 'D MMM HH:00');
+        const hour = (hasval(timeAxisFormat) && hasval(timeAxisFormat.hour) ? timeAxisFormat.hour : formatOptions);
+        tickFormat = defaultTickFormat((hasval(hour.tickFormat) && hour.tickFormat !== '' ? hour.tickFormat : formatOptions.tickFormat));
+        prefixFormat = defaultPrefixFormat((hasval(hour.prefixFormat) && hour.prefixFormat !== '' ? hour.prefixFormat : formatOptions.prefixFormat));
+        timeStructFactory = function (): TimeStruct { return new HourStruct(); };
     }
     else if (tickInterval_MILLIS <= hoursToMillis(12)) {
-        let formatOptions = new FormatOptions('HH:mm', 'D MMM YYYY');
-        let day = (hasval(timeAxisFormat) && hasval(timeAxisFormat.day) ? timeAxisFormat.day : formatOptions);
-        let tickFormat = defaultTickFormat((hasval(day.tickFormat) && day.tickFormat !== '' ? day.tickFormat : formatOptions.tickFormat));
-        let prefixFormat = defaultPrefixFormat((hasval(day.prefixFormat) && day.prefixFormat !== '' ? day.prefixFormat : formatOptions.prefixFormat));
-        let timeStructFactory = function (): TimeStruct { return new DayStruct() };
+        const formatOptions = new FormatOptions('HH:mm', 'D MMM YYYY');
+        const day = (hasval(timeAxisFormat) && hasval(timeAxisFormat.day) ? timeAxisFormat.day : formatOptions);
+        tickFormat = defaultTickFormat((hasval(day.tickFormat) && day.tickFormat !== '' ? day.tickFormat : formatOptions.tickFormat));
+        prefixFormat = defaultPrefixFormat((hasval(day.prefixFormat) && day.prefixFormat !== '' ? day.prefixFormat : formatOptions.prefixFormat));
+        timeStructFactory = function (): TimeStruct { return new DayStruct(); };
     }
     else if (tickInterval_MILLIS <= daysToMillis(10)) {
-        let formatOptions = new FormatOptions('D', 'MMM YYYY');
-        let month = (hasval(timeAxisFormat) && hasval(timeAxisFormat.month) ? timeAxisFormat.month : formatOptions);
-        let tickFormat = defaultTickFormat((hasval(month.tickFormat) && month.tickFormat !== '' ? month.tickFormat : formatOptions.tickFormat));
-        let prefixFormat = defaultPrefixFormat((hasval(month.prefixFormat) && month.prefixFormat !== '' ? month.prefixFormat : formatOptions.prefixFormat));
-        let timeStructFactory = function (): TimeStruct { return new MonthStruct() };
+        const formatOptions = new FormatOptions('D', 'MMM YYYY');
+        const month = (hasval(timeAxisFormat) && hasval(timeAxisFormat.month) ? timeAxisFormat.month : formatOptions);
+        tickFormat = defaultTickFormat((hasval(month.tickFormat) && month.tickFormat !== '' ? month.tickFormat : formatOptions.tickFormat));
+        prefixFormat = defaultPrefixFormat((hasval(month.prefixFormat) && month.prefixFormat !== '' ? month.prefixFormat : formatOptions.prefixFormat));
+        timeStructFactory = function (): TimeStruct { return new MonthStruct(); };
     }
     else if (tickInterval_MILLIS <= daysToMillis(60)) {
-        let formatOptions = new FormatOptions('MMM', 'YYYY');
-        let year = (hasval(timeAxisFormat) && hasval(timeAxisFormat.year) ? timeAxisFormat.year : formatOptions);
-        let tickFormat = defaultTickFormat((hasval(year.tickFormat) && year.tickFormat !== '' ? year.tickFormat : formatOptions.tickFormat));
-        let prefixFormat = defaultPrefixFormat((hasval(year.prefixFormat) && year.prefixFormat !== '' ? year.prefixFormat : formatOptions.prefixFormat));
-        let timeStructFactory = function (): TimeStruct { return new YearStruct() };
+        const formatOptions = new FormatOptions('MMM', 'YYYY');
+        const year = (hasval(timeAxisFormat) && hasval(timeAxisFormat.year) ? timeAxisFormat.year : formatOptions);
+        tickFormat = defaultTickFormat((hasval(year.tickFormat) && year.tickFormat !== '' ? year.tickFormat : formatOptions.tickFormat));
+        prefixFormat = defaultPrefixFormat((hasval(year.prefixFormat) && year.prefixFormat !== '' ? year.prefixFormat : formatOptions.prefixFormat));
+        timeStructFactory = function (): TimeStruct { return new YearStruct(); };
     }
     else {
-        let tickFormat = defaultTickFormat('YYYY');
+        tickFormat = defaultTickFormat('YYYY');
     }
 
     return <TickDisplayData>{ prefixFormat: prefixFormat, tickFormat: tickFormat, timeStructFactory: timeStructFactory };
@@ -409,17 +414,11 @@ interface TickDisplayData {
     timeStructFactory: TimeStructFactory;
 }
 
-interface PrefixFormat {
-    (timeStruct: TimeStruct): string;
-}
+type PrefixFormat = (timeStruct: TimeStruct) => string;
 
-interface TickFormat {
-    (tickTime_PMILLIS: number): string;
-}
+type TickFormat = (tickTime_PMILLIS: number) => string;
 
-interface TimeStructFactory {
-    (): TimeStruct;
-}
+type TimeStructFactory = () => TimeStruct;
 
 class TimeStruct {
     public start_PMILLIS: number;
@@ -438,7 +437,7 @@ class TimeStruct {
 
 class YearStruct extends TimeStruct {
     setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
-        let m = moment(time_PMILLIS).zone(timeZone);
+        const m = moment(time_PMILLIS).zone(timeZone);
         m.month(0);
         m.date(0);
         m.hours(0);
@@ -455,7 +454,7 @@ class YearStruct extends TimeStruct {
 
 class MonthStruct extends TimeStruct {
     setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
-        let m = moment(time_PMILLIS).zone(timeZone);
+        const m = moment(time_PMILLIS).zone(timeZone);
         m.date(0);
         m.hours(0);
         m.minutes(0);
@@ -471,7 +470,7 @@ class MonthStruct extends TimeStruct {
 
 class DayStruct extends TimeStruct {
     setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
-        let m = moment(time_PMILLIS).zone(timeZone);
+        const m = moment(time_PMILLIS).zone(timeZone);
         m.hours(0);
         m.minutes(0);
         m.seconds(0);
@@ -486,7 +485,7 @@ class DayStruct extends TimeStruct {
 
 class HourStruct extends TimeStruct {
     setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
-        let m = moment(time_PMILLIS).zone(timeZone);
+        const m = moment(time_PMILLIS).zone(timeZone);
         m.minutes(0);
         m.seconds(0);
         return m;
@@ -499,7 +498,7 @@ class HourStruct extends TimeStruct {
 
 function createTimeStructs(timeAxis: TimeAxis1D, factory: TimeStructFactory, timeZone: string, referenceDate_PMILLIS: number, isFuturePositive: boolean, tickTimes_PMILLIS: number[], labelAlign: number): TimeStruct[] {
     if (hasval(referenceDate_PMILLIS)) {
-        let tickInterval_MILLIS = getTickInterval_MILLIS(tickTimes_PMILLIS);
+        const tickInterval_MILLIS = getTickInterval_MILLIS(tickTimes_PMILLIS);
 
         if (tickInterval_MILLIS <= minutesToMillis(1)) {
             return createTimeStructsRelativeHours(timeAxis, referenceDate_PMILLIS, isFuturePositive, tickTimes_PMILLIS, labelAlign);
@@ -516,10 +515,10 @@ function createTimeStructs(timeAxis: TimeAxis1D, factory: TimeStructFactory, tim
 
 function createTimeStructsRelativeHours(timeAxis: TimeAxis1D, referenceDate_PMILLIS: number, isFuturePositive: boolean, tickTimes_PMILLIS: number[], labelAlign: number): TimeStruct[] {
 
-    let dMin_PMILLIS = timeAxis.tMin_PMILLIS;
-    let dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+    const dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+    const dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
-    let timeStructs: TimeStruct[] = [];
+    const timeStructs: TimeStruct[] = [];
     let maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
 
     let previous_HOURS = null;
@@ -528,17 +527,19 @@ function createTimeStructsRelativeHours(timeAxis: TimeAxis1D, referenceDate_PMIL
     for (let n = 0; n < tickTimes_PMILLIS.length; n++) {
 
         let elapsedTime_MILLIS = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
-        let negative = (elapsedTime_MILLIS < 0);
-        let signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? "-" : "";
+        const negative = (elapsedTime_MILLIS < 0);
+        const signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? '-' : '';
         elapsedTime_MILLIS = Math.abs(elapsedTime_MILLIS);
-        let elapsedTime_HOURS = millisToHours(elapsedTime_MILLIS);
-        let elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
+        const elapsedTime_HOURS = millisToHours(elapsedTime_MILLIS);
+        const elapsedTime_HOURS_WHOLE = Math.floor(elapsedTime_HOURS);
 
-        if (hasval(previous_HOURS) && elapsedTime_HOURS_WHOLE === previous_HOURS && negative === previous_SIGN) continue;
+        if (hasval(previous_HOURS) && elapsedTime_HOURS_WHOLE === previous_HOURS && negative === previous_SIGN) {
+            continue;
+        }
         previous_HOURS = elapsedTime_HOURS_WHOLE;
         previous_SIGN = negative;
 
-        let timeStruct = new TimeStruct();
+        const timeStruct = new TimeStruct();
 
         if (negative) {
             timeStruct.end_PMILLIS = hoursToMillis(-elapsedTime_HOURS_WHOLE) + referenceDate_PMILLIS;
@@ -564,10 +565,10 @@ function createTimeStructsRelativeHours(timeAxis: TimeAxis1D, referenceDate_PMIL
 
 function createTimeStructsRelativeDays(timeAxis: TimeAxis1D, referenceDate_PMILLIS: number, isFuturePositive: boolean, tickTimes_PMILLIS: number[], labelAlign: number): TimeStruct[] {
 
-    let dMin_PMILLIS = timeAxis.tMin_PMILLIS;
-    let dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+    const dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+    const dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
-    let timeStructs: TimeStruct[] = [];
+    const timeStructs: TimeStruct[] = [];
     let maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
 
     let previous_DAYS = null;
@@ -576,17 +577,19 @@ function createTimeStructsRelativeDays(timeAxis: TimeAxis1D, referenceDate_PMILL
     for (let n = 0; n < tickTimes_PMILLIS.length; n++) {
 
         let elapsedTime_MILLIS = tickTimes_PMILLIS[n] - referenceDate_PMILLIS;
-        let negative = (elapsedTime_MILLIS < 0);
-        let signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? "-" : "";
+        const negative = (elapsedTime_MILLIS < 0);
+        const signString = (negative && isFuturePositive) || (!negative && !isFuturePositive) ? '-' : '';
         elapsedTime_MILLIS = Math.abs(elapsedTime_MILLIS);
-        let elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
-        let elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
+        const elapsedTime_DAYS = millisToDays(elapsedTime_MILLIS);
+        const elapsedTime_DAYS_WHOLE = Math.floor(elapsedTime_DAYS);
 
-        if (hasval(previous_DAYS) && elapsedTime_DAYS_WHOLE === previous_DAYS && negative === previous_SIGN) continue;
+        if (hasval(previous_DAYS) && elapsedTime_DAYS_WHOLE === previous_DAYS && negative === previous_SIGN) {
+            continue;
+        }
         previous_DAYS = elapsedTime_DAYS_WHOLE;
         previous_SIGN = negative;
 
-        let timeStruct = new TimeStruct();
+        const timeStruct = new TimeStruct();
 
         if (negative) {
             timeStruct.end_PMILLIS = daysToMillis(-elapsedTime_DAYS_WHOLE) + referenceDate_PMILLIS;
@@ -611,22 +614,24 @@ function createTimeStructsRelativeDays(timeAxis: TimeAxis1D, referenceDate_PMILL
 }
 
 function createTimeStructsAbsolute(timeAxis: TimeAxis1D, factory: TimeStructFactory, timeZone: string, tickTimes_PMILLIS: number[], labelAlign: number): TimeStruct[] {
-    let dMin_PMILLIS = timeAxis.tMin_PMILLIS;
-    let dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+    const dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+    const dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
-    let timeStructs: TimeStruct[] = [];
+    const timeStructs: TimeStruct[] = [];
     let maxViewDuration_MILLIS = Number.NEGATIVE_INFINITY;
 
     let previous_PMILLIS: number = null;
 
     for (let n = 0; n < tickTimes_PMILLIS.length; n++) {
-        let tickTime_PMILLIS = tickTimes_PMILLIS[n];
-        let timeStruct = factory();
-        let m = timeStruct.setTime(tickTime_PMILLIS, timeZone);
-        let start_PMILLIS = m.valueOf();
+        const tickTime_PMILLIS = tickTimes_PMILLIS[n];
+        const timeStruct = factory();
+        const m = timeStruct.setTime(tickTime_PMILLIS, timeZone);
+        const start_PMILLIS = m.valueOf();
 
         // XXX: Floating-point comparison can be unintuitive
-        if (hasval(previous_PMILLIS) && start_PMILLIS === previous_PMILLIS) continue;
+        if (hasval(previous_PMILLIS) && start_PMILLIS === previous_PMILLIS) {
+            continue;
+        }
         previous_PMILLIS = start_PMILLIS;
 
         timeStruct.start_PMILLIS = start_PMILLIS;
@@ -647,11 +652,11 @@ function createTimeStructsAbsolute(timeAxis: TimeAxis1D, factory: TimeStructFact
 
 function setTimeStructTextCenter(timeStructs: TimeStruct[], labelAlign: number, maxViewDuration_MILLIS: number) {
     for (let n = 0; n < timeStructs.length; n++) {
-        let timeStruct = timeStructs[n];
-        let duration_MILLIS = timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS;
-        let midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + labelAlign * duration_MILLIS;
-        let edge_PMILLIS = (timeStruct.viewStart_PMILLIS === timeStruct.start_PMILLIS ? timeStruct.viewEnd_PMILLIS : timeStruct.viewStart_PMILLIS);
-        let edginess = 1 - clamp(0, 1, duration_MILLIS / maxViewDuration_MILLIS);
+        const timeStruct = timeStructs[n];
+        const duration_MILLIS = timeStruct.viewEnd_PMILLIS - timeStruct.viewStart_PMILLIS;
+        const midpoint_PMILLIS = timeStruct.viewStart_PMILLIS + labelAlign * duration_MILLIS;
+        const edge_PMILLIS = (timeStruct.viewStart_PMILLIS === timeStruct.start_PMILLIS ? timeStruct.viewEnd_PMILLIS : timeStruct.viewStart_PMILLIS);
+        const edginess = 1 - clamp(0, 1, duration_MILLIS / maxViewDuration_MILLIS);
         timeStruct.textCenter_PMILLIS = midpoint_PMILLIS + edginess * (edge_PMILLIS - midpoint_PMILLIS);
     }
 }
@@ -667,9 +672,9 @@ export function getTickTimes_PMILLIS(timeAxis: TimeAxis1D, sizePixels: number, t
 
 function getTickTimesRelative_PMILLIS(timeAxis: TimeAxis1D, sizePixels: number, tickSpacing: number, referenceDate_PMILLIS: number): number[] {
 
-    let dMin_PMILLIS = timeAxis.tMin_PMILLIS;
-    let dMax_PMILLIS = timeAxis.tMax_PMILLIS;
-    let approxTickInterval_MILLIS = tickSpacing * (dMax_PMILLIS - dMin_PMILLIS) / sizePixels;
+    const dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+    const dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+    const approxTickInterval_MILLIS = tickSpacing * (dMax_PMILLIS - dMin_PMILLIS) / sizePixels;
 
     if (approxTickInterval_MILLIS < daysToMillis(1)) {
         return getHourTickTimesRelative_PMILLIS(dMin_PMILLIS, dMax_PMILLIS, approxTickInterval_MILLIS, referenceDate_PMILLIS);
@@ -680,7 +685,7 @@ function getTickTimesRelative_PMILLIS(timeAxis: TimeAxis1D, sizePixels: number, 
 }
 
 function getHourTickTimesRelative_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, approxTickInterval_MILLIS: number, referenceDate_PMILLIS: number): number[] {
-    let tickTimes = getHourTickTimes_PMILLIS(dMin_PMILLIS - referenceDate_PMILLIS, dMax_PMILLIS - referenceDate_PMILLIS, approxTickInterval_MILLIS, 0);
+    const tickTimes = getHourTickTimes_PMILLIS(dMin_PMILLIS - referenceDate_PMILLIS, dMax_PMILLIS - referenceDate_PMILLIS, approxTickInterval_MILLIS, 0);
 
     for (let n = 0; n < tickTimes.length; n++) {
         tickTimes[n] = tickTimes[n] + referenceDate_PMILLIS;
@@ -690,13 +695,13 @@ function getHourTickTimesRelative_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: nu
 }
 
 function getDayTickTimesRelative_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, sizePixels: number, tickSpacing: number, referenceDate_PMILLIS: number): number[] {
-    let axis = new Axis1D(millisToDays(dMin_PMILLIS - referenceDate_PMILLIS), millisToDays(dMax_PMILLIS - referenceDate_PMILLIS));
-    let approxNumTicks = sizePixels / tickSpacing;
-    let tickInterval = getTickInterval(axis, approxNumTicks);
-    let tickCount = getTickCount(axis, tickInterval);
-    let tickPositions = new Float32Array(tickCount);
+    const axis = new Axis1D(millisToDays(dMin_PMILLIS - referenceDate_PMILLIS), millisToDays(dMax_PMILLIS - referenceDate_PMILLIS));
+    const approxNumTicks = sizePixels / tickSpacing;
+    const tickInterval = getTickInterval(axis, approxNumTicks);
+    const tickCount = getTickCount(axis, tickInterval);
+    const tickPositions = new Float32Array(tickCount);
     getTickPositions(axis, tickInterval, tickCount, tickPositions);
-    let tickTimes_PMILLIS = <number[]>[];
+    const tickTimes_PMILLIS = <number[]>[];
     for (let n = 0; n < tickCount; n++) {
         tickTimes_PMILLIS.push(daysToMillis(tickPositions[n]) + referenceDate_PMILLIS);
     }
@@ -704,14 +709,14 @@ function getDayTickTimesRelative_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: num
 }
 
 function getTickTimesAbsolute_PMILLIS(timeAxis: TimeAxis1D, sizePixels: number, tickSpacing: number, timeZone: string): number[] {
-    let dMin_PMILLIS = timeAxis.tMin_PMILLIS;
-    let dMax_PMILLIS = timeAxis.tMax_PMILLIS;
+    const dMin_PMILLIS = timeAxis.tMin_PMILLIS;
+    const dMax_PMILLIS = timeAxis.tMax_PMILLIS;
 
     // NOTE: moment.js reports time zone offset reversed from Java Calendar, thus the negative sign
-    let mMin = moment(dMin_PMILLIS).zone(timeZone);
-    let zoneOffset_MILLIS = -minutesToMillis(mMin.zone());
+    const mMin = moment(dMin_PMILLIS).zone(timeZone);
+    const zoneOffset_MILLIS = -minutesToMillis(mMin.zone());
 
-    let approxTickInterval_MILLIS = tickSpacing * (dMax_PMILLIS - dMin_PMILLIS) / sizePixels;
+    const approxTickInterval_MILLIS = tickSpacing * (dMax_PMILLIS - dMin_PMILLIS) / sizePixels;
 
     if (approxTickInterval_MILLIS > daysToMillis(60)) {
         return getYearTickTimes_PMILLIS(dMin_PMILLIS, dMax_PMILLIS, approxTickInterval_MILLIS, timeZone);
@@ -729,19 +734,19 @@ function getTickTimesAbsolute_PMILLIS(timeAxis: TimeAxis1D, sizePixels: number, 
 
 
 function getYearTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, approxTickInterval_MILLIS: number, timeZone: string): number[] {
-    let m = moment(dMin_PMILLIS).zone(timeZone);
+    const m = moment(dMin_PMILLIS).zone(timeZone);
 
-    let currentYear = m.year();
-    let daysPerYear = 365.25; // assume 365.25 days in every year as a heuristic
-    let approxTickInterval_YEARS = millisToDays(approxTickInterval_MILLIS) / daysPerYear;
+    const currentYear = m.year();
+    const daysPerYear = 365.25; // assume 365.25 days in every year as a heuristic
+    const approxTickInterval_YEARS = millisToDays(approxTickInterval_MILLIS) / daysPerYear;
 
-    let yearOrderFactor = 6.0;
-    let stepYears = getYearStep(approxTickInterval_YEARS * yearOrderFactor);
-    let startYear = getRoundedYear(currentYear, stepYears);
+    const yearOrderFactor = 6.0;
+    const stepYears = getYearStep(approxTickInterval_YEARS * yearOrderFactor);
+    const startYear = getRoundedYear(currentYear, stepYears);
 
     m.year(startYear).month(0).date(1).hours(0).minutes(0).seconds(0).milliseconds(0);
 
-    let tickTimes_PMILLIS = <number[]>[];
+    const tickTimes_PMILLIS = <number[]>[];
     while (m.valueOf() <= dMax_PMILLIS) {
         tickTimes_PMILLIS.push(m.valueOf());
         m.add('years', stepYears);
@@ -751,23 +756,25 @@ function getYearTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, ap
 
 
 function getYearStep(spanYears: number): number {
-    let log10 = Math.log(spanYears) / Math.LN10;
-    let order = Math.floor(log10);
-    if ((log10 - order) > (1.0 - 1e-12)) order++;
+    const log10Span = Math.log(spanYears) / Math.LN10;
+    let orderSpan = Math.floor(log10Span);
+    if ((log10Span - orderSpan) > (1.0 - 1e-12)) {
+        orderSpan++;
+    }
 
-    return Math.max(1, Math.pow(10, order));
+    return Math.max(1, Math.pow(10, orderSpan));
 }
 
 
 function getRoundedYear(currentYear: number, yearStep: number): number {
-    let numSteps = Math.floor(currentYear / yearStep);
+    const numSteps = Math.floor(currentYear / yearStep);
     return numSteps * yearStep;
 }
 
 
 function getMonthTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, approxTickInterval_MILLIS: number, timeZone: string): number[] {
-    let m = moment(dMin_PMILLIS).zone(timeZone).date(1).hours(0).minutes(0).seconds(0).milliseconds(0);
-    let tickTimes_PMILLIS = <number[]>[];
+    const m = moment(dMin_PMILLIS).zone(timeZone).date(1).hours(0).minutes(0).seconds(0).milliseconds(0);
+    const tickTimes_PMILLIS = <number[]>[];
     while (m.valueOf() <= dMax_PMILLIS) {
         tickTimes_PMILLIS.push(m.valueOf());
         m.add('months', 1);
@@ -777,27 +784,27 @@ function getMonthTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, a
 
 
 function getDayTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, approxTickInterval_MILLIS: number, timeZone: string): number[] {
-    let tickInterval_DAYS = calculateTickInterval_DAYS(approxTickInterval_MILLIS);
+    const tickInterval_DAYS = calculateTickInterval_DAYS(approxTickInterval_MILLIS);
 
     // initialize calendar off start time and reset fields less than month
-    let m = moment(dMin_PMILLIS).zone(timeZone).date(1).hours(0).minutes(0).seconds(0).milliseconds(0);
+    const m = moment(dMin_PMILLIS).zone(timeZone).date(1).hours(0).minutes(0).seconds(0).milliseconds(0);
 
-    let endTime_PMILLIS = dMax_PMILLIS + daysToMillis(tickInterval_DAYS);
+    const endTime_PMILLIS = dMax_PMILLIS + daysToMillis(tickInterval_DAYS);
     let currentMonth = m.month();
 
-    let tickTimes_PMILLIS = <number[]>[];
+    const tickTimes_PMILLIS = <number[]>[];
 
     while (m.valueOf() <= endTime_PMILLIS) {
         // ensure ticks always fall on the first day of the month
-        let newMonth = m.month();
+        const newMonth = m.month();
         if (newMonth !== currentMonth) {
             m.date(1);
             currentMonth = newMonth;
         }
 
         // prevent display of ticks too close to the end of the month
-        let maxDom = m.clone().endOf('month').date();
-        let dom = m.date();
+        const maxDom = m.clone().endOf('month').date();
+        const dom = m.date();
         if (maxDom - dom + 1 >= tickInterval_DAYS / 2) {
             tickTimes_PMILLIS.push(m.valueOf());
         }
@@ -810,13 +817,13 @@ function getDayTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, app
 
 
 function getHourTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, approxTickInterval_MILLIS: number, zoneOffset_MILLIS: number): number[] {
-    let tickInterval_MILLIS = calculateTickInterval_MILLIS(approxTickInterval_MILLIS);
+    const tickInterval_MILLIS = calculateTickInterval_MILLIS(approxTickInterval_MILLIS);
 
-    let ticksSince1970 = Math.floor((dMin_PMILLIS + zoneOffset_MILLIS) / tickInterval_MILLIS);
-    let firstTick_PMILLIS = (ticksSince1970 * tickInterval_MILLIS) - zoneOffset_MILLIS;
-    let numTicks = Math.ceil(1 + (dMax_PMILLIS - firstTick_PMILLIS) / tickInterval_MILLIS);
+    const ticksSince1970 = Math.floor((dMin_PMILLIS + zoneOffset_MILLIS) / tickInterval_MILLIS);
+    const firstTick_PMILLIS = (ticksSince1970 * tickInterval_MILLIS) - zoneOffset_MILLIS;
+    const numTicks = Math.ceil(1 + (dMax_PMILLIS - firstTick_PMILLIS) / tickInterval_MILLIS);
 
-    let tickTimes_PMILLIS = <number[]>[];
+    const tickTimes_PMILLIS = <number[]>[];
     for (let n = 0; n < numTicks; n++) {
         tickTimes_PMILLIS.push(firstTick_PMILLIS + n * tickInterval_MILLIS);
     }
@@ -824,11 +831,11 @@ function getHourTickTimes_PMILLIS(dMin_PMILLIS: number, dMax_PMILLIS: number, ap
 }
 
 
-let tickIntervalRungs_DAYS = [2, 3, 4, 5, 8, 10];
+const tickIntervalRungs_DAYS = [2, 3, 4, 5, 8, 10];
 
 
 function calculateTickInterval_DAYS(approxTickInterval_MILLIS: number) {
-    let approxTickInterval_DAYS = millisToDays(approxTickInterval_MILLIS);
+    const approxTickInterval_DAYS = millisToDays(approxTickInterval_MILLIS);
     for (let n = 0; n < tickIntervalRungs_DAYS.length; n++) {
         if (approxTickInterval_DAYS <= tickIntervalRungs_DAYS[n]) {
             return tickIntervalRungs_DAYS[n];
@@ -838,7 +845,7 @@ function calculateTickInterval_DAYS(approxTickInterval_MILLIS: number) {
 }
 
 
-let tickIntervalRungs_MILLIS = [secondsToMillis(1),
+const tickIntervalRungs_MILLIS = [secondsToMillis(1),
 secondsToMillis(2),
 secondsToMillis(5),
 secondsToMillis(10),

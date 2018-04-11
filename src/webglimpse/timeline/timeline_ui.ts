@@ -64,10 +64,10 @@ export class TimelineUi {
         this._dispose = new Notification();
         this._input = new TimelineInput();
 
-        let getPaneId = function (pane: Pane): string {
-            let paneId = pane['webglimpse_PaneId']
+        const getPaneId = function (pane: Pane): string {
+            const paneId = pane['webglimpse_PaneId'];
             return hasval(paneId) ? paneId : getObjectId(pane);
-        }
+        };
 
         this._panes = new OrderedSet<Pane>([], getPaneId);
 
@@ -75,17 +75,17 @@ export class TimelineUi {
         attachTimelineInputToSelection(this._input, this._selection, options);
 
         this._groupUis = new OrderedSet<TimelineGroupUi>([], (g) => g.groupGuid);
-        let groupUis = this._groupUis;
-        let addGroupUi = function (group: TimelineGroupModel) { groupUis.add(new TimelineGroupUi(group.groupGuid)); };
-        let removeGroupUi = function (group: TimelineGroupModel) { groupUis.removeId(group.groupGuid); };
+        const groupUis = this._groupUis;
+        const addGroupUi = function (group: TimelineGroupModel) { groupUis.add(new TimelineGroupUi(group.groupGuid)); };
+        const removeGroupUi = function (group: TimelineGroupModel) { groupUis.removeId(group.groupGuid); };
         model.groups.forEach(addGroupUi);
         model.groups.valueAdded.on(addGroupUi);
         model.groups.valueRemoved.on(removeGroupUi);
 
         this._rowUis = new OrderedSet<TimelineRowUi>([], (r) => r.rowGuid);
-        let rowUis = this._rowUis;
-        let addRowUi = function (row: TimelineRowModel) { rowUis.add(new TimelineRowUi(row.rowGuid)); }
-        let removeRowUi = function (row: TimelineRowModel) { rowUis.removeId(row.rowGuid); }
+        const rowUis = this._rowUis;
+        const addRowUi = function (row: TimelineRowModel) { rowUis.add(new TimelineRowUi(row.rowGuid)); };
+        const removeRowUi = function (row: TimelineRowModel) { rowUis.removeId(row.rowGuid); };
         model.rows.forEach(addRowUi);
         model.rows.valueAdded.on(addRowUi);
         model.rows.valueRemoved.on(removeRowUi);
@@ -154,13 +154,15 @@ export class TimelineUi {
         if (!hasval(this._imageStatus[url])) {
             this._imageStatus[url] = true;
 
-            let imageCache = this._imageCache;
-            let image = new Image();
+            const imageCache = this._imageCache;
+            const image = new Image();
             image.onload = function () {
-                let w = image.naturalWidth;
-                let h = image.naturalHeight;
+                const w = image.naturalWidth;
+                const h = image.naturalHeight;
                 imageCache[url] = new Texture2D(w, h, GL.LINEAR, GL.LINEAR, function (g) { g.drawImage(image, 0, 0); });
-                if (onLoaded) onLoaded();
+                if (onLoaded) {
+                    onLoaded();
+                }
             };
             image.src = url;
         }
@@ -215,10 +217,10 @@ export class TimelineRowUi {
         this._paneFactoryChanged = new Notification();
         this._paneFactory = null;
 
-        let getPaneId = function (pane: Pane): string {
-            let paneId = pane['webglimpse_PaneId']
+        const getPaneId = function (pane: Pane): string {
+            const paneId = pane['webglimpse_PaneId'];
             return hasval(paneId) ? paneId : getObjectId(pane);
-        }
+        };
 
         this._panes = new OrderedSet<Pane>([], getPaneId);
     }
@@ -262,14 +264,14 @@ export class TimelineRowUi {
 }
 
 
-let timelineAnnotationStyle_DEFAULT = new TimelineAnnotationStyleUi({
+const timelineAnnotationStyle_DEFAULT = new TimelineAnnotationStyleUi({
     styleGuid: 'DEFAULT',
     color: 'white',
     icons: []
 });
 
 
-let timelineEventStyle_DEFAULT = new TimelineEventStyleUi({
+const timelineEventStyle_DEFAULT = new TimelineEventStyleUi({
     styleGuid: 'DEFAULT',
     icons: []
 });
@@ -459,7 +461,7 @@ export class TimeIntervalModel {
 
 function attachTimelineInputToSelection(input: TimelineInput, selection: TimelineSelectionModel, options: TimelineUiOptions) {
 
-    let allowEventMultiSelection = (hasval(options) && hasval(options.allowEventMultiSelection) ? options.allowEventMultiSelection : true);
+    const allowEventMultiSelection = (hasval(options) && hasval(options.allowEventMultiSelection) ? options.allowEventMultiSelection : true);
 
     // Mouse-pos & Time
     //
@@ -485,10 +487,10 @@ function attachTimelineInputToSelection(input: TimelineInput, selection: Timelin
     if (options.allowEventMultiSelection) {
         input.mouseDown.on(function (ev: PointerEvent) {
             if (isLeftMouseDown(ev.mouseEvent)) {
-                let event = selection.hoveredEvent.value;
+                const event = selection.hoveredEvent.value;
                 if (hasval(event)) {
-                    let multiSelectMode = (ev.mouseEvent && (ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey));
-                    let unselectedEventClicked = !selection.selectedEvents.hasValue(event);
+                    const multiSelectMode = (ev.mouseEvent && (ev.mouseEvent.ctrlKey || ev.mouseEvent.shiftKey));
+                    const unselectedEventClicked = !selection.selectedEvents.hasValue(event);
                     if (multiSelectMode) {
                         if (selection.selectedEvents.hasValue(event)) {
                             selection.selectedEvents.removeValue(event);
@@ -513,7 +515,7 @@ function attachTimelineInputToSelection(input: TimelineInput, selection: Timelin
     else {
         input.mouseDown.on(function (ev: PointerEvent) {
             if (isLeftMouseDown(ev.mouseEvent)) {
-                let event = selection.hoveredEvent.value;
+                const event = selection.hoveredEvent.value;
                 if (hasval(event)) {
                     selection.selectedEvents.retainValues([event]);
                     selection.selectedEvents.add(event);

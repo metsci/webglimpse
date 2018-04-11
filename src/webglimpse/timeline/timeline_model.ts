@@ -593,7 +593,9 @@ export class TimelineTimeseriesFragmentModel {
 
                     // find the index to reinsert new data at
                     index = indexOf(this._times_PMILLIS, time);
-                    if (index < 0) index = -index - 1;
+                    if (index < 0) {
+                        index = -index - 1;
+                    }
 
                     this._times_PMILLIS.splice(index, 0, time);
                     this._data.splice(index, 0, value);
@@ -713,13 +715,13 @@ export class TimelineEventModel {
     setInterval(start_PMILLIS: number, end_PMILLIS: number) {
         if (start_PMILLIS !== this._start_PMILLIS || end_PMILLIS !== this._end_PMILLIS) {
 
-            let initial_start_PMILLIS = this._start_PMILLIS;
-            let initial_end_PMILLIS = this._end_PMILLIS;
+            const initial_start_PMILLIS = this._start_PMILLIS;
+            const initial_end_PMILLIS = this._end_PMILLIS;
 
-            let underStartLimit = hasval(this._startLimit_PMILLIS) && start_PMILLIS < this._startLimit_PMILLIS;
-            let overEndLimit = hasval(this._endLimit_PMILLIS) && end_PMILLIS > this._endLimit_PMILLIS;
-            let duration_PMILLIS = end_PMILLIS - start_PMILLIS;
-            let durationLimit_PMILLIS = this._endLimit_PMILLIS - this._startLimit_PMILLIS;
+            const underStartLimit = hasval(this._startLimit_PMILLIS) && start_PMILLIS < this._startLimit_PMILLIS;
+            const overEndLimit = hasval(this._endLimit_PMILLIS) && end_PMILLIS > this._endLimit_PMILLIS;
+            const duration_PMILLIS = end_PMILLIS - start_PMILLIS;
+            const durationLimit_PMILLIS = this._endLimit_PMILLIS - this._startLimit_PMILLIS;
 
             // If both limits are present and the event is larger than the total distance between them
             // then shrink the event to fit between the limits.
@@ -852,9 +854,9 @@ export class TimelineEventModel {
         return this._order;
     }
 
-    set order(order: number) {
-        if (order !== this._order) {
-            this._order = order;
+    set order(orderVal: number) {
+        if (orderVal !== this._order) {
+            this._order = orderVal;
             this._attrsChanged.fire();
         }
     }
@@ -1077,8 +1079,8 @@ export class TimelineRowModel {
         this._rowGuid = row.rowGuid;
         this._attrsChanged = new Notification();
 
-        let min: number = hasval(row.yMin) ? row.yMin : 0;
-        let max: number = hasval(row.yMax) ? row.yMax : 1;
+        const min: number = hasval(row.yMin) ? row.yMin : 0;
+        const max: number = hasval(row.yMax) ? row.yMax : 1;
         this._dataAxis = new Axis1D(min, max);
 
         this.setAttrs(row);
@@ -1424,49 +1426,49 @@ export class TimelineModel {
 
     constructor(timeline?: Timeline) {
 
-        let cursors = (hasval(timeline) && hasval(timeline.cursors) ? timeline.cursors : []);
+        const cursors = (hasval(timeline) && hasval(timeline.cursors) ? timeline.cursors : []);
         this._cursors = new OrderedSet<TimelineCursorModel>([], (g) => g.cursorGuid);
         for (let n = 0; n < cursors.length; n++) {
             this._cursors.add(new TimelineCursorModel(cursors[n]));
         }
 
-        let annotations = (hasval(timeline) && hasval(timeline.annotations) ? timeline.annotations : []);
+        const annotations = (hasval(timeline) && hasval(timeline.annotations) ? timeline.annotations : []);
         this._annotations = new OrderedSet<TimelineAnnotationModel>([], (g) => g.annotationGuid);
         for (let n = 0; n < annotations.length; n++) {
             this._annotations.add(new TimelineAnnotationModel(annotations[n]));
         }
 
-        let timeseriesFragments = (hasval(timeline) && hasval(timeline.timeseriesFragments) ? timeline.timeseriesFragments : []);
+        const timeseriesFragments = (hasval(timeline) && hasval(timeline.timeseriesFragments) ? timeline.timeseriesFragments : []);
         this._timeseriesFragments = new OrderedSet<TimelineTimeseriesFragmentModel>([], (e) => e.fragmentGuid);
         for (let n = 0; n < timeseriesFragments.length; n++) {
             this._timeseriesFragments.add(new TimelineTimeseriesFragmentModel(timeseriesFragments[n]));
         }
 
-        let timeseries = (hasval(timeline) && hasval(timeline.timeseries) ? timeline.timeseries : []);
+        const timeseries = (hasval(timeline) && hasval(timeline.timeseries) ? timeline.timeseries : []);
         this._timeseries = new OrderedSet<TimelineTimeseriesModel>([], (e) => e.timeseriesGuid);
         for (let n = 0; n < timeseries.length; n++) {
             this._timeseries.add(new TimelineTimeseriesModel(timeseries[n]));
         }
 
-        let events = (hasval(timeline) && hasval(timeline.events) ? timeline.events : []);
+        const events = (hasval(timeline) && hasval(timeline.events) ? timeline.events : []);
         this._events = new OrderedSet<TimelineEventModel>([], (e) => e.eventGuid);
         for (let n = 0; n < events.length; n++) {
             this._events.add(new TimelineEventModel(events[n]));
         }
 
-        let rows = (hasval(timeline) && hasval(timeline.rows) ? timeline.rows : []);
+        const rows = (hasval(timeline) && hasval(timeline.rows) ? timeline.rows : []);
         this._rows = new OrderedSet<TimelineRowModel>([], (r) => r.rowGuid);
         for (let n = 0; n < rows.length; n++) {
             this._rows.add(new TimelineRowModel(rows[n]));
         }
 
-        let groups = (hasval(timeline) && hasval(timeline.groups) ? timeline.groups : []);
+        const groups = (hasval(timeline) && hasval(timeline.groups) ? timeline.groups : []);
         this._groups = new OrderedSet<TimelineGroupModel>([], (g) => g.groupGuid);
         for (let n = 0; n < groups.length; n++) {
             this._groups.add(new TimelineGroupModel(groups[n]));
         }
 
-        let root = (hasval(timeline) && hasval(timeline.root) ? timeline.root : newEmptyTimelineRoot());
+        const root = (hasval(timeline) && hasval(timeline.root) ? timeline.root : newEmptyTimelineRoot());
         this._root = new TimelineRootModel(root);
     }
 
@@ -1493,18 +1495,18 @@ export class TimelineModel {
         // Purge removed items
         //
 
-        let freshRoot = newTimeline.root;
+        const freshRoot = newTimeline.root;
         this._root.groupGuids.retainValues(freshRoot.groupGuids);
         this._root.topPinnedRowGuids.retainValues(freshRoot.topPinnedRowGuids);
         this._root.bottomPinnedRowGuids.retainValues(freshRoot.bottomPinnedRowGuids);
         this._root.maximizedRowGuids.retainValues(freshRoot.maximizedRowGuids);
 
-        let freshGroups = newTimeline.groups;
-        let retainedGroupGuids: string[] = [];
+        const freshGroups = newTimeline.groups;
+        const retainedGroupGuids: string[] = [];
         for (let n = 0; n < freshGroups.length; n++) {
-            let freshGroup = freshGroups[n];
-            let groupGuid = freshGroup.groupGuid;
-            let oldGroup = this._groups.valueFor(groupGuid);
+            const freshGroup = freshGroups[n];
+            const groupGuid = freshGroup.groupGuid;
+            const oldGroup = this._groups.valueFor(groupGuid);
             if (hasval(oldGroup)) {
                 oldGroup.rowGuids.retainValues(freshGroup.rowGuids);
                 retainedGroupGuids.push(groupGuid);
@@ -1512,12 +1514,12 @@ export class TimelineModel {
         }
         this._groups.retainIds(retainedGroupGuids);
 
-        let freshRows = newTimeline.rows;
-        let retainedRowGuids: string[] = [];
+        const freshRows = newTimeline.rows;
+        const retainedRowGuids: string[] = [];
         for (let n = 0; n < freshRows.length; n++) {
-            let freshRow = freshRows[n];
-            let rowGuid = freshRow.rowGuid;
-            let oldRow = this._rows.valueFor(rowGuid);
+            const freshRow = freshRows[n];
+            const rowGuid = freshRow.rowGuid;
+            const oldRow = this._rows.valueFor(rowGuid);
             if (hasval(oldRow)) {
                 oldRow.eventGuids.retainValues(freshRow.eventGuids || []);
                 retainedRowGuids.push(rowGuid);
@@ -1525,60 +1527,60 @@ export class TimelineModel {
         }
         this._rows.retainIds(retainedRowGuids);
 
-        let freshEvents = newTimeline.events;
-        let retainedEventGuids: string[] = [];
+        const freshEvents = newTimeline.events;
+        const retainedEventGuids: string[] = [];
         for (let n = 0; n < freshEvents.length; n++) {
-            let freshEvent = freshEvents[n];
-            let eventGuid = freshEvent.eventGuid;
-            let oldEvent = this._events.valueFor(eventGuid);
+            const freshEvent = freshEvents[n];
+            const eventGuid = freshEvent.eventGuid;
+            const oldEvent = this._events.valueFor(eventGuid);
             if (hasval(oldEvent)) {
                 retainedEventGuids.push(eventGuid);
             }
         }
         this._events.retainIds(retainedEventGuids);
 
-        let freshTimeseriesSet = newTimeline.timeseries;
-        let retainedTimeseriesGuids: string[] = [];
+        const freshTimeseriesSet = newTimeline.timeseries;
+        const retainedTimeseriesGuids: string[] = [];
         for (let n = 0; n < freshTimeseriesSet.length; n++) {
-            let freshTimeseries = freshTimeseriesSet[n];
-            let timeseriesGuid = freshTimeseries.timeseriesGuid;
-            let oldTimeseries = this._timeseries.valueFor(timeseriesGuid);
+            const freshTimeseries = freshTimeseriesSet[n];
+            const timeseriesGuid = freshTimeseries.timeseriesGuid;
+            const oldTimeseries = this._timeseries.valueFor(timeseriesGuid);
             if (hasval(oldTimeseries)) {
                 retainedTimeseriesGuids.push(timeseriesGuid);
             }
         }
         this._timeseries.retainIds(retainedTimeseriesGuids);
 
-        let freshTimeseriesFragments = newTimeline.timeseriesFragments;
-        let retainedTimeseriesFragmentGuids: string[] = [];
+        const freshTimeseriesFragments = newTimeline.timeseriesFragments;
+        const retainedTimeseriesFragmentGuids: string[] = [];
         for (let n = 0; n < freshTimeseriesFragments.length; n++) {
-            let freshTimeseriesFragment = freshTimeseriesFragments[n];
-            let fragmentGuid = freshTimeseriesFragment.fragmentGuid;
-            let oldTimeseriesFragment = this._timeseriesFragments.valueFor(fragmentGuid);
+            const freshTimeseriesFragment = freshTimeseriesFragments[n];
+            const fragmentGuid = freshTimeseriesFragment.fragmentGuid;
+            const oldTimeseriesFragment = this._timeseriesFragments.valueFor(fragmentGuid);
             if (hasval(oldTimeseriesFragment)) {
                 retainedTimeseriesFragmentGuids.push(fragmentGuid);
             }
         }
         this._timeseriesFragments.retainIds(retainedTimeseriesFragmentGuids);
 
-        let freshAnnotations = newTimeline.annotations;
-        let retainedAnnotationGuids: string[] = [];
+        const freshAnnotations = newTimeline.annotations;
+        const retainedAnnotationGuids: string[] = [];
         for (let n = 0; n < freshAnnotations.length; n++) {
-            let freshAnnotation = freshAnnotations[n];
-            let annotationGuid = freshAnnotation.annotationGuid;
-            let oldAnnotation = this._annotations.valueFor(annotationGuid);
+            const freshAnnotation = freshAnnotations[n];
+            const annotationGuid = freshAnnotation.annotationGuid;
+            const oldAnnotation = this._annotations.valueFor(annotationGuid);
             if (hasval(oldAnnotation)) {
                 retainedAnnotationGuids.push(annotationGuid);
             }
         }
         this._annotations.retainIds(retainedAnnotationGuids);
 
-        let freshCursors = newTimeline.cursors;
-        let retainedCursorGuids: string[] = [];
+        const freshCursors = newTimeline.cursors;
+        const retainedCursorGuids: string[] = [];
         for (let n = 0; n < freshCursors.length; n++) {
-            let freshCursor = freshCursors[n];
-            let cursorGuid = freshCursor.cursorGuid;
-            let oldCursor = this._cursors.valueFor(cursorGuid);
+            const freshCursor = freshCursors[n];
+            const cursorGuid = freshCursor.cursorGuid;
+            const oldCursor = this._cursors.valueFor(cursorGuid);
             if (hasval(oldCursor)) {
                 retainedCursorGuids.push(cursorGuid);
             }
@@ -1589,8 +1591,8 @@ export class TimelineModel {
         //
 
         for (let n = 0; n < freshCursors.length; n++) {
-            let freshCursor = freshCursors[n];
-            let oldCursor = this._cursors.valueFor(freshCursor.cursorGuid);
+            const freshCursor = freshCursors[n];
+            const oldCursor = this._cursors.valueFor(freshCursor.cursorGuid);
             if (hasval(oldCursor)) {
                 oldCursor.setAttrs(freshCursor);
             }
@@ -1600,8 +1602,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshAnnotations.length; n++) {
-            let freshAnnotation = freshAnnotations[n];
-            let oldAnnotation = this._annotations.valueFor(freshAnnotation.annotationGuid);
+            const freshAnnotation = freshAnnotations[n];
+            const oldAnnotation = this._annotations.valueFor(freshAnnotation.annotationGuid);
             if (hasval(oldAnnotation)) {
                 oldAnnotation.setAttrs(freshAnnotation);
             }
@@ -1611,8 +1613,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshTimeseriesFragments.length; n++) {
-            let freshTimeseriesFragment = freshTimeseriesFragments[n];
-            let oldTimeseriesFragment = this._timeseriesFragments.valueFor(freshTimeseriesFragment.fragmentGuid);
+            const freshTimeseriesFragment = freshTimeseriesFragments[n];
+            const oldTimeseriesFragment = this._timeseriesFragments.valueFor(freshTimeseriesFragment.fragmentGuid);
             if (hasval(oldTimeseriesFragment)) {
                 oldTimeseriesFragment.setAttrs(freshTimeseriesFragment);
             }
@@ -1622,8 +1624,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshTimeseriesSet.length; n++) {
-            let freshTimeseries = freshTimeseriesSet[n];
-            let oldTimeseries = this._timeseries.valueFor(freshTimeseries.timeseriesGuid);
+            const freshTimeseries = freshTimeseriesSet[n];
+            const oldTimeseries = this._timeseries.valueFor(freshTimeseries.timeseriesGuid);
             if (hasval(oldTimeseries)) {
                 oldTimeseries.setAttrs(freshTimeseries);
             }
@@ -1633,8 +1635,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshEvents.length; n++) {
-            let freshEvent = freshEvents[n];
-            let oldEvent = this._events.valueFor(freshEvent.eventGuid);
+            const freshEvent = freshEvents[n];
+            const oldEvent = this._events.valueFor(freshEvent.eventGuid);
             if (hasval(oldEvent)) {
                 oldEvent.setAttrs(freshEvent);
             }
@@ -1644,8 +1646,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshRows.length; n++) {
-            let freshRow = freshRows[n];
-            let oldRow = this._rows.valueFor(freshRow.rowGuid);
+            const freshRow = freshRows[n];
+            const oldRow = this._rows.valueFor(freshRow.rowGuid);
             if (hasval(oldRow)) {
                 oldRow.setAttrs(freshRow);
                 oldRow.eventGuids.addAll((freshRow.eventGuids || []), 0, true);
@@ -1656,8 +1658,8 @@ export class TimelineModel {
         }
 
         for (let n = 0; n < freshGroups.length; n++) {
-            let freshGroup = freshGroups[n];
-            let oldGroup = this._groups.valueFor(freshGroup.groupGuid);
+            const freshGroup = freshGroups[n];
+            const oldGroup = this._groups.valueFor(freshGroup.groupGuid);
             if (hasval(oldGroup)) {
                 oldGroup.setAttrs(freshGroup);
                 oldGroup.rowGuids.addAll(freshGroup.rowGuids, 0, true);
@@ -1676,10 +1678,10 @@ export class TimelineModel {
 
     merge(newData: Timeline, strategy: TimelineMergeStrategy) {
 
-        let newCursors = hasval(newData.cursors) ? newData.cursors : [];
+        const newCursors = hasval(newData.cursors) ? newData.cursors : [];
         for (let n = 0; n < newCursors.length; n++) {
-            let newCursor = newCursors[n];
-            let cursorModel = this._cursors.valueFor(newCursor.cursorGuid);
+            const newCursor = newCursors[n];
+            const cursorModel = this._cursors.valueFor(newCursor.cursorGuid);
             if (hasval(cursorModel)) {
                 strategy.updateCursorModel(cursorModel, newCursor);
             }
@@ -1688,10 +1690,10 @@ export class TimelineModel {
             }
         }
 
-        let newAnnotations = hasval(newData.annotations) ? newData.annotations : [];
+        const newAnnotations = hasval(newData.annotations) ? newData.annotations : [];
         for (let n = 0; n < newAnnotations.length; n++) {
-            let newAnnotation = newAnnotations[n];
-            let annotationModel = this._annotations.valueFor(newAnnotation.annotationGuid);
+            const newAnnotation = newAnnotations[n];
+            const annotationModel = this._annotations.valueFor(newAnnotation.annotationGuid);
             if (hasval(annotationModel)) {
                 strategy.updateAnnotationModel(annotationModel, newAnnotation);
             }
@@ -1700,10 +1702,10 @@ export class TimelineModel {
             }
         }
 
-        let newTimeseriesFragments = hasval(newData.timeseriesFragments) ? newData.timeseriesFragments : [];
+        const newTimeseriesFragments = hasval(newData.timeseriesFragments) ? newData.timeseriesFragments : [];
         for (let n = 0; n < newTimeseriesFragments.length; n++) {
-            let newTimeseriesFragment = newTimeseriesFragments[n];
-            let timeseriesFragmentModel = this._timeseriesFragments.valueFor(newTimeseriesFragment.fragmentGuid);
+            const newTimeseriesFragment = newTimeseriesFragments[n];
+            const timeseriesFragmentModel = this._timeseriesFragments.valueFor(newTimeseriesFragment.fragmentGuid);
             if (hasval(timeseriesFragmentModel)) {
                 strategy.updateTimeseriesFragmentModel(timeseriesFragmentModel, newTimeseriesFragment);
             }
@@ -1712,10 +1714,10 @@ export class TimelineModel {
             }
         }
 
-        let newTimeseriesSet = hasval(newData.timeseries) ? newData.timeseries : [];
+        const newTimeseriesSet = hasval(newData.timeseries) ? newData.timeseries : [];
         for (let n = 0; n < newTimeseriesSet.length; n++) {
-            let newTimeseries = newTimeseriesSet[n];
-            let timeseriesModel = this._timeseries.valueFor(newTimeseries.timeseriesGuid);
+            const newTimeseries = newTimeseriesSet[n];
+            const timeseriesModel = this._timeseries.valueFor(newTimeseries.timeseriesGuid);
             if (hasval(timeseriesModel)) {
                 strategy.updateTimeseriesModel(timeseriesModel, newTimeseries);
             }
@@ -1724,10 +1726,10 @@ export class TimelineModel {
             }
         }
 
-        let newEvents = hasval(newData.events) ? newData.events : [];
+        const newEvents = hasval(newData.events) ? newData.events : [];
         for (let n = 0; n < newEvents.length; n++) {
-            let newEvent = newEvents[n];
-            let eventModel = this._events.valueFor(newEvent.eventGuid);
+            const newEvent = newEvents[n];
+            const eventModel = this._events.valueFor(newEvent.eventGuid);
             if (hasval(eventModel)) {
                 strategy.updateEventModel(eventModel, newEvent);
             }
@@ -1736,10 +1738,10 @@ export class TimelineModel {
             }
         }
 
-        let newRows = hasval(newData.rows) ? newData.rows : [];
+        const newRows = hasval(newData.rows) ? newData.rows : [];
         for (let n = 0; n < newRows.length; n++) {
-            let newRow = newRows[n];
-            let rowModel = this._rows.valueFor(newRow.rowGuid);
+            const newRow = newRows[n];
+            const rowModel = this._rows.valueFor(newRow.rowGuid);
             if (hasval(rowModel)) {
                 strategy.updateRowModel(rowModel, newRow);
             }
@@ -1748,10 +1750,10 @@ export class TimelineModel {
             }
         }
 
-        let newGroups = hasval(newData.groups) ? newData.groups : [];
+        const newGroups = hasval(newData.groups) ? newData.groups : [];
         for (let n = 0; n < newGroups.length; n++) {
-            let newGroup = newGroups[n];
-            let groupModel = this._groups.valueFor(newGroup.groupGuid);
+            const newGroup = newGroups[n];
+            const groupModel = this._groups.valueFor(newGroup.groupGuid);
             if (hasval(groupModel)) {
                 strategy.updateGroupModel(groupModel, newGroup);
             }
@@ -1760,7 +1762,7 @@ export class TimelineModel {
             }
         }
 
-        let newRoot = newData.root;
+        const newRoot = newData.root;
         strategy.updateRootModel(this._root, newRoot);
     }
 

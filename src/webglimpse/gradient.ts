@@ -31,26 +31,24 @@ import { Texture, FloatDataTexture2D } from './texture';
 
 // value: a number from 0-1
 // out: four component RGBA array indicating the gradient color for the input fraction
-export interface Gradient {
-    (value: number): number[];
-}
+export type Gradient = (value: number) => number[];
 
 // fills an array with jet colorscale values
 // webgl does not support 1D textures, so a 2D texture must be used
 export function jet(value: number): number[] {
 
-    let x = 4.0 * value;
+    const x = 4.0 * value;
 
-    let r = clamp(1.5 - Math.abs(x - 3.0), 0, 1);
-    let g = clamp(1.5 - Math.abs(x - 2.0), 0, 1);
-    let b = clamp(1.5 - Math.abs(x - 1.0), 0, 1);
+    const r = clamp(1.5 - Math.abs(x - 3.0), 0, 1);
+    const g = clamp(1.5 - Math.abs(x - 2.0), 0, 1);
+    const b = clamp(1.5 - Math.abs(x - 1.0), 0, 1);
 
     return [r, g, b, 1.0];
 }
 
 export function reverseBone(value: number): number[] {
 
-    let x = 1 - 0.875 * value;
+    const x = 1 - 0.875 * value;
     if (value < 0.375) {
         return [x, x, x - value / 3, 1];
     }
@@ -64,10 +62,10 @@ export function reverseBone(value: number): number[] {
 }
 
 export function getGradientTexture(gradient: Gradient, size: number = 1024): Texture {
-    let array = new Float32Array(size * 4);
+    const array = new Float32Array(size * 4);
 
     for (let v = 0; v < size; v++) {
-        let color = gradient(v / size);
+        const color = gradient(v / size);
 
         array[4 * v + 0] = color[0];
         array[4 * v + 1] = color[1];

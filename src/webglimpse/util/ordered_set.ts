@@ -58,8 +58,8 @@ export class OrderedSet<V> {
         this._indexes = {};
         this._valuesMap = {};
         for (let n = 0; n < this._valuesArray.length; n++) {
-            let value = this._valuesArray[n];
-            let id = requireString(this._idOf(value));
+            const value = this._valuesArray[n];
+            const id = requireString(this._idOf(value));
             this._ids[n] = id;
             this._indexes[id] = n;
             this._valuesMap[id] = value;
@@ -203,23 +203,27 @@ export class OrderedSet<V> {
 
     add(value: V, index?: number, moveIfExists?: boolean) {
         index = (hasval(index) ? index : this._valuesArray.length);
-        if (!hasval(moveIfExists)) moveIfExists = false;
+        if (!hasval(moveIfExists)) {
+            moveIfExists = false;
+        }
         this._add(value, index, moveIfExists);
     }
 
     addAll(values: V[], index?: number, moveIfExists?: boolean) {
         index = (hasval(index) ? index : this._valuesArray.length);
-        if (!hasval(moveIfExists)) moveIfExists = false;
+        if (!hasval(moveIfExists)) {
+            moveIfExists = false;
+        }
         for (let n = 0; n < values.length; n++) {
-            let actualIndex = this._add(values[n], index, moveIfExists);
+            const actualIndex = this._add(values[n], index, moveIfExists);
             index = actualIndex + 1;
         }
     }
 
     private _add(value: V, newIndex: number, moveIfExists: boolean): number {
-        let id = requireString(this._idOf(value));
+        const id = requireString(this._idOf(value));
 
-        let oldIndex = this._indexes[id];
+        const oldIndex = this._indexes[id];
         if (!hasval(oldIndex)) {
             this._ids.splice(newIndex, 0, id);
             this._valuesArray.splice(newIndex, 0, value);
@@ -268,7 +272,7 @@ export class OrderedSet<V> {
 
     removeId(id: string) {
         if (isString(id)) {
-            let index = this._indexes[id];
+            const index = this._indexes[id];
             if (hasval(index)) {
                 this._remove(id, index);
             }
@@ -276,7 +280,7 @@ export class OrderedSet<V> {
     }
 
     removeIndex(index: number) {
-        let id = this._ids[index];
+        const id = this._ids[index];
         if (isString(id)) {
             this._remove(id, index);
         }
@@ -285,15 +289,15 @@ export class OrderedSet<V> {
     removeAll() {
         // Remove from last to first, to minimize index shifting
         for (let n = this._valuesArray.length - 1; n >= 0; n--) {
-            let id = this._ids[n];
+            const id = this._ids[n];
             this._remove(id, n);
         }
     }
 
     retainValues(values: V[]) {
-        let idsToRetain: StringMap<any> = {};
+        const idsToRetain: StringMap<any> = {};
         for (let n = 0; n < values.length; n++) {
-            let id = this._idOf(values[n]);
+            const id = this._idOf(values[n]);
             if (isString(id)) {
                 idsToRetain[id] = true;
             }
@@ -302,9 +306,9 @@ export class OrderedSet<V> {
     }
 
     retainIds(ids: string[]) {
-        let idsToRetain: StringMap<any> = {};
+        const idsToRetain: StringMap<any> = {};
         for (let n = 0; n < ids.length; n++) {
-            let id = ids[n];
+            const id = ids[n];
             if (isString(id)) {
                 idsToRetain[id] = true;
             }
@@ -313,9 +317,9 @@ export class OrderedSet<V> {
     }
 
     retainIndices(indices: number[]) {
-        let idsToRetain: StringMap<any> = {};
+        const idsToRetain: StringMap<any> = {};
         for (let n = 0; n < indices.length; n++) {
-            let id = this._ids[indices[n]];
+            const id = this._ids[indices[n]];
             idsToRetain[id] = true;
         }
         this._retain(idsToRetain);
@@ -324,7 +328,7 @@ export class OrderedSet<V> {
     private _retain(ids: StringMap<any>) {
         // Remove from last to first, to minimize index shifting
         for (let n = this._valuesArray.length - 1; n >= 0; n--) {
-            let id = this._ids[n];
+            const id = this._ids[n];
             if (!ids.hasOwnProperty(id)) {
                 this._remove(id, n);
             }
@@ -332,7 +336,7 @@ export class OrderedSet<V> {
     }
 
     private _remove(id: string, index: number) {
-        let value = this._valuesArray[index];
+        const value = this._valuesArray[index];
         this._ids.splice(index, 1);
         this._valuesArray.splice(index, 1);
         delete this._indexes[id];
@@ -359,7 +363,7 @@ export class OrderedStringSet {
         this._valuesArray = [];
         this._indexes = {};
         for (let n = 0; n < values.length; n++) {
-            let value = requireString(values[n]);
+            const value = requireString(values[n]);
             this._valuesArray[n] = value;
             this._indexes[value] = n;
         }
@@ -473,15 +477,19 @@ export class OrderedStringSet {
 
     add(value: string, index?: number, moveIfExists?: boolean) {
         index = (hasval(index) ? index : this._valuesArray.length);
-        if (!hasval(moveIfExists)) moveIfExists = false;
+        if (!hasval(moveIfExists)) {
+            moveIfExists = false;
+        }
         this._add(value, index, moveIfExists);
     }
 
     addAll(values: string[], index?: number, moveIfExists?: boolean) {
         index = (hasval(index) ? index : this._valuesArray.length);
-        if (!hasval(moveIfExists)) moveIfExists = false;
+        if (!hasval(moveIfExists)) {
+            moveIfExists = false;
+        }
         for (let n = 0; n < values.length; n++) {
-            let actualIndex = this._add(values[n], index, moveIfExists);
+            const actualIndex = this._add(values[n], index, moveIfExists);
             index = actualIndex + 1;
         }
     }
@@ -489,7 +497,7 @@ export class OrderedStringSet {
     private _add(value: string, newIndex: number, moveIfExists: boolean): number {
         requireString(value);
 
-        let oldIndex = this._indexes[value];
+        const oldIndex = this._indexes[value];
         if (!hasval(oldIndex)) {
             this._valuesArray.splice(newIndex, 0, value);
             for (let n = newIndex; n < this._valuesArray.length; n++) {
@@ -529,7 +537,7 @@ export class OrderedStringSet {
 
     removeValue(value: string) {
         if (isString(value)) {
-            let index = this._indexes[value];
+            const index = this._indexes[value];
             if (hasval(index)) {
                 this._remove(value, index);
             }
@@ -537,7 +545,7 @@ export class OrderedStringSet {
     }
 
     removeIndex(index: number) {
-        let value = this._valuesArray[index];
+        const value = this._valuesArray[index];
         if (isString(value)) {
             this._remove(value, index);
         }
@@ -546,15 +554,15 @@ export class OrderedStringSet {
     removeAll() {
         // Remove from last to first, to minimize index shifting
         for (let n = this._valuesArray.length - 1; n >= 0; n--) {
-            let value = this._valuesArray[n];
+            const value = this._valuesArray[n];
             this._remove(value, n);
         }
     }
 
     retainValues(values: string[]) {
-        let valuesToRetain: StringMap<any> = {};
+        const valuesToRetain: StringMap<any> = {};
         for (let n = 0; n < values.length; n++) {
-            let value = values[n];
+            const value = values[n];
             if (isString(value)) {
                 valuesToRetain[value] = true;
             }
@@ -563,9 +571,9 @@ export class OrderedStringSet {
     }
 
     retainIndices(indices: number[]) {
-        let valuesToRetain: StringMap<any> = {};
+        const valuesToRetain: StringMap<any> = {};
         for (let n = 0; n < indices.length; n++) {
-            let value = this._valuesArray[indices[n]];
+            const value = this._valuesArray[indices[n]];
             valuesToRetain[value] = true;
         }
         this._retain(valuesToRetain);
@@ -574,7 +582,7 @@ export class OrderedStringSet {
     private _retain(values: StringMap<any>) {
         // Remove from last to first, to minimize index shifting
         for (let n = this._valuesArray.length - 1; n >= 0; n--) {
-            let value = this._valuesArray[n];
+            const value = this._valuesArray[n];
             if (!values.hasOwnProperty(value)) {
                 this._remove(value, n);
             }

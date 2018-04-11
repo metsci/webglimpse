@@ -32,7 +32,7 @@ import { concatLines, ensureCapacityFloat32, GL, order, hasval, clamp } from '..
 import { Axis1D, getTickInterval, getTickCount, getTickPositions } from './axis';
 import { Color, black } from '../color';
 import { Gradient, getGradientTexture } from '../gradient';
-import { Painter, yFrac, xFrac } from '../core';
+import { Painter } from '../core';
 import { Program, UniformMatrix4f, UniformSampler2D, Attribute, UniformColor, Uniform1f, Uniform2f } from '../shader';
 import { heatmap_VERTSHADER } from './heatmap_painter';
 import { newDynamicBuffer } from '../buffer';
@@ -45,8 +45,8 @@ import { glOrthoViewport } from '../matrix';
 
 export function edgeMarks_VERTSHADER(labelSide: Side) {
     // The shader uses 'a' for the along-axis coord, and 'b' for the across-axis coord
-    let horizontal = (labelSide === Side.TOP || labelSide === Side.BOTTOM);
-    let bFlip = (labelSide === Side.LEFT || labelSide === Side.BOTTOM);
+    const horizontal = (labelSide === Side.TOP || labelSide === Side.BOTTOM);
+    const bFlip = (labelSide === Side.LEFT || labelSide === Side.BOTTOM);
     return concatLines(
         nearestPixelCenter_GLSLFUNC,
         '                                                                                               ',
@@ -94,9 +94,7 @@ export let gradient_FRAGSHADER = concatLines(
 // precision    : number of decimal points which should be used for tick labels
 // orderAxis    : order( Math.abs( axis.vSize ) ) then rounded to nearest multiple of three (-3, 0, 3, 6...)
 // orderFactor  : Math.pow( 10, -orderAxis )
-export interface TickLabeler {
-    (value: number, axis: Axis1D, tickInterval: number): string;
-}
+export type TickLabeler = (value: number, axis: Axis1D, tickInterval: number) => string;
 
 
 export interface EdgeAxisPainterOptions {
@@ -116,69 +114,71 @@ export interface EdgeAxisPainterOptions {
 
 
 export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: EdgeAxisPainterOptions): Painter {
-    let tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 100);
-    let label = (hasval(options) && hasval(options.label) ? options.label : '');
-    let units = (hasval(options) && hasval(options.units) ? options.units : '');
-    let shortenLabels = (hasval(options) && hasval(options.shortenLabels) ? options.shortenLabels : true);
-    let font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
-    let textColor = (hasval(options) && hasval(options.textColor) ? options.textColor : black);
-    let tickColor = (hasval(options) && hasval(options.tickColor) ? options.tickColor : black);
-    let tickSize = (hasval(options) && hasval(options.tickSize) ? options.tickSize : 6);
-    let showLabel = (hasval(options) && hasval(options.showLabel) ? options.showLabel : true);
-    let showBorder = (hasval(options) && hasval(options.showBorder) ? options.showBorder : false);
-    let gradientFill = (hasval(options) && hasval(options.gradientFill) ? options.gradientFill : undefined);
-    let tickLabeler = (hasval(options) && hasval(options.tickLabeler) ? options.tickLabeler : undefined);
+    const tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 100);
+    const label = (hasval(options) && hasval(options.label) ? options.label : '');
+    const units = (hasval(options) && hasval(options.units) ? options.units : '');
+    const shortenLabels = (hasval(options) && hasval(options.shortenLabels) ? options.shortenLabels : true);
+    const font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
+    const textColor = (hasval(options) && hasval(options.textColor) ? options.textColor : black);
+    const tickColor = (hasval(options) && hasval(options.tickColor) ? options.tickColor : black);
+    const tickSize = (hasval(options) && hasval(options.tickSize) ? options.tickSize : 6);
+    const showLabel = (hasval(options) && hasval(options.showLabel) ? options.showLabel : true);
+    const showBorder = (hasval(options) && hasval(options.showBorder) ? options.showBorder : false);
+    const gradientFill = (hasval(options) && hasval(options.gradientFill) ? options.gradientFill : undefined);
+    const tickLabeler = (hasval(options) && hasval(options.tickLabeler) ? options.tickLabeler : undefined);
 
     let tickPositions = new Float32Array(0);
 
-    let gradientProgram = new Program(heatmap_VERTSHADER, gradient_FRAGSHADER);
-    let gradientProgram_u_modelViewMatrix = new UniformMatrix4f(gradientProgram, 'u_modelViewMatrix');
-    let gradientProgram_u_colorTexture = new UniformSampler2D(gradientProgram, 'u_colorTex');
-    let gradientProgram_a_vertCoord = new Attribute(gradientProgram, 'a_vertCoord');
-    let gradientProgram_a_texCoord = new Attribute(gradientProgram, 'a_texCoord');
+    const gradientProgram = new Program(heatmap_VERTSHADER, gradient_FRAGSHADER);
+    const gradientProgram_u_modelViewMatrix = new UniformMatrix4f(gradientProgram, 'u_modelViewMatrix');
+    const gradientProgram_u_colorTexture = new UniformSampler2D(gradientProgram, 'u_colorTex');
+    const gradientProgram_a_vertCoord = new Attribute(gradientProgram, 'a_vertCoord');
+    const gradientProgram_a_texCoord = new Attribute(gradientProgram, 'a_texCoord');
 
     let gradientColorTexture: Texture = null;
     if (gradientFill) {
-        let gradientColorTexture = getGradientTexture(gradientFill);
+        gradientColorTexture = getGradientTexture(gradientFill);
     }
 
     let gradientVertCoords = new Float32Array(0);
-    let gradientVertCoordsBuffer = newDynamicBuffer();
+    const gradientVertCoordsBuffer = newDynamicBuffer();
 
     let gradientTexCoords = new Float32Array(0);
-    let gradientTexCoordsBuffer = newDynamicBuffer();
+    const gradientTexCoordsBuffer = newDynamicBuffer();
 
-    let borderProgram = new Program(modelview_VERTSHADER, solid_FRAGSHADER);
-    let borderProgram_a_Position = new Attribute(borderProgram, 'a_Position');
-    let borderProgram_u_modelViewMatrix = new UniformMatrix4f(borderProgram, 'u_modelViewMatrix');
-    let borderProgram_u_Color = new UniformColor(borderProgram, 'u_Color');
+    const borderProgram = new Program(modelview_VERTSHADER, solid_FRAGSHADER);
+    const borderProgram_a_Position = new Attribute(borderProgram, 'a_Position');
+    const borderProgram_u_modelViewMatrix = new UniformMatrix4f(borderProgram, 'u_modelViewMatrix');
+    const borderProgram_u_Color = new UniformColor(borderProgram, 'u_Color');
 
     let borderCoords = new Float32Array(0);
-    let borderCoordsBuffer = newDynamicBuffer();
+    const borderCoordsBuffer = newDynamicBuffer();
 
-    let marksProgram = new Program(edgeMarks_VERTSHADER(labelSide), solid_FRAGSHADER);
-    let marksProgram_u_VMin = new Uniform1f(marksProgram, 'u_VMin');
-    let marksProgram_u_VSize = new Uniform1f(marksProgram, 'u_VSize');
-    let marksProgram_u_ViewportSize = new Uniform2f(marksProgram, 'u_ViewportSize');
-    let marksProgram_u_MarkSize = new Uniform1f(marksProgram, 'u_MarkSize');
-    let marksProgram_u_Color = new UniformColor(marksProgram, 'u_Color');
-    let marksProgram_a_VCoord = new Attribute(marksProgram, 'a_VCoord');
+    const marksProgram = new Program(edgeMarks_VERTSHADER(labelSide), solid_FRAGSHADER);
+    const marksProgram_u_VMin = new Uniform1f(marksProgram, 'u_VMin');
+    const marksProgram_u_VSize = new Uniform1f(marksProgram, 'u_VSize');
+    const marksProgram_u_ViewportSize = new Uniform2f(marksProgram, 'u_ViewportSize');
+    const marksProgram_u_MarkSize = new Uniform1f(marksProgram, 'u_MarkSize');
+    const marksProgram_u_Color = new UniformColor(marksProgram, 'u_Color');
+    const marksProgram_a_VCoord = new Attribute(marksProgram, 'a_VCoord');
 
     let markCoords = new Float32Array(0);
-    let markCoordsBuffer = newDynamicBuffer();
+    const markCoordsBuffer = newDynamicBuffer();
 
-    let textTextures = <Cache<TextTexture2D>>newTextTextureCache(font, textColor);
-    let textureRenderer = new TextureRenderer();
-    let hTickLabels = textTextures.value('-0.123456789').h;
-    let isVerticalAxis = (labelSide === Side.LEFT || labelSide === Side.RIGHT);
+    const textTextures = <Cache<TextTexture2D>>newTextTextureCache(font, textColor);
+    const textureRenderer = new TextureRenderer();
+    const hTickLabels = textTextures.value('-0.123456789').h;
+    const isVerticalAxis = (labelSide === Side.LEFT || labelSide === Side.RIGHT);
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
-        let sizePixels = isVerticalAxis ? viewport.h : viewport.w;
-        if (sizePixels === 0) return;
-        let approxNumTicks = sizePixels / tickSpacing;
-        let tickInterval = getTickInterval(axis, approxNumTicks);
-        let tickCount = getTickCount(axis, tickInterval);
+        const sizePixels = isVerticalAxis ? viewport.h : viewport.w;
+        if (sizePixels === 0) {
+            return;
+        }
+        const approxNumTicks = sizePixels / tickSpacing;
+        const tickInterval = getTickInterval(axis, approxNumTicks);
+        const tickCount = getTickCount(axis, tickInterval);
         tickPositions = ensureCapacityFloat32(tickPositions, tickCount);
         getTickPositions(axis, tickInterval, tickCount, tickPositions);
 
@@ -191,10 +191,10 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
         if (showBorder || gradientFill) {
             borderCoords = ensureCapacityFloat32(borderCoords, 10);
 
-            let horizontal = (labelSide === Side.TOP || labelSide === Side.BOTTOM);
-            let bFlip = (labelSide === Side.LEFT || labelSide === Side.BOTTOM);
-            let width = viewport.w - 1;
-            let height = viewport.h - 1;
+            const horizontal = (labelSide === Side.TOP || labelSide === Side.BOTTOM);
+            const bFlip = (labelSide === Side.LEFT || labelSide === Side.BOTTOM);
+            const width = viewport.w - 1;
+            const height = viewport.h - 1;
 
             borderCoords[0] = horizontal ? 0 : (bFlip ? width - tickSize : 0);
             borderCoords[1] = !horizontal ? 0 : (bFlip ? height - tickSize : 0);
@@ -280,7 +280,7 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
 
         markCoords = ensureCapacityFloat32(markCoords, 4 * tickCount);
         for (let n = 0; n < tickCount; n++) {
-            let v = tickPositions[n];
+            const v = tickPositions[n];
             markCoords[(4 * n + 0)] = v;
             markCoords[(4 * n + 1)] = 0;
             markCoords[(4 * n + 2)] = v;
@@ -303,7 +303,7 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
         gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
         gl.enable(GL.BLEND);
 
-        let orderAxisRaw = order(Math.abs(axis.vSize));
+        const orderAxisRaw = order(Math.abs(axis.vSize));
         let orderAxis = 0;
         if (orderAxisRaw > 0) {
             orderAxis = Math.floor((orderAxisRaw - 1) / 3) * 3;
@@ -311,17 +311,19 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
         else if (orderAxisRaw < 0) {
             orderAxis = (Math.ceil(orderAxisRaw / 3) - 1) * 3;
         }
-        let orderFactor = Math.pow(10, -orderAxis);
-        let orderTick = order(tickInterval);
-        let precision = Math.max(0, orderAxis - orderTick);
+        const orderFactor = Math.pow(10, -orderAxis);
+        const orderTick = order(tickInterval);
+        const precision = Math.max(0, orderAxis - orderTick);
 
         textTextures.resetTouches();
         textureRenderer.begin(gl, viewport);
 
         for (let n = 0; n < tickCount; n++) {
-            let v = tickPositions[n];
-            let vFrac = axis.vFrac(v);
-            if (vFrac < 0 || vFrac >= 1) continue;
+            const v = tickPositions[n];
+            const vFrac = axis.vFrac(v);
+            if (vFrac < 0 || vFrac >= 1) {
+                continue;
+            }
 
             let tickLabel;
             if (tickLabeler) {
@@ -345,14 +347,14 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
                 // show magnitude inline for each tick
                 tickLabel = Number(v * orderFactor).toFixed(precision) + (orderAxis === 0 ? '' : 'e' + orderAxis);
             }
-            let textTexture = textTextures.value(tickLabel);
+            const textTexture = textTextures.value(tickLabel);
 
             let xFrac: number;
             let yFrac: number;
             if (labelSide === Side.LEFT || labelSide === Side.RIGHT) {
-                let yAnchor = textTexture.yAnchor(0.43);
-                let j0 = (vFrac * viewport.h) - yAnchor * textTexture.h;
-                let j = clamp(0, viewport.h - textTexture.h, j0);
+                const yAnchor = textTexture.yAnchor(0.43);
+                const j0 = (vFrac * viewport.h) - yAnchor * textTexture.h;
+                const j = clamp(0, viewport.h - textTexture.h, j0);
                 yFrac = j / viewport.h;
 
                 if (labelSide === Side.LEFT) {
@@ -365,13 +367,13 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
             else {
                 let wMinus = 0;
                 if (v < 0) {
-                    let absTickLabel = Number(Math.abs(v) * orderFactor).toFixed(precision);
+                    const absTickLabel = Number(Math.abs(v) * orderFactor).toFixed(precision);
                     wMinus = textTexture.w - textTextures.value(absTickLabel).w;
                 }
 
-                let xAnchor = 0.45;
-                let i0 = (vFrac * viewport.w) - xAnchor * (textTexture.w - wMinus) - wMinus;
-                let i = clamp(0, viewport.w - textTexture.w, i0);
+                const xAnchor = 0.45;
+                const i0 = (vFrac * viewport.w) - xAnchor * (textTexture.w - wMinus) - wMinus;
+                const i = clamp(0, viewport.w - textTexture.w, i0);
                 xFrac = i / viewport.w;
 
                 if (labelSide === Side.BOTTOM) {
@@ -389,18 +391,18 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
         //
 
         if (showLabel) {
-            let unitsString = units + (!shortenLabels || orderAxis === 0 ? '' : ' x 10^' + orderAxis.toFixed(0));
-            let axisLabel = label + (unitsString ? ' (' + unitsString + ')' : '');
+            const unitsString = units + (!shortenLabels || orderAxis === 0 ? '' : ' x 10^' + orderAxis.toFixed(0));
+            const axisLabel = label + (unitsString ? ' (' + unitsString + ')' : '');
 
             if (axisLabel !== '') {
-                let textTexture = textTextures.value(axisLabel);
+                const textTexture = textTextures.value(axisLabel);
 
                 let xFrac: number;
                 let yFrac: number;
                 let textOpts: TextureDrawOptions;
                 if (labelSide === Side.LEFT || labelSide === Side.RIGHT) {
                     // Using hTickLabels here works out about right, even though the tick-label text is horizontal
-                    let xFrac0 = 0.5 * (viewport.w - tickSize - 2 - hTickLabels) / viewport.w;
+                    const xFrac0 = 0.5 * (viewport.w - tickSize - 2 - hTickLabels) / viewport.w;
                     xFrac = (labelSide === Side.LEFT ? xFrac0 : 1 - xFrac0);
                     yFrac = 0.5;
                     textOpts = {
@@ -410,7 +412,7 @@ export function newEdgeAxisPainter(axis: Axis1D, labelSide: Side, options?: Edge
                     };
                 }
                 else {
-                    let yFrac0 = 0.5 * (viewport.h - tickSize - 2 - hTickLabels) / viewport.h;
+                    const yFrac0 = 0.5 * (viewport.h - tickSize - 2 - hTickLabels) / viewport.h;
                     yFrac = (labelSide === Side.BOTTOM ? yFrac0 : 1 - yFrac0);
                     xFrac = 0.5;
                     textOpts = {

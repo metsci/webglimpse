@@ -30,7 +30,7 @@
 import { Notification } from './notification';
 
 export function initSplitContainer(container: HTMLElement): Notification {
-    let tilesResized = new Notification();
+    const tilesResized = new Notification();
 
     _initSplitContainer(container, tilesResized);
 
@@ -49,11 +49,11 @@ function _initSplitContainer(container: HTMLElement, tilesResized: Notification)
     let tileA: HTMLElement = null;
     let tileB: HTMLElement = null;
     let sep: HTMLElement = null;
-    let children = container.childNodes;
+    const children = container.childNodes;
     for (let n = 0; n < children.length; n++) {
-        let child = children[n];
+        const child = children[n];
         if (child.nodeType === 1 && (<any>child).classList) {
-            let element = <HTMLElement>child;
+            const element = <HTMLElement>child;
             if (tileA == null) {
                 if (element.classList.contains('splitContainerNS') || element.classList.contains('splitContainerEW') || element.classList.contains('splitTile')) {
                     tileA = element;
@@ -74,9 +74,15 @@ function _initSplitContainer(container: HTMLElement, tilesResized: Notification)
             }
         }
     }
-    if (tileA == null) throw new Error('Failed to init split-container: could not find first tile');
-    if (sep == null) throw new Error('Failed to init split-container: could not find separator');
-    if (tileB == null) throw new Error('Failed to init split-container: could not find second tile');
+    if (tileA == null) {
+        throw new Error('Failed to init split-container: could not find first tile');
+    }
+    if (sep == null) {
+        throw new Error('Failed to init split-container: could not find separator');
+    }
+    if (tileB == null) {
+        throw new Error('Failed to init split-container: could not find second tile');
+    }
 
     if (container.classList.contains('splitContainerNS')) {
         _initSplitNS(container, tileA, sep, tileB, tilesResized);
@@ -106,36 +112,36 @@ function _initSplitNS(container: HTMLElement, tileA: HTMLElement, sep: HTMLEleme
     tileB.style.left = '0px';
     tileB.style.right = '0px';
 
-    let minHeightA = 1;
-    let minHeightB = 1;
+    const minHeightA = 1;
+    const minHeightB = 1;
     let recentFracA: number = null;
 
     function layoutTiles(prelimHeightA?: number) {
-        let heightSep = sep.getBoundingClientRect().height;
-        let heightContainer = container.getBoundingClientRect().height;
-        let heightContent = heightContainer - heightSep;
+        const heightSep = sep.getBoundingClientRect().height;
+        const heightContainer = container.getBoundingClientRect().height;
+        const heightContent = heightContainer - heightSep;
         if (recentFracA == null) {
             recentFracA = tileA.getBoundingClientRect().height / heightContent;
         }
 
-        let keepFracA = (prelimHeightA == null);
+        const keepFracA = (prelimHeightA == null);
         if (keepFracA) {
             prelimHeightA = Math.round(recentFracA * heightContent);
         }
 
-        let maxHeightA = heightContainer - heightSep - minHeightB;
+        const maxHeightA = heightContainer - heightSep - minHeightB;
 
-        let topA = 0;
-        let heightA = Math.max(minHeightA, Math.min(maxHeightA, prelimHeightA));
+        const topA = 0;
+        const heightA = Math.max(minHeightA, Math.min(maxHeightA, prelimHeightA));
         tileA.style.top = topA + 'px';
         tileA.style.height = heightA + 'px';
 
-        let topSep = topA + heightA;
+        const topSep = topA + heightA;
         sep.style.top = topSep + 'px';
         sep.style.height = heightSep + 'px';
 
-        let topB = topSep + heightSep;
-        let heightB = Math.max(minHeightB, heightContainer - topB);
+        const topB = topSep + heightSep;
+        const heightB = Math.max(minHeightB, heightContainer - topB);
         tileB.style.top = topB + 'px';
         tileB.style.height = heightB + 'px';
 
@@ -185,36 +191,36 @@ function _initSplitEW(container: HTMLElement, tileA: HTMLElement, sep: HTMLEleme
     tileB.style.top = '0px';
     tileB.style.bottom = '0px';
 
-    let minWidthA = 1;
-    let minWidthB = 1;
+    const minWidthA = 1;
+    const minWidthB = 1;
     let recentFracA: number = null;
 
     function layoutTiles(prelimWidthA?: number) {
-        let widthSep = sep.getBoundingClientRect().width;
-        let widthContainer = container.getBoundingClientRect().width;
-        let widthContent = widthContainer - widthSep;
+        const widthSep = sep.getBoundingClientRect().width;
+        const widthContainer = container.getBoundingClientRect().width;
+        const widthContent = widthContainer - widthSep;
         if (recentFracA == null) {
             recentFracA = tileA.getBoundingClientRect().width / widthContent;
         }
 
-        let keepFracA = (prelimWidthA == null);
+        const keepFracA = (prelimWidthA == null);
         if (keepFracA) {
             prelimWidthA = Math.round(recentFracA * widthContent);
         }
 
-        let maxWidthA = widthContainer - widthSep - minWidthB;
+        const maxWidthA = widthContainer - widthSep - minWidthB;
 
-        let leftA = 0;
-        let widthA = Math.max(minWidthA, Math.min(maxWidthA, prelimWidthA));
+        const leftA = 0;
+        const widthA = Math.max(minWidthA, Math.min(maxWidthA, prelimWidthA));
         tileA.style.left = leftA + 'px';
         tileA.style.width = widthA + 'px';
 
-        let leftSep = leftA + widthA;
+        const leftSep = leftA + widthA;
         sep.style.left = leftSep + 'px';
         sep.style.width = widthSep + 'px';
 
-        let leftB = leftSep + widthSep;
-        let widthB = Math.max(minWidthB, widthContainer - leftB);
+        const leftB = leftSep + widthSep;
+        const widthB = Math.max(minWidthB, widthContainer - leftB);
         tileB.style.left = leftB + 'px';
         tileB.style.width = widthB + 'px';
 

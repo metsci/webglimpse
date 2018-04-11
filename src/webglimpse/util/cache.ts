@@ -38,7 +38,7 @@ export interface CacheHelper<V> {
 
 class CacheEntry<V> {
     value: V;
-    touched: boolean = false;
+    touched = false;
 
     constructor(value: V) {
         this.value = value;
@@ -59,14 +59,14 @@ export class Cache<V> {
         if (!this.map.hasOwnProperty(key)) {
             this.map[key] = new CacheEntry<V>(this.helper.create(key));
         }
-        let en = this.map[key];
+        const en = this.map[key];
 
         en.touched = true;
         return en.value;
     }
 
     clear() {
-        for (let k in this.map) {
+        for (const k in this.map) {
             if (this.map.hasOwnProperty(k)) {
                 this.helper.dispose(this.map[k].value, k);
             }
@@ -88,12 +88,12 @@ export class Cache<V> {
     }
 
     retain(key: string) {
-        let newMap: { [k: string]: CacheEntry<V>; } = {};
+        const newMap: { [k: string]: CacheEntry<V>; } = {};
         if (this.map.hasOwnProperty(key)) {
             newMap[key] = this.map[key];
             delete this.map[key];
         }
-        for (let k in this.map) {
+        for (const k in this.map) {
             if (this.map.hasOwnProperty(k)) {
                 this.helper.dispose(this.map[k].value, k);
             }
@@ -102,15 +102,15 @@ export class Cache<V> {
     }
 
     retainAll(keys: string[]) {
-        let newMap: { [key: string]: CacheEntry<V>; } = {};
+        const newMap: { [key: string]: CacheEntry<V>; } = {};
         for (let i = 0; i < keys.length; i++) {
-            let k = keys[i];
+            const k = keys[i];
             if (this.map.hasOwnProperty(k)) {
                 newMap[k] = this.map[k];
                 delete this.map[k];
             }
         }
-        for (let k2 in this.map) {
+        for (const k2 in this.map) {
             if (this.map.hasOwnProperty(k2)) {
                 this.helper.dispose(this.map[k2].value, k2);
             }
@@ -119,7 +119,7 @@ export class Cache<V> {
     }
 
     resetTouches() {
-        for (let k in this.map) {
+        for (const k in this.map) {
             if (this.map.hasOwnProperty(k)) {
                 this.map[k].touched = false;
             }
@@ -127,10 +127,10 @@ export class Cache<V> {
     }
 
     retainTouched() {
-        let newMap: { [k: string]: CacheEntry<V>; } = {};
-        for (let k in this.map) {
+        const newMap: { [k: string]: CacheEntry<V>; } = {};
+        for (const k in this.map) {
             if (this.map.hasOwnProperty(k)) {
-                let en = this.map[k];
+                const en = this.map[k];
                 if (en.touched) {
                     newMap[k] = this.map[k];
                 }

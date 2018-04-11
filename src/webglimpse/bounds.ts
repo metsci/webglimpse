@@ -123,14 +123,14 @@ export class Bounds {
 
 
 export function newBoundsFromRect(i: number, j: number, w: number, h: number): Bounds {
-    let b = new Bounds();
+    const b = new Bounds();
     b.setRect(i, j, w, h);
     return b;
 }
 
 
 export function newBoundsFromEdges(iStart: number, iEnd: number, jStart: number, jEnd: number): Bounds {
-    let b = new Bounds();
+    const b = new Bounds();
     b.setEdges(iStart, iEnd, jStart, jEnd);
     return b;
 }

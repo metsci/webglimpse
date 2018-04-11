@@ -141,70 +141,70 @@ export interface TimelinePaneOptions {
 export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model: TimelineModel, options?: TimelinePaneOptions, ui?: TimelineUi): TimelinePane {
 
     // Misc
-    let font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
-    let rowPaneFactoryChooser = (hasval(options) && hasval(options.rowPaneFactoryChooser) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT);
+    const font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
+    const rowPaneFactoryChooser = (hasval(options) && hasval(options.rowPaneFactoryChooser) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT);
 
     // Scroll
-    let showScrollbar = (hasval(options) && hasval(options.showScrollbar) ? options.showScrollbar : true);
-    let scrollbarOptions = (hasval(options) ? options.scrollbarOptions : null);
+    const showScrollbar = (hasval(options) && hasval(options.showScrollbar) ? options.showScrollbar : true);
+    const scrollbarOptions = (hasval(options) ? options.scrollbarOptions : null);
 
     // Colors
-    let fgColor = (hasval(options) && hasval(options.fgColor) ? options.fgColor : white);
-    let bgColor = (hasval(options) && hasval(options.bgColor) ? options.bgColor : rgb(0.098, 0.165, 0.243));
-    let rowLabelColor = (hasval(options) && hasval(options.rowLabelColor) ? options.rowLabelColor : fgColor);
-    let rowLabelBgColor = (hasval(options) && hasval(options.rowLabelBgColor) ? options.rowLabelBgColor : bgColor);
-    let groupLabelColor = (hasval(options) && hasval(options.groupLabelColor) ? options.groupLabelColor : fgColor);
-    let groupHighlightColor = (hasval(options) && hasval(options.groupHighlightColor) ? options.groupHighlightColor : rgb(0, 1, 1));
-    let axisLabelColor = (hasval(options) && hasval(options.axisLabelColor) ? options.axisLabelColor : fgColor);
-    let rowBgColor = (hasval(options) && hasval(options.rowBgColor) ? options.rowBgColor : rgb(0.020, 0.086, 0.165));
-    let rowAltBgColor = (hasval(options) && hasval(options.rowAltBgColor) ? options.rowAltBgColor : rgb(0.020, 0.086, 0.165));
-    let gridColor = (hasval(options) && hasval(options.gridColor) ? options.gridColor : gray(0.5));
-    let selectedIntervalFillColor = (hasval(options) && hasval(options.selectedIntervalFillColor) ? options.selectedIntervalFillColor : rgba(0, 0.6, 0.8, 0.157));
-    let selectedIntervalBorderColor = (hasval(options) && hasval(options.selectedIntervalBorderColor) ? options.selectedIntervalBorderColor : rgb(0, 0.2, 1.0));
+    const fgColor = (hasval(options) && hasval(options.fgColor) ? options.fgColor : white);
+    const bgColor = (hasval(options) && hasval(options.bgColor) ? options.bgColor : rgb(0.098, 0.165, 0.243));
+    const rowLabelColor = (hasval(options) && hasval(options.rowLabelColor) ? options.rowLabelColor : fgColor);
+    const rowLabelBgColor = (hasval(options) && hasval(options.rowLabelBgColor) ? options.rowLabelBgColor : bgColor);
+    const groupLabelColor = (hasval(options) && hasval(options.groupLabelColor) ? options.groupLabelColor : fgColor);
+    const groupHighlightColor = (hasval(options) && hasval(options.groupHighlightColor) ? options.groupHighlightColor : rgb(0, 1, 1));
+    const axisLabelColor = (hasval(options) && hasval(options.axisLabelColor) ? options.axisLabelColor : fgColor);
+    const rowBgColor = (hasval(options) && hasval(options.rowBgColor) ? options.rowBgColor : rgb(0.020, 0.086, 0.165));
+    const rowAltBgColor = (hasval(options) && hasval(options.rowAltBgColor) ? options.rowAltBgColor : rgb(0.020, 0.086, 0.165));
+    const gridColor = (hasval(options) && hasval(options.gridColor) ? options.gridColor : gray(0.5));
+    const selectedIntervalFillColor = (hasval(options) && hasval(options.selectedIntervalFillColor) ? options.selectedIntervalFillColor : rgba(0, 0.6, 0.8, 0.157));
+    const selectedIntervalBorderColor = (hasval(options) && hasval(options.selectedIntervalBorderColor) ? options.selectedIntervalBorderColor : rgb(0, 0.2, 1.0));
 
     // Axes
-    let showTopAxis = (hasval(options) && hasval(options.showTopAxis) ? options.showTopAxis : true);
-    let showBottomAxis = (hasval(options) && hasval(options.showBottomAxis) ? options.showBottomAxis : true);
-    let topTimeZone = (hasval(options) && hasval(options.topTimeZone) ? options.topTimeZone : '+0000');
-    let bottomTimeZone = (hasval(options) && hasval(options.bottomTimeZone) ? options.bottomTimeZone : '+0000');
-    let tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
-    let axisLabelAlign = (hasval(options) && hasval(options.axisLabelAlign) ? options.axisLabelAlign : 0.5);
+    const showTopAxis = (hasval(options) && hasval(options.showTopAxis) ? options.showTopAxis : true);
+    const showBottomAxis = (hasval(options) && hasval(options.showBottomAxis) ? options.showBottomAxis : true);
+    const topTimeZone = (hasval(options) && hasval(options.topTimeZone) ? options.topTimeZone : '+0000');
+    const bottomTimeZone = (hasval(options) && hasval(options.bottomTimeZone) ? options.bottomTimeZone : '+0000');
+    const tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
+    const axisLabelAlign = (hasval(options) && hasval(options.axisLabelAlign) ? options.axisLabelAlign : 0.5);
 
     // Sizing
-    let groupLabelInsets = (hasval(options) && hasval(options.groupLabelInsets) ? options.groupLabelInsets : newInsets(6, 10));
-    let rowLabelInsets = (hasval(options) && hasval(options.rowLabelInsets) ? options.rowLabelInsets : newInsets(0, 35));
-    let rowLabelPaneWidth = (hasval(options) && hasval(options.rowLabelPaneWidth) ? options.rowLabelPaneWidth : 140);
-    let rowSeparatorHeight = (hasval(options) && hasval(options.rowSeparatorHeight) ? options.rowSeparatorHeight : 2);
+    const groupLabelInsets = (hasval(options) && hasval(options.groupLabelInsets) ? options.groupLabelInsets : newInsets(6, 10));
+    const rowLabelInsets = (hasval(options) && hasval(options.rowLabelInsets) ? options.rowLabelInsets : newInsets(0, 35));
+    const rowLabelPaneWidth = (hasval(options) && hasval(options.rowLabelPaneWidth) ? options.rowLabelPaneWidth : 140);
+    const rowSeparatorHeight = (hasval(options) && hasval(options.rowSeparatorHeight) ? options.rowSeparatorHeight : 2);
     let scrollbarWidth = (hasval(options) && hasval(options.scrollbarWidth) ? options.scrollbarWidth : 16);
     scrollbarWidth = showScrollbar ? scrollbarWidth : 0; // if the scrollbar is not showing, set its width to 0
-    let axisPaneHeight = (hasval(options) && hasval(options.axisPaneHeight) ? options.axisPaneHeight : 40);
-    let draggableEdgeWidth = (hasval(options) && hasval(options.draggableEdgeWidth) ? options.draggableEdgeWidth : 6);
-    let snapToDistance = (hasval(options) && hasval(options.snapToDistance) ? options.snapToDistance : 10);
+    const axisPaneHeight = (hasval(options) && hasval(options.axisPaneHeight) ? options.axisPaneHeight : 40);
+    const draggableEdgeWidth = (hasval(options) && hasval(options.draggableEdgeWidth) ? options.draggableEdgeWidth : 6);
+    const snapToDistance = (hasval(options) && hasval(options.snapToDistance) ? options.snapToDistance : 10);
 
     // Event / Selection
-    let allowEventMultiSelection = (hasval(options) && hasval(options.allowEventMultiSelection) ? options.allowEventMultiSelection : true);
-    let selectedIntervalMode = (hasval(options) && hasval(options.selectedIntervalMode) ? options.selectedIntervalMode : 'range');
-    let centerSelectedIntervalOnDoubleClick = (hasval(options) && hasval(options.centerSelectedIntervalOnDoubleClick) ? options.centerSelectedIntervalOnDoubleClick : true);
-    let defaultMouseWheelListener = function (ev: PointerEvent) {
-        let zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
+    const allowEventMultiSelection = (hasval(options) && hasval(options.allowEventMultiSelection) ? options.allowEventMultiSelection : true);
+    const selectedIntervalMode = (hasval(options) && hasval(options.selectedIntervalMode) ? options.selectedIntervalMode : 'range');
+    const centerSelectedIntervalOnDoubleClick = (hasval(options) && hasval(options.centerSelectedIntervalOnDoubleClick) ? options.centerSelectedIntervalOnDoubleClick : true);
+    const defaultMouseWheelListener = function (ev: PointerEvent) {
+        const zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
         timeAxis.zoom(zoomFactor, timeAxis.vAtFrac(xFrac(ev)));
-    }
-    let mouseWheelListener = (hasval(options) && hasval(options.mouseWheelListener) ? options.mouseWheelListener : defaultMouseWheelListener);
+    };
+    const mouseWheelListener = (hasval(options) && hasval(options.mouseWheelListener) ? options.mouseWheelListener : defaultMouseWheelListener);
 
     let outsideManagedUi = false;
     if (!ui) {
-        let outsideManagedUi = false;
+        outsideManagedUi = false;
         ui = new TimelineUi(model, { allowEventMultiSelection: allowEventMultiSelection });
     }
     else {
         // remove old panes (if the ui is being reused)
-        let outsideManagedUi = true;
+        outsideManagedUi = true;
         ui.panes.removeAll();
     }
 
-    let selection = ui.selection;
+    const selection = ui.selection;
 
-    let redraw = function () {
+    const redraw = function () {
         drawable.redraw();
     };
     selection.selectedInterval.changed.on(redraw);
@@ -217,11 +217,11 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     //  cursor doesn't show a vertical or horizontal line)
     // this check just avoids redrawing unncessarily in the easy-to-verify common case where
     // no cursors are defined
-    let redrawCursor = function () {
+    const redrawCursor = function () {
         if (!model.cursors.isEmpty) {
             drawable.redraw();
         }
-    }
+    };
 
     selection.hoveredY.changed.on(redrawCursor);
     selection.hoveredTime_PMILLIS.changed.on(redrawCursor);
@@ -234,25 +234,25 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     // Scroll Pane
 
-    let tickTimeZone = (showTopAxis ? topTimeZone : bottomTimeZone);
-    let contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
+    const tickTimeZone = (showTopAxis ? topTimeZone : bottomTimeZone);
+    const contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
     let contentPaneArgs;
     let contentPane: Pane = null;
 
     if (showScrollbar) {
 
-        let scrollLayout = newVerticalScrollLayout();
-        let scrollable = new Pane(scrollLayout, false);
+        const scrollLayout = newVerticalScrollLayout();
+        const scrollable = new Pane(scrollLayout, false);
         ui.addPane('scroll-content-pane', scrollable);
 
         contentPaneArgs = { drawable: drawable, scrollLayout: scrollLayout, timeAxis: timeAxis, model: model, ui: ui, options: contentPaneOpts };
 
-        let scrollContentPane = newTimelineContentPane(contentPaneArgs);
+        const scrollContentPane = newTimelineContentPane(contentPaneArgs);
         ui.addPane('content-pane', scrollContentPane);
 
         scrollable.addPane(scrollContentPane, 0);
 
-        let scrollbar = newVerticalScrollbar(scrollLayout, drawable, scrollbarOptions);
+        const scrollbar = newVerticalScrollbar(scrollLayout, drawable, scrollbarOptions);
         ui.addPane('scrollbar', scrollbar);
 
         contentPane = new Pane(newColumnLayout(false), false);
@@ -272,27 +272,27 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     // Card Pane Switching Logic
 
-    let timelineCardPane = new Pane(newCardLayout());
+    const timelineCardPane = new Pane(newCardLayout());
     ui.addPane('switch-content-pane', timelineCardPane);
 
-    let maximizedContentPane = new Pane(newRowLayout());
+    const maximizedContentPane = new Pane(newRowLayout());
     ui.addPane('maximize-content-pane', maximizedContentPane);
 
-    let insetMaximizedContentPane = newInsetPane(maximizedContentPane, newInsets(0, scrollbarWidth, 0, 0));
+    const insetMaximizedContentPane = newInsetPane(maximizedContentPane, newInsets(0, scrollbarWidth, 0, 0));
     ui.addPane('inset-maximize-content-pane', insetMaximizedContentPane);
 
-    let contentActive = model.root.maximizedRowGuids.isEmpty;
+    const contentActive = model.root.maximizedRowGuids.isEmpty;
     timelineCardPane.addPane(insetMaximizedContentPane, !contentActive);
     timelineCardPane.addPane(contentPane, contentActive);
 
     setupRowContainerPane(contentPaneArgs, maximizedContentPane, model.root.maximizedRowGuids, true, 'maximized');
 
-    let updateMaximizedRows = function (rowGuid: string, rowIndex: number) {
-        let contentActive = model.root.maximizedRowGuids.isEmpty;
-        timelineCardPane.setLayoutArg(insetMaximizedContentPane, !contentActive);
-        timelineCardPane.setLayoutArg(contentPane, contentActive);
+    const updateMaximizedRows = function (rowGuid: string, rowIndex: number) {
+        const contentActiveInner = model.root.maximizedRowGuids.isEmpty;
+        timelineCardPane.setLayoutArg(insetMaximizedContentPane, !contentActiveInner);
+        timelineCardPane.setLayoutArg(contentPane, contentActiveInner);
         drawable.redraw();
-    }
+    };
 
     model.root.maximizedRowGuids.valueAdded.on(updateMaximizedRows);
     model.root.maximizedRowGuids.valueRemoved.on(updateMaximizedRows);
@@ -300,25 +300,25 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // Overlay and Underlay Panes
     //
 
-    let underlayPane = new Pane(newRowLayout());
+    const underlayPane = new Pane(newRowLayout());
     ui.addPane('underlay-pane', underlayPane);
 
-    let axisInsets = newInsets(0, scrollbarWidth, 0, rowLabelPaneWidth);
+    const axisInsets = newInsets(0, scrollbarWidth, 0, rowLabelPaneWidth);
 
     // top time axis pane
-    let axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive: options.isFuturePositive, timeAxisFormat: options.timeAxisFormat };
+    const axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive: options.isFuturePositive, timeAxisFormat: options.timeAxisFormat };
     if (showTopAxis) {
-        let topAxisPane = newTimeAxisPane(contentPaneArgs, null);
+        const topAxisPane = newTimeAxisPane(contentPaneArgs, null);
         ui.addPane('top-axis-pane', topAxisPane);
         topAxisPane.addPainter(newTimeAxisPainter(timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts));
         underlayPane.addPane(newInsetPane(topAxisPane, axisInsets), 0, { height: axisPaneHeight, width: null });
     }
 
     // pane containing pinned rows specified in TimelineRoot.topPinnedRowGuids
-    let topPinnedPane = new Pane(newRowLayout());
+    const topPinnedPane = new Pane(newRowLayout());
     ui.addPane('top-pinned-pane', topPinnedPane);
 
-    let insetTopPinnedPane = newInsetPane(topPinnedPane, newInsets(0, scrollbarWidth, 0, 0));
+    const insetTopPinnedPane = newInsetPane(topPinnedPane, newInsets(0, scrollbarWidth, 0, 0));
     ui.addPane('inset-top-pinned-pane', insetTopPinnedPane);
 
     setupRowContainerPane(contentPaneArgs, topPinnedPane, model.root.topPinnedRowGuids, false, 'toppinned');
@@ -328,10 +328,10 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     underlayPane.addPane(timelineCardPane, 2, { height: 'pref-max', width: null });
 
     // pane containing pinned rows specified in TimelineRoot.bottomPinnedRowGuids
-    let bottomPinnedPane = new Pane(newRowLayout());
+    const bottomPinnedPane = new Pane(newRowLayout());
     ui.addPane('bottom-pinned-pane', bottomPinnedPane);
 
-    let insetBottomPinnedPane = newInsetPane(bottomPinnedPane, newInsets(0, scrollbarWidth, 0, 0));
+    const insetBottomPinnedPane = newInsetPane(bottomPinnedPane, newInsets(0, scrollbarWidth, 0, 0));
     ui.addPane('inset-bottom-pinned-pane', insetBottomPinnedPane);
 
     setupRowContainerPane(contentPaneArgs, bottomPinnedPane, model.root.bottomPinnedRowGuids, false, 'bottompinned');
@@ -339,32 +339,32 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     // bottom time axis pane
     if (showBottomAxis) {
-        let bottomAxisPane = newTimeAxisPane(contentPaneArgs, null);
+        const bottomAxisPane = newTimeAxisPane(contentPaneArgs, null);
         ui.addPane('bottom-axis-pane', bottomAxisPane);
         bottomAxisPane.addPainter(newTimeAxisPainter(timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts));
         underlayPane.addPane(newInsetPane(bottomAxisPane, axisInsets), 4, { height: axisPaneHeight, width: null });
     }
 
-    let updateMillisPerPx = function () {
-        let w = underlayPane.viewport.w - axisInsets.left - axisInsets.right;
+    const updateMillisPerPx = function () {
+        const w = underlayPane.viewport.w - axisInsets.left - axisInsets.right;
         ui.millisPerPx.value = timeAxis.tSize_MILLIS / w;
     };
     underlayPane.viewportChanged.on(updateMillisPerPx);
     timeAxis.limitsChanged.on(updateMillisPerPx);
 
-    let timelinePane = new TimelinePane(newOverlayLayout(), model, ui);
+    const timelinePane = new TimelinePane(newOverlayLayout(), model, ui);
     ui.addPane('timeline-pane', timelinePane);
     timelinePane.addPainter(newBackgroundPainter(bgColor));
     timelinePane.addPane(underlayPane, true);
 
     if (selectedIntervalMode === 'single' || selectedIntervalMode === 'single-unmodifiable') {
-        let overlayPane = new Pane(null, false, alwaysTrue);
+        const overlayPane = new Pane(null, false, alwaysTrue);
         ui.addPane('overlay-pane', overlayPane);
         overlayPane.addPainter(newTimelineSingleSelectionPainter(timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor));
         timelinePane.addPane(newInsetPane(overlayPane, axisInsets, null, false));
     }
     else if (selectedIntervalMode === 'range' || selectedIntervalMode === 'range-unmodifiable') {
-        let overlayPane = new Pane(null, false, alwaysTrue);
+        const overlayPane = new Pane(null, false, alwaysTrue);
         ui.addPane('overlay-pane', overlayPane);
         overlayPane.addPainter(newTimelineRangeSelectionPainter(timeAxis, selection.selectedInterval, selectedIntervalBorderColor, selectedIntervalFillColor));
         timelinePane.addPane(newInsetPane(overlayPane, axisInsets, null, false));
@@ -373,17 +373,17 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // Enable double click to center selection on mouse
 
     if (centerSelectedIntervalOnDoubleClick) {
-        let doubleClick = function (ev: PointerEvent) {
+        const doubleClick = function (ev: PointerEvent) {
             if (selectedIntervalMode === 'single') {
                 if (ev.clickCount > 1) {
-                    let time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
+                    const time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
                     selection.selectedInterval.setInterval(time_PMILLIS, time_PMILLIS);
                 }
             }
             else if (selectedIntervalMode === 'range') {
                 if (ev.clickCount > 1) {
-                    let time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
-                    let offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5 * selection.selectedInterval.duration_MILLIS;
+                    const time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
+                    const offset_PMILLIS = selection.selectedInterval.start_PMILLIS + 0.5 * selection.selectedInterval.duration_MILLIS;
                     selection.selectedInterval.pan(time_PMILLIS - offset_PMILLIS);
                 }
             }
@@ -393,7 +393,9 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     timelinePane.dispose.on(function () {
         // only dispose the ui if we created it (and this manage its lifecycle)
-        if (!outsideManagedUi) ui.dispose.fire();
+        if (!outsideManagedUi) {
+            ui.dispose.fire();
+        }
         selection.selectedInterval.changed.off(redraw);
         selection.hoveredEvent.changed.off(redraw);
         selection.hoveredY.changed.off(redrawCursor);
@@ -415,20 +417,20 @@ function newTimeIntervalMask(timeAxis: TimeAxis1D, interval: TimeIntervalModel, 
 
     if (selectedIntervalMode === 'range') {
         return function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
-            let time_PMILLIS = timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
+            const time_PMILLIS = timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
 
             // allow a 10 pixel selection buffer to make it easier to grab ends of the selection
-            let buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+            const buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
 
             return interval.overlaps(time_PMILLIS - buffer_MILLIS, time_PMILLIS + buffer_MILLIS);
         };
     }
     else if (selectedIntervalMode === 'single') {
         return function (viewport: BoundsUnmodifiable, i: number, j: number): boolean {
-            let time_PMILLIS = timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
+            const time_PMILLIS = timeAxis.tAtFrac_PMILLIS(viewport.xFrac(i));
 
             // allow a 10 pixel selection buffer to make it easier to grab the selection
-            let buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
+            const buffer_MILLIS = timeAxis.tSize_MILLIS / viewport.w * 10;
 
             return time_PMILLIS < interval.cursor_PMILLIS + buffer_MILLIS && time_PMILLIS > interval.cursor_PMILLIS - buffer_MILLIS;
         };
@@ -458,52 +460,58 @@ function attachTimeAxisMouseListeners(pane: Pane, axis: Axis1D, args: TimelineCo
 }
 
 function newTimeAxisPane(args: TimelineContentPaneArguments, row: TimelineRowModel): Pane {
-    let timeAxis = args.timeAxis;
-    let ui = args.ui;
-    let draggableEdgeWidth = args.options.draggableEdgeWidth;
-    let scrollLayout = args.scrollLayout;
-    let drawable = args.drawable;
-    let selectedIntervalMode = args.options.selectedIntervalMode;
+    const timeAxis = args.timeAxis;
+    const ui = args.ui;
+    const draggableEdgeWidth = args.options.draggableEdgeWidth;
+    const scrollLayout = args.scrollLayout;
+    const drawable = args.drawable;
+    const selectedIntervalMode = args.options.selectedIntervalMode;
 
-    let input = ui.input;
+    const input = ui.input;
 
-    let axisPane = new Pane(newOverlayLayout());
-    if (scrollLayout) attachTimelineVerticalScrollMouseListeners(axisPane, scrollLayout, drawable);
+    const axisPane = new Pane(newOverlayLayout());
+    if (scrollLayout) {
+        attachTimelineVerticalScrollMouseListeners(axisPane, scrollLayout, drawable);
+    }
     attachTimeAxisMouseListeners(axisPane, timeAxis, args);
 
-    let onMouseMove = function (ev: PointerEvent) {
-        let time_PMILLIS = timeAxis.tAtFrac_PMILLIS(xFrac(ev));
+    const onMouseMove = function (ev: PointerEvent) {
+        const time_PMILLIS = timeAxis.tAtFrac_PMILLIS(xFrac(ev));
         input.mouseMove.fire(ev);
         input.timeHover.fire(time_PMILLIS, ev);
-        if (row) input.rowHover.fire(row, ev);
+        if (row) {
+            input.rowHover.fire(row, ev);
+        }
     };
     axisPane.mouseMove.on(onMouseMove);
 
-    let onMouseExit = function (ev: PointerEvent) {
+    const onMouseExit = function (ev: PointerEvent) {
         input.mouseExit.fire(ev);
         input.timeHover.fire(null, ev);
-        if (row) input.rowHover.fire(null, ev);
+        if (row) {
+            input.rowHover.fire(null, ev);
+        }
     };
     axisPane.mouseExit.on(onMouseExit);
 
-    let onMouseDown = function (ev: PointerEvent) {
+    const onMouseDown = function (ev: PointerEvent) {
         input.mouseDown.fire(ev);
     };
     axisPane.mouseDown.on(onMouseDown);
 
-    let onMouseUp = function (ev: PointerEvent) {
+    const onMouseUp = function (ev: PointerEvent) {
         input.mouseUp.fire(ev);
     };
     axisPane.mouseUp.on(onMouseUp);
 
-    let onContextMenu = function (ev: PointerEvent) {
+    const onContextMenu = function (ev: PointerEvent) {
         input.contextMenu.fire(ev);
     };
     axisPane.contextMenu.on(onContextMenu);
 
     if (selectedIntervalMode === 'single' || selectedIntervalMode === 'range') {
-        let selection = ui.selection;
-        let selectedIntervalPane = new Pane(null, true, newTimeIntervalMask(timeAxis, selection.selectedInterval, selectedIntervalMode));
+        const selection = ui.selection;
+        const selectedIntervalPane = new Pane(null, true, newTimeIntervalMask(timeAxis, selection.selectedInterval, selectedIntervalMode));
         attachTimeSelectionMouseListeners(selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode);
         axisPane.addPane(selectedIntervalPane, false);
 
@@ -536,9 +544,9 @@ function attachTimeSelectionMouseListeners(pane: Pane,
 
     if (selectedIntervalMode === 'single') {
 
-        let chooseDragMode = function chooseDragMode(ev: PointerEvent): string {
+        const chooseDragMode = function (ev: PointerEvent): string {
             return 'center';
-        }
+        };
 
         attachTimeIntervalSelectionMouseListeners(pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode);
 
@@ -546,7 +554,7 @@ function attachTimeSelectionMouseListeners(pane: Pane,
     else if (selectedIntervalMode === 'range') {
 
         // Edges are draggable when interval is at least this wide
-        let minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+        const minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
 
         // When dragging an edge, the interval cannot be made narrower than this
         //
@@ -554,17 +562,17 @@ function attachTimeSelectionMouseListeners(pane: Pane,
         // cover floating-point precision loss -- so a user can't accidentally make
         // the interval so narrow that it can't easily be widened again.
         //
-        let minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
+        const minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
 
-        let chooseDragMode = function chooseDragMode(ev: PointerEvent): string {
-            let intervalWidth = (interval.duration_MILLIS) * ev.paneViewport.w / timeAxis.vSize;
+        const chooseDragMode = function (ev: PointerEvent): string {
+            const intervalWidth = (interval.duration_MILLIS) * ev.paneViewport.w / timeAxis.vSize;
             if (intervalWidth < minIntervalWidthForEdgeDraggability) {
                 // If interval isn't very wide, don't try to allow edge dragging
                 return 'center';
             }
             else {
-                let time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
-                let mouseOffset = (time_PMILLIS - interval.start_PMILLIS) * ev.paneViewport.w / timeAxis.vSize;
+                const time_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
+                const mouseOffset = (time_PMILLIS - interval.start_PMILLIS) * ev.paneViewport.w / timeAxis.vSize;
                 if (mouseOffset < draggableEdgeWidth) {
                     // If mouse is near the left edge, drag the interval's start-time
                     return 'start';
@@ -593,14 +601,14 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
     chooseDragMode: (ev: PointerEvent) => string) {
 
     // see comments in attachTimeSelectionMouseListeners( ... )
-    let minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
-    let minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
+    const minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
+    const minIntervalWidthWhenDraggingEdge = minIntervalWidthForEdgeDraggability + 1;
 
     // Hook up input notifications
     //
 
     pane.mouseWheel.on(function (ev: PointerEvent) {
-        let zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
+        const zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
         timeAxis.zoom(zoomFactor, timeAxis.vAtFrac(xFrac(ev)));
     });
 
@@ -617,7 +625,7 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
 
     pane.mouseMove.on(function (ev: PointerEvent) {
         if (!dragMode) {
-            let mouseCursors = { 'center': 'move', 'start': 'w-resize', 'end': 'e-resize' };
+            const mouseCursors = { 'center': 'move', 'start': 'w-resize', 'end': 'e-resize' };
             pane.mouseCursor = mouseCursors[chooseDragMode(ev)];
         }
     });
@@ -635,7 +643,7 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
 
     let dragPointer_PMILLIS: number = null;
 
-    let updateDragPointer = function (ev: PointerEvent) {
+    const updateDragPointer = function (ev: PointerEvent) {
         if (hasval(dragMode)) {
             dragPointer_PMILLIS = timeAtPointer_PMILLIS(timeAxis, ev);
         }
@@ -647,17 +655,17 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
     // Dragging interval-center
     //
 
-    let grabCenter = function () {
+    const grabCenter = function () {
         if (dragMode === 'center') {
             dragOffset_MILLIS = dragPointer_PMILLIS - interval.start_PMILLIS;
         }
     };
     pane.mouseDown.on(grabCenter);
 
-    let dragCenter = function () {
+    const dragCenter = function () {
         if (dragMode === 'center') {
-            let newStart_PMILLIS = (dragPointer_PMILLIS - dragOffset_MILLIS);
-            let newEnd_PMILLIS = interval.end_PMILLIS + (newStart_PMILLIS - interval.start_PMILLIS);
+            const newStart_PMILLIS = (dragPointer_PMILLIS - dragOffset_MILLIS);
+            const newEnd_PMILLIS = interval.end_PMILLIS + (newStart_PMILLIS - interval.start_PMILLIS);
             interval.setInterval(newStart_PMILLIS, newEnd_PMILLIS);
         }
     };
@@ -667,17 +675,17 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
     // Dragging interval-start
     //
 
-    let grabStart = function () {
+    const grabStart = function () {
         if (dragMode === 'start') {
             dragOffset_MILLIS = dragPointer_PMILLIS - interval.start_PMILLIS;
         }
     };
     pane.mouseDown.on(grabStart);
 
-    let dragStart = function () {
+    const dragStart = function () {
         if (dragMode === 'start') {
-            let wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
-            let newStart_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
+            const wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
+            const newStart_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
             interval.start_PMILLIS = Math.min(interval.end_PMILLIS - wMin_MILLIS, newStart_PMILLIS);
         }
     };
@@ -687,17 +695,17 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
     // Dragging interval-end
     //
 
-    let grabEnd = function () {
+    const grabEnd = function () {
         if (dragMode === 'end') {
             dragOffset_MILLIS = dragPointer_PMILLIS - interval.end_PMILLIS;
         }
     };
     pane.mouseDown.on(grabEnd);
 
-    let dragEnd = function () {
+    const dragEnd = function () {
         if (dragMode === 'end') {
-            let wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
-            let newEnd_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
+            const wMin_MILLIS = minIntervalWidthWhenDraggingEdge * timeAxis.vSize / pane.viewport.w;
+            const newEnd_PMILLIS = dragPointer_PMILLIS - dragOffset_MILLIS;
             interval.end_PMILLIS = Math.max(interval.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS);
             interval.cursor_PMILLIS = interval.end_PMILLIS;
         }
@@ -717,22 +725,22 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
 
 export function newTimelineSingleSelectionPainter(timeAxis: TimeAxis1D, interval: TimeIntervalModel, borderColor: Color, fillColor: Color): Painter {
 
-    let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let u_Color = new UniformColor(program, 'u_Color');
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const u_Color = new UniformColor(program, 'u_Color');
 
     // holds vertices for fill and border
-    let coords = new Float32Array(12 + 8);
-    let coordsBuffer = newDynamicBuffer();
+    const coords = new Float32Array(12 + 8);
+    const coordsBuffer = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
         if (hasval(interval.cursor_PMILLIS)) {
 
-            let fracSelection = timeAxis.tFrac(interval.cursor_PMILLIS);
-            let fracWidth = 1 / viewport.w;
-            let fracHeight = 1 / viewport.h;
-            let thickWidth = 3 / viewport.w;
-            let highlightWidth = 7 / viewport.w;
+            const fracSelection = timeAxis.tFrac(interval.cursor_PMILLIS);
+            const fracWidth = 1 / viewport.w;
+            const fracHeight = 1 / viewport.h;
+            const thickWidth = 3 / viewport.w;
+            const highlightWidth = 7 / viewport.w;
             let index = 0;
 
             // fill vertices
@@ -771,23 +779,23 @@ export function newTimelineSingleSelectionPainter(timeAxis: TimeAxis1D, interval
 
 function newTimelineRangeSelectionPainter(timeAxis: TimeAxis1D, interval: TimeIntervalModel, borderColor: Color, fillColor: Color): Painter {
 
-    let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let u_Color = new UniformColor(program, 'u_Color');
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const u_Color = new UniformColor(program, 'u_Color');
 
     // holds vertices for fill and border
-    let coords = new Float32Array(12 + 8 + 48);
-    let coordsBuffer = newDynamicBuffer();
+    const coords = new Float32Array(12 + 8 + 48);
+    const coordsBuffer = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
         if (hasval(interval.start_PMILLIS) && hasval(interval.end_PMILLIS)) {
 
-            let fracStart = timeAxis.tFrac(interval.start_PMILLIS);
-            let fracEnd = timeAxis.tFrac(interval.end_PMILLIS);
-            let fracSelection = timeAxis.tFrac(interval.cursor_PMILLIS);
-            let fracWidth = 1 / viewport.w;
-            let fracHeight = 1 / viewport.h;
-            let thickWidth = 3 / viewport.w;
+            const fracStart = timeAxis.tFrac(interval.start_PMILLIS);
+            const fracEnd = timeAxis.tFrac(interval.end_PMILLIS);
+            const fracSelection = timeAxis.tFrac(interval.cursor_PMILLIS);
+            const fracWidth = 1 / viewport.w;
+            const fracHeight = 1 / viewport.h;
+            const thickWidth = 3 / viewport.w;
             let index = 0;
 
             // fill vertices
@@ -832,38 +840,38 @@ function newTimelineRangeSelectionPainter(timeAxis: TimeAxis1D, interval: TimeIn
 
 function newGroupCollapseExpandArrowPainter(group: TimelineGroupModel) {
 
-    let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
-    let u_Color = new UniformColor(program, 'u_Color');
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const u_Color = new UniformColor(program, 'u_Color');
 
     // holds vertices for triangle
-    let coords = new Float32Array(6);
-    let coordsBuffer = newDynamicBuffer();
+    const coords = new Float32Array(6);
+    const coordsBuffer = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
         let sizeFracX = 0.5;
-        let sizeX = sizeFracX * viewport.w;
-        let sizeY = sizeX * Math.sqrt(3) / 2;
+        const sizeX = sizeFracX * viewport.w;
+        const sizeY = sizeX * Math.sqrt(3) / 2;
         let sizeFracY = sizeY / viewport.h;
 
-        let bufferFracX = 0.05;
-        let bufferSize = bufferFracX * viewport.w;
-        let bufferFracY = bufferSize / viewport.h;
+        const bufferFracX = 0.05;
+        const bufferSize = bufferFracX * viewport.w;
+        const bufferFracY = bufferSize / viewport.h;
 
-        let centerFracX = 0.5;
-        let centerFracY = bufferFracY + sizeFracY / 2;
+        const centerFracX = 0.5;
+        const centerFracY = bufferFracY + sizeFracY / 2;
 
         if (group.collapsed) {
 
             sizeFracX = sizeY / viewport.w;
             sizeFracY = sizeX / viewport.h;
 
-            let fracStartX = centerFracX - sizeFracX / 2;
-            let fracEndX = centerFracX + sizeFracX / 2;
+            const fracStartX = centerFracX - sizeFracX / 2;
+            const fracEndX = centerFracX + sizeFracX / 2;
 
-            let fracStartY = 1 - (centerFracY - sizeFracY / 2);
-            let fracEndY = 1 - (centerFracY + sizeFracY / 2);
+            const fracStartY = 1 - (centerFracY - sizeFracY / 2);
+            const fracEndY = 1 - (centerFracY + sizeFracY / 2);
 
             let index = 0;
             coords[index++] = fracStartX;
@@ -873,11 +881,11 @@ function newGroupCollapseExpandArrowPainter(group: TimelineGroupModel) {
             coords[index++] = fracStartX;
             coords[index++] = fracEndY;
         } else {
-            let fracStartX = centerFracX - sizeFracX / 2;
-            let fracEndX = centerFracX + sizeFracX / 2;
+            const fracStartX = centerFracX - sizeFracX / 2;
+            const fracEndX = centerFracX + sizeFracX / 2;
 
-            let fracStartY = 1 - (centerFracY - sizeFracY / 2);
-            let fracEndY = 1 - (centerFracY + sizeFracY / 2);
+            const fracStartY = 1 - (centerFracY - sizeFracY / 2);
+            const fracEndY = 1 - (centerFracY + sizeFracY / 2);
 
             let index = 0;
             coords[index++] = fracStartX;
@@ -897,7 +905,7 @@ function newGroupCollapseExpandArrowPainter(group: TimelineGroupModel) {
 
         a_XyFrac.disable(gl);
         program.endUse(gl);
-    }
+    };
 }
 
 interface TimelineContentPaneOptions {
@@ -941,60 +949,60 @@ interface TimelineContentPaneArguments {
 }
 
 function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
-    let drawable = args.drawable;
-    let scrollLayout = args.scrollLayout;
-    let timeAxis = args.timeAxis;
-    let model = args.model;
-    let ui = args.ui;
-    let options = args.options;
+    const drawable = args.drawable;
+    const scrollLayout = args.scrollLayout;
+    const timeAxis = args.timeAxis;
+    const model = args.model;
+    const ui = args.ui;
+    const options = args.options;
 
-    let root = model.root;
+    const root = model.root;
 
-    let selectedIntervalMode = options.selectedIntervalMode;
-    let rowPaneFactoryChooser = options.rowPaneFactoryChooser;
+    const selectedIntervalMode = options.selectedIntervalMode;
+    const rowPaneFactoryChooser = options.rowPaneFactoryChooser;
 
-    let font = options.font;
-    let fgColor = options.fgColor;
-    let rowLabelColor = options.rowLabelColor;
-    let groupLabelColor = options.groupLabelColor;
-    let groupHighlightColor = options.groupHighlightColor;
-    let axisLabelColor = options.axisLabelColor;
-    let bgColor = options.bgColor;
-    let rowBgColor = options.rowBgColor;
-    let rowAltBgColor = options.rowAltBgColor;
-    let gridColor = options.gridColor;
+    const font = options.font;
+    const fgColor = options.fgColor;
+    const rowLabelColor = options.rowLabelColor;
+    const groupLabelColor = options.groupLabelColor;
+    const groupHighlightColor = options.groupHighlightColor;
+    const axisLabelColor = options.axisLabelColor;
+    const bgColor = options.bgColor;
+    const rowBgColor = options.rowBgColor;
+    const rowAltBgColor = options.rowAltBgColor;
+    const gridColor = options.gridColor;
 
-    let gridTimeZone = options.gridTimeZone;
-    let gridTickSpacing = options.gridTickSpacing;
+    const gridTimeZone = options.gridTimeZone;
+    const gridTickSpacing = options.gridTickSpacing;
 
-    let groupLabelInsets = options.groupLabelInsets;
-    let rowLabelInsets = options.rowLabelInsets;
-    let rowLabelPaneWidth = options.rowLabelPaneWidth;
-    let rowSeparatorHeight = options.rowSeparatorHeight;
+    const groupLabelInsets = options.groupLabelInsets;
+    const rowLabelInsets = options.rowLabelInsets;
+    const rowLabelPaneWidth = options.rowLabelPaneWidth;
+    const rowSeparatorHeight = options.rowSeparatorHeight;
 
-    let draggableEdgeWidth = options.draggableEdgeWidth;
-    let snapToDistance = options.snapToDistance;
+    const draggableEdgeWidth = options.draggableEdgeWidth;
+    const snapToDistance = options.snapToDistance;
 
-    let textureRenderer = new TextureRenderer();
-    let createGroupLabelTexture = createTextTextureFactory(font);
-    let createRowLabelTexture = createTextTextureFactory(font);
+    const textureRenderer = new TextureRenderer();
+    const createGroupLabelTexture = createTextTextureFactory(font);
+    const createRowLabelTexture = createTextTextureFactory(font);
 
     // Group panes
     //
 
-    let timelineContentPane = new Pane(newRowLayout());
+    const timelineContentPane = new Pane(newRowLayout());
 
-    let groupHeaderPanes: StringMap<Pane> = {};
-    let groupContentPanes: StringMap<Pane> = {};
+    const groupHeaderPanes: StringMap<Pane> = {};
+    const groupContentPanes: StringMap<Pane> = {};
 
-    let addGroup = function (groupGuid: string, groupIndex: number) {
-        let group = model.group(groupGuid);
+    const addGroup = function (groupGuid: string, groupIndex: number) {
+        const group = model.group(groupGuid);
 
-        let groupLabel = new Label(group.label, font, groupLabelColor);
-        let groupLabelPane = new Pane(<Layout>{ updatePrefSize: fitToLabel(groupLabel) }, false);
+        const groupLabel = new Label(group.label, font, groupLabelColor);
+        const groupLabelPane = new Pane(<Layout>{ updatePrefSize: fitToLabel(groupLabel) }, false);
         groupLabelPane.addPainter(newLabelPainter(groupLabel, 0, 1, 0, 1));
 
-        let groupArrowPane = new Pane({
+        const groupArrowPane = new Pane({
             updatePrefSize: <LayoutPhase1>function (parentPrefSize: Size) {
                 parentPrefSize.w = 16;
                 parentPrefSize.h = 0;
@@ -1002,50 +1010,50 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         }, false);
         groupArrowPane.addPainter(newGroupCollapseExpandArrowPainter(group));
 
-        let groupPane = new Pane(newColumnLayout(), false);
+        const groupPane = new Pane(newColumnLayout(), false);
         groupPane.addPane(groupArrowPane, 0);
         groupPane.addPane(groupLabelPane, 1);
 
-        let groupButton = newInsetPane(groupPane, groupLabelInsets, bgColor);
+        const groupButton = newInsetPane(groupPane, groupLabelInsets, bgColor);
 
 
-        let redrawLabel = function () {
+        const redrawLabel = function () {
             groupLabel.text = group.label;
             drawable.redraw();
-        }
+        };
         group.attrsChanged.on(redrawLabel);
         /// handle rollup group row ///
 
-        let groupHeaderHighlight = new Pane(newColumnLayout());
+        const groupHeaderHighlight = new Pane(newColumnLayout());
         groupHeaderHighlight.addPane(newSolidPane(groupHighlightColor), 1, { width: 6, height: null });
 
-        let groupHeaderStripe = new Pane(newRowLayout());
+        const groupHeaderStripe = new Pane(newRowLayout());
         groupHeaderStripe.addPane(new Pane(null), 0, { height: null });
         groupHeaderStripe.addPane(newSolidPane(groupLabelColor), 1, { height: 1 });
         groupHeaderStripe.addPane(new Pane(null), 2, { height: null });
 
-        let rollupRow = model.row(group.rollupGuid);
+        const rollupRow = model.row(group.rollupGuid);
         let groupHeaderPane: Pane = null;
         let groupHeaderUnderlay: Pane = null;
         if (rollupRow) {
 
-            let rowBackgroundPanes = newRowBackgroundPanes(args, group.rowGuids, rollupRow);
-            let rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
-            let rowInsetPane = rowBackgroundPanes.rowInsetPane;
+            const rowBackgroundPanes = newRowBackgroundPanes(args, group.rowGuids, rollupRow);
+            const rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+            const rowInsetPane = rowBackgroundPanes.rowInsetPane;
 
-            let rollupUi = ui.rowUi(rollupRow.rowGuid);
+            const rollupUi = ui.rowUi(rollupRow.rowGuid);
 
             // expose panes in api via TimelineRowUi
             rollupUi.addPane('background', rowBackgroundPane);
             rollupUi.addPane('inset', rowInsetPane);
 
-            let rollupDataAxis = rollupRow.dataAxis;
+            const rollupDataAxis = rollupRow.dataAxis;
 
             let rollupContentPane: Pane = null;
             let rollupPaneFactory: TimelineRowPaneFactory = null;
-            let rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false, mouseWheelListener: args.options.mouseWheelListener };
-            let refreshRollupContentPane = function () {
-                let newRollupPaneFactory = (rollupUi.paneFactory || rowPaneFactoryChooser(rollupRow));
+            const rollupContentOptions = { timelineFont: font, timelineFgColor: fgColor, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, isMaximized: false, mouseWheelListener: args.options.mouseWheelListener };
+            const refreshRollupContentPane = function () {
+                const newRollupPaneFactory = (rollupUi.paneFactory || rowPaneFactoryChooser(rollupRow));
                 if (newRollupPaneFactory !== rollupPaneFactory) {
                     if (rollupContentPane) {
                         rollupContentPane.dispose.fire();
@@ -1068,7 +1076,7 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             rollupRow.timeseriesGuids.valueRemoved.on(refreshRollupContentPane);
             refreshRollupContentPane();
 
-            let groupButtonHeaderUnderlay = new Pane(newColumnLayout());
+            const groupButtonHeaderUnderlay = new Pane(newColumnLayout());
             groupButtonHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
             groupButtonHeaderUnderlay.addPane(groupButton, 1);
             groupButtonHeaderUnderlay.addPane(groupHeaderStripe, 2, { ignoreHeight: true });
@@ -1087,9 +1095,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             groupHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
             groupHeaderUnderlay.addPane(groupButton, 1);
             groupHeaderUnderlay.addPane(groupHeaderStripe, 2, { ignoreHeight: true });
-            groupHeaderUnderlay
-            let groupHeaderOverlay = newTimeAxisPane(args, null);
-            let groupHeaderOverlayInsets = newInsets(0, 0, 0, rowLabelPaneWidth);
+            const groupHeaderOverlay = newTimeAxisPane(args, null);
+            const groupHeaderOverlayInsets = newInsets(0, 0, 0, rowLabelPaneWidth);
 
             groupHeaderPane = new Pane(newOverlayLayout());
             groupHeaderPane.addPane(groupHeaderUnderlay, true);
@@ -1097,10 +1104,10 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
         }
 
-        let groupContentPane = new Pane(newRowLayout());
+        const groupContentPane = new Pane(newRowLayout());
 
         timelineContentPane.updateLayoutArgs(function (layoutArg: any): any {
-            let shift = (isNumber(layoutArg) && layoutArg >= 2 * groupIndex);
+            const shift = (isNumber(layoutArg) && layoutArg >= 2 * groupIndex);
             return (shift ? layoutArg + 2 : layoutArg);
         });
         timelineContentPane.addPane(groupHeaderPane, 2 * groupIndex);
@@ -1108,16 +1115,16 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         groupHeaderPanes[groupGuid] = groupHeaderPane;
         groupContentPanes[groupGuid] = groupContentPane;
 
-        let groupAttrsChanged = function (group: TimelineGroup) {
-            let groupContentLayoutOpts = timelineContentPane.layoutOptions(groupContentPane);
-            let groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
+        const groupAttrsChanged = function (timelineGroup: TimelineGroup) {
+            const groupContentLayoutOpts = timelineContentPane.layoutOptions(groupContentPane);
+            const groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
             let redraw = false;
-            if (group.highlighted !== (!groupHighlightLayoutOpts.hide)) {
-                groupHighlightLayoutOpts.hide = !group.highlighted;
+            if (timelineGroup.highlighted !== (!groupHighlightLayoutOpts.hide)) {
+                groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;
                 redraw = true;
             }
-            if (group.collapsed !== groupContentLayoutOpts.hide) {
-                groupContentLayoutOpts.hide = group.collapsed;
+            if (timelineGroup.collapsed !== groupContentLayoutOpts.hide) {
+                groupContentLayoutOpts.hide = timelineGroup.collapsed;
                 redraw = true;
             }
             if (redraw) {
@@ -1150,28 +1157,28 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     root.groupGuids.forEach(addGroup);
     root.groupGuids.valueAdded.on(addGroup);
 
-    let moveGroup = function (groupGuid: string, groupOldIndex: number, groupNewIndex: number) {
-        let nMin = Math.min(groupOldIndex, groupNewIndex);
-        let nMax = Math.max(groupOldIndex, groupNewIndex);
+    const moveGroup = function (groupGuid: string, groupOldIndex: number, groupNewIndex: number) {
+        const nMin = Math.min(groupOldIndex, groupNewIndex);
+        const nMax = Math.max(groupOldIndex, groupNewIndex);
         for (let n = nMin; n <= nMax; n++) {
-            let groupGuid = root.groupGuids.valueAt(n);
-            timelineContentPane.setLayoutArg(groupHeaderPanes[groupGuid], 2 * n);
-            timelineContentPane.setLayoutArg(groupContentPanes[groupGuid], 2 * n + 1);
+            const groupGuidTemp = root.groupGuids.valueAt(n);
+            timelineContentPane.setLayoutArg(groupHeaderPanes[groupGuidTemp], 2 * n);
+            timelineContentPane.setLayoutArg(groupContentPanes[groupGuidTemp], 2 * n + 1);
         }
 
         drawable.redraw();
     };
     root.groupGuids.valueMoved.on(moveGroup);
 
-    let removeGroup = function (groupGuid: string, groupIndex: number) {
-        let contentPane: Pane = groupContentPanes[groupGuid];
-        let headerPane: Pane = groupHeaderPanes[groupGuid];
+    const removeGroup = function (groupGuid: string, groupIndex: number) {
+        const contentPane: Pane = groupContentPanes[groupGuid];
+        const headerPane: Pane = groupHeaderPanes[groupGuid];
         contentPane.dispose.fire();
         headerPane.dispose.fire();
         timelineContentPane.removePane(contentPane);
         timelineContentPane.removePane(headerPane);
         timelineContentPane.updateLayoutArgs(function (layoutArg: any): any {
-            let shift = (isNumber(layoutArg) && layoutArg > 2 * groupIndex + 1);
+            const shift = (isNumber(layoutArg) && layoutArg > 2 * groupIndex + 1);
             return (shift ? layoutArg - 2 : layoutArg);
         });
         delete groupHeaderPanes[groupGuid];
@@ -1184,11 +1191,11 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     // Handle listing for hidden property
     //
 
-    let groupAttrsChangedListeners = {};
+    const groupAttrsChangedListeners = {};
 
-    let attachGroupAttrsChangedListener = function (groupGuid: string, groupIndex: number) {
-        let group = model.group(groupGuid);
-        let groupAttrsChangedListener = function () {
+    const attachGroupAttrsChangedListener = function (groupGuid: string, groupIndex: number) {
+        const group = model.group(groupGuid);
+        const groupAttrsChangedListener = function () {
             if (hasval(group.hidden) && hasval(groupContentPanes[groupGuid])) {
 
                 timelineContentPane.layoutOptions(groupContentPanes[groupGuid]).hide = group.hidden;
@@ -1200,10 +1207,10 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         group.attrsChanged.on(groupAttrsChangedListener);
     };
 
-    let unattachGroupAttrsChangedListener = function (groupGuid: string, groupIndex: number) {
-        let group = model.group(groupGuid);
+    const unattachGroupAttrsChangedListener = function (groupGuid: string, groupIndex: number) {
+        const group = model.group(groupGuid);
         group.attrsChanged.off(groupAttrsChangedListeners[groupGuid]);
-    }
+    };
 
     root.groupGuids.forEach(attachGroupAttrsChangedListener);
     root.groupGuids.valueAdded.on(attachGroupAttrsChangedListener);
@@ -1226,27 +1233,27 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
 function newRowBackgroundPainter(args: TimelineContentPaneArguments, guidList: OrderedStringSet, row: TimelineRowModel) {
     return function (gl: WebGLRenderingContext) {
-        let color = hasval(row.bgColor) ? row.bgColor : (guidList.indexOf(row.rowGuid) % 2 ? args.options.rowBgColor : args.options.rowAltBgColor);
+        const color = hasval(row.bgColor) ? row.bgColor : (guidList.indexOf(row.rowGuid) % 2 ? args.options.rowBgColor : args.options.rowAltBgColor);
         gl.clearColor(color.r, color.g, color.b, color.a);
         gl.clear(GL.COLOR_BUFFER_BIT);
     };
 }
 
 function newRowBackgroundPanes(args: TimelineContentPaneArguments, guidList: OrderedStringSet, row: TimelineRowModel) {
-    let rowBackgroundPane = newTimeAxisPane(args, row);
+    const rowBackgroundPane = newTimeAxisPane(args, row);
     rowBackgroundPane.addPainter(newRowBackgroundPainter(args, guidList, row));
 
-    let timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor, referenceDate: args.options.referenceDate };
+    const timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor, referenceDate: args.options.referenceDate };
     rowBackgroundPane.addPainter(newTimeGridPainter(args.timeAxis, false, args.options.gridTimeZone, timeGridOpts));
 
-    let rowInsetTop = args.options.rowSeparatorHeight / 2;
-    let rowInsetBottom = args.options.rowSeparatorHeight - rowInsetTop;
-    let rowInsetPane = new Pane(newInsetLayout(newInsets(rowInsetTop, 0, rowInsetBottom, 0)), false);
+    const rowInsetTop = args.options.rowSeparatorHeight / 2;
+    const rowInsetBottom = args.options.rowSeparatorHeight - rowInsetTop;
+    const rowInsetPane = new Pane(newInsetLayout(newInsets(rowInsetTop, 0, rowInsetBottom, 0)), false);
     rowInsetPane.addPainter(newBorderPainter(args.options.bgColor, { thickness: rowInsetTop, drawRight: false, drawLeft: false, drawBottom: false }));
     rowInsetPane.addPainter(newBorderPainter(args.options.bgColor, { thickness: rowInsetBottom, drawRight: false, drawLeft: false, drawTop: false }));
     rowBackgroundPane.addPane(rowInsetPane, true);
 
-    let rowOverlayPane = new Pane(null, false);
+    const rowOverlayPane = new Pane(null, false);
     rowOverlayPane.addPainter(newBorderPainter(args.options.rowLabelColor, { drawRight: false, drawTop: false, drawBottom: false }));
     rowBackgroundPane.addPane(rowOverlayPane, false);
 
@@ -1255,46 +1262,46 @@ function newRowBackgroundPanes(args: TimelineContentPaneArguments, guidList: Ord
 
 function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: Pane, guidList: OrderedStringSet, isMaximized: boolean, keyPrefix: string) {
 
-    let drawable = args.drawable;
-    let scrollLayout = args.scrollLayout;
-    let timeAxis = args.timeAxis;
-    let model = args.model;
-    let ui = args.ui;
-    let options = args.options;
+    const drawable = args.drawable;
+    const scrollLayout = args.scrollLayout;
+    const timeAxis = args.timeAxis;
+    const model = args.model;
+    const ui = args.ui;
+    const options = args.options;
 
-    let rowPanes: StringMap<Pane> = {};
+    const rowPanes: StringMap<Pane> = {};
 
-    let addRow = function (rowGuid: string, rowIndex: number) {
-        let row = model.row(rowGuid);
-        let rowUi = ui.rowUi(rowGuid);
+    const addRow = function (rowGuid: string, rowIndex: number) {
+        const row = model.row(rowGuid);
+        const rowUi = ui.rowUi(rowGuid);
 
-        let rowLabelColorBg: Color = hasval(row.bgLabelColor) ? row.bgLabelColor : options.rowLabelBgColor;
-        let rowLabelColorFg: Color = hasval(row.fgLabelColor) ? row.fgLabelColor : options.rowLabelColor;
-        let rowLabelFont: string = hasval(row.labelFont) ? row.labelFont : options.font;
+        const rowLabelColorBg: Color = hasval(row.bgLabelColor) ? row.bgLabelColor : options.rowLabelBgColor;
+        const rowLabelColorFg: Color = hasval(row.fgLabelColor) ? row.fgLabelColor : options.rowLabelColor;
+        const rowLabelFont: string = hasval(row.labelFont) ? row.labelFont : options.font;
 
-        let rowLabel = new Label(row.label, rowLabelFont, rowLabelColorFg);
-        let rowLabelPane = new Pane({ updatePrefSize: fitToLabel(rowLabel) }, false);
+        const rowLabel = new Label(row.label, rowLabelFont, rowLabelColorFg);
+        const rowLabelPane = new Pane({ updatePrefSize: fitToLabel(rowLabel) }, false);
         rowLabelPane.addPainter(newLabelPainter(rowLabel, 0, 0.5, 0, 0.5));
 
-        let rowLabelBackground = new Background(rowLabelColorBg);
-        let rowHeaderPane = new Pane(newInsetLayout(options.rowLabelInsets), true);
+        const rowLabelBackground = new Background(rowLabelColorBg);
+        const rowHeaderPane = new Pane(newInsetLayout(options.rowLabelInsets), true);
         rowHeaderPane.addPainter(rowLabelBackground.newPainter());
         rowHeaderPane.addPane(rowLabelPane);
 
-        let rowAttrsChanged = function () {
+        const rowAttrsChanged = function () {
             rowLabel.text = row.label;
             rowLabel.fgColor = hasval(row.fgLabelColor) ? row.fgLabelColor : options.rowLabelColor;
             rowLabel.font = hasval(row.labelFont) ? row.labelFont : options.font;
             rowLabelBackground.color = hasval(row.bgLabelColor) ? row.bgLabelColor : options.bgColor;
             drawable.redraw();
-        }
+        };
         row.attrsChanged.on(rowAttrsChanged);
 
-        let rowBackgroundPanes = newRowBackgroundPanes(args, guidList, row);
-        let rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
-        let rowInsetPane = rowBackgroundPanes.rowInsetPane;
+        const rowBackgroundPanes = newRowBackgroundPanes(args, guidList, row);
+        const rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
+        const rowInsetPane = rowBackgroundPanes.rowInsetPane;
 
-        let rowPane = new Pane(newColumnLayout());
+        const rowPane = new Pane(newColumnLayout());
         rowPane.addPane(rowHeaderPane, 0, { width: options.rowLabelPaneWidth });
         rowPane.addPane(rowBackgroundPane, 1, { width: null });
 
@@ -1304,13 +1311,13 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         rowUi.addPane(keyPrefix + '-label', rowLabelPane);
         rowUi.addPane(keyPrefix + '-header', rowHeaderPane);
 
-        let rowDataAxis = row.dataAxis;
+        const rowDataAxis = row.dataAxis;
 
         let rowContentPane: Pane = null;
         let rowPaneFactory: TimelineRowPaneFactory = null;
-        let rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized, mouseWheelListener: options.mouseWheelListener };
-        let refreshRowContentPane = function () {
-            let newRowPaneFactory = (rowUi.paneFactory || options.rowPaneFactoryChooser(row));
+        const rowContentOptions = { timelineFont: options.font, timelineFgColor: options.fgColor, draggableEdgeWidth: options.draggableEdgeWidth, snapToDistance: options.snapToDistance, isMaximized: isMaximized, mouseWheelListener: options.mouseWheelListener };
+        const refreshRowContentPane = function () {
+            const newRowPaneFactory = (rowUi.paneFactory || options.rowPaneFactoryChooser(row));
             if (newRowPaneFactory !== rowPaneFactory) {
                 if (rowContentPane) {
                     rowContentPane.dispose.fire();
@@ -1334,7 +1341,7 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         refreshRowContentPane();
 
         parentPane.updateLayoutArgs(function (layoutArg: any): any {
-            let shift = (isNumber(layoutArg) && layoutArg >= rowIndex);
+            const shift = (isNumber(layoutArg) && layoutArg >= rowIndex);
             return (shift ? layoutArg + 1 : layoutArg);
         });
         parentPane.addPane(rowPane, rowIndex);
@@ -1365,24 +1372,24 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
     guidList.forEach(addRow);
     guidList.valueAdded.on(addRow);
 
-    let valueMoved = function (rowGuid: string, rowOldIndex: number, rowNewIndex: number) {
-        let nMin = Math.min(rowOldIndex, rowNewIndex);
-        let nMax = Math.max(rowOldIndex, rowNewIndex);
+    const valueMoved = function (rowGuid: string, rowOldIndex: number, rowNewIndex: number) {
+        const nMin = Math.min(rowOldIndex, rowNewIndex);
+        const nMax = Math.max(rowOldIndex, rowNewIndex);
         for (let n = nMin; n <= nMax; n++) {
-            let rowGuid = guidList.valueAt(n);
-            parentPane.setLayoutArg(rowPanes[rowGuid], n);
+            const rowGuidTemp = guidList.valueAt(n);
+            parentPane.setLayoutArg(rowPanes[rowGuidTemp], n);
         }
 
         drawable.redraw();
     };
     guidList.valueMoved.on(valueMoved);
 
-    let removeRow = function (rowGuid: string, rowIndex: number) {
-        let pane: Pane = rowPanes[rowGuid];
+    const removeRow = function (rowGuid: string, rowIndex: number) {
+        const pane: Pane = rowPanes[rowGuid];
         pane.dispose.fire();
         parentPane.removePane(pane);
         parentPane.updateLayoutArgs(function (layoutArg: any): any {
-            let shift = (isNumber(layoutArg) && layoutArg > rowIndex);
+            const shift = (isNumber(layoutArg) && layoutArg > rowIndex);
             return (shift ? layoutArg - 1 : layoutArg);
         });
         delete rowPanes[rowGuid];
@@ -1394,11 +1401,11 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
     // Handle listing for hidden property
     //
 
-    let attrsChangedListeners = {};
+    const attrsChangedListeners = {};
 
-    let attachAttrsChangedListener = function (rowGuid: string, rowIndex: number) {
-        let row = model.row(rowGuid);
-        let attrsChangedListener = function () {
+    const attachAttrsChangedListener = function (rowGuid: string, rowIndex: number) {
+        const row = model.row(rowGuid);
+        const attrsChangedListener = function () {
             if (hasval(row.hidden && hasval(rowPanes[rowGuid]))) {
                 parentPane.layoutOptions(rowPanes[rowGuid]).hide = row.hidden;
                 drawable.redraw();
@@ -1408,10 +1415,10 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         row.attrsChanged.on(attrsChangedListener);
     };
 
-    let unattachAttrsChangedListener = function (rowGuid: string, rowIndex: number) {
-        let row = model.row(rowGuid);
+    const unattachAttrsChangedListener = function (rowGuid: string, rowIndex: number) {
+        const row = model.row(rowGuid);
         row.attrsChanged.off(attrsChangedListeners[rowGuid]);
-    }
+    };
 
     guidList.forEach(attachAttrsChangedListener);
     guidList.valueAdded.on(attachAttrsChangedListener);

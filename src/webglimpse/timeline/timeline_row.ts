@@ -43,16 +43,12 @@ export interface TimelineRowPaneOptions {
     mouseWheelListener?: (PointerEvent: PointerEvent) => void;
 }
 
-export interface TimelineRowPaneFactory {
-    (drawable: Drawable,
+export type TimelineRowPaneFactory = (drawable: Drawable,
         timeAxis: TimeAxis1D,
         dataAxis: Axis1D,
         model: TimelineModel,
         row: TimelineRowModel,
         ui: TimelineUi,
-        options: TimelineRowPaneOptions): Pane;
-}
+        options: TimelineRowPaneOptions) => Pane;
 
-export interface TimelineRowPaneFactoryChooser {
-    (row: TimelineRowModel): TimelineRowPaneFactory;
-}
+export type TimelineRowPaneFactoryChooser = (row: TimelineRowModel) => TimelineRowPaneFactory;

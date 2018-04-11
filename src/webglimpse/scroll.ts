@@ -43,11 +43,11 @@ export interface VerticalScrollLayout extends Layout {
 
 
 export function newVerticalScrollLayout(): VerticalScrollLayout {
-    let layout = <VerticalScrollLayout>{
+    const layout = <VerticalScrollLayout>{
 
         updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
             if (children.length === 1) {
-                let childPrefSize = children[0].prefSize;
+                const childPrefSize = children[0].prefSize;
 
                 // XXX: Need some way to override the child's pref-height
                 if (!hasval(childPrefSize.h)) {
@@ -68,10 +68,10 @@ export function newVerticalScrollLayout(): VerticalScrollLayout {
 
         updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
             if (children.length === 1) {
-                let child = children[0];
+                const child = children[0];
 
                 let j;
-                let h = child.prefSize.h;
+                const h = child.prefSize.h;
                 if (h <= parentViewport.h) {
                     j = parentViewport.jEnd - h;
                 }
@@ -108,9 +108,9 @@ export interface ScrollbarOptions {
 
 
 export function newVerticalScrollbar(scrollLayout: VerticalScrollLayout, drawable: Drawable, options?: ScrollbarOptions): Pane {
-    let bgColor = (hasval(options) && hasval(options.bgColor) ? options.bgColor : gray(0.9));
+    const bgColor = (hasval(options) && hasval(options.bgColor) ? options.bgColor : gray(0.9));
 
-    let scrollbar = new Pane(null);
+    const scrollbar = new Pane(null);
     scrollbar.addPainter(newBackgroundPainter(bgColor));
     scrollbar.addPainter(newVerticalScrollbarPainter(scrollLayout, options));
 
@@ -121,34 +121,34 @@ export function newVerticalScrollbar(scrollLayout: VerticalScrollLayout, drawabl
 
 
 export function newVerticalScrollbarPainter(scrollLayout: VerticalScrollLayout, options?: ScrollbarOptions): Painter {
-    let fgColor = (hasval(options) && hasval(options.fgColor) ? options.fgColor : gray(0.56));
-    let borderColor = (hasval(options) && hasval(options.borderColor) ? options.borderColor : gray(0.42));
-    let borderThickness = (hasval(options) && hasval(options.borderThickness) ? options.borderThickness : 1);
-    let borderTop = (hasval(options) && hasval(options.borderTop) ? options.borderTop : true);
-    let borderLeft = (hasval(options) && hasval(options.borderLeft) ? options.borderLeft : false);
-    let borderRight = (hasval(options) && hasval(options.borderRight) ? options.borderRight : false);
-    let borderBottom = (hasval(options) && hasval(options.borderBottom) ? options.borderBottom : true);
+    const fgColor = (hasval(options) && hasval(options.fgColor) ? options.fgColor : gray(0.56));
+    const borderColor = (hasval(options) && hasval(options.borderColor) ? options.borderColor : gray(0.42));
+    const borderThickness = (hasval(options) && hasval(options.borderThickness) ? options.borderThickness : 1);
+    const borderTop = (hasval(options) && hasval(options.borderTop) ? options.borderTop : true);
+    const borderLeft = (hasval(options) && hasval(options.borderLeft) ? options.borderLeft : false);
+    const borderRight = (hasval(options) && hasval(options.borderRight) ? options.borderRight : false);
+    const borderBottom = (hasval(options) && hasval(options.borderBottom) ? options.borderBottom : true);
 
-    let program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
-    let u_Color = new UniformColor(program, 'u_Color');
-    let a_XyFrac = new Attribute(program, 'a_XyFrac');
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
 
-    let numFillVertices = 6;
-    let numBorderVertices = (borderTop ? 6 : 0) + (borderLeft ? 6 : 0) + (borderRight ? 6 : 0) + (borderBottom ? 6 : 0);
-    let xyFrac = new Float32Array(2 * Math.max(numFillVertices, numBorderVertices));
-    let xyFracBuffer = newDynamicBuffer();
+    const numFillVertices = 6;
+    const numBorderVertices = (borderTop ? 6 : 0) + (borderLeft ? 6 : 0) + (borderRight ? 6 : 0) + (borderBottom ? 6 : 0);
+    const xyFrac = new Float32Array(2 * Math.max(numFillVertices, numBorderVertices));
+    const xyFracBuffer = newDynamicBuffer();
 
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
-        let hFrac = scrollLayout.hVisible / scrollLayout.hContent;
+        const hFrac = scrollLayout.hVisible / scrollLayout.hContent;
         if (hFrac < 1) {
-            let yTop = Math.round(((scrollLayout.hContent - (scrollLayout.jOffset)) / scrollLayout.hContent) * viewport.h + 1e-4);
-            let yBottom = Math.round(((scrollLayout.hContent - (scrollLayout.jOffset + scrollLayout.hVisible)) / scrollLayout.hContent) * viewport.h + 1e-4);
+            const yTop = Math.round(((scrollLayout.hContent - (scrollLayout.jOffset)) / scrollLayout.hContent) * viewport.h + 1e-4);
+            const yBottom = Math.round(((scrollLayout.hContent - (scrollLayout.jOffset + scrollLayout.hVisible)) / scrollLayout.hContent) * viewport.h + 1e-4);
 
-            let yFracTop = yTop / viewport.h;
-            let yFracBottom = yBottom / viewport.h;
+            const yFracTop = yTop / viewport.h;
+            const yFracBottom = yBottom / viewport.h;
 
-            let wBorderFrac = borderThickness / viewport.w;
-            let hBorderFrac = borderThickness / viewport.h;
+            const wBorderFrac = borderThickness / viewport.w;
+            const hBorderFrac = borderThickness / viewport.h;
 
             gl.disable(GL.BLEND);
 
@@ -169,10 +169,18 @@ export function newVerticalScrollbarPainter(scrollLayout: VerticalScrollLayout, 
             //
 
             let index = 0;
-            if (borderTop) index = putQuadXys(xyFrac, index, 0, 1 - (borderRight ? wBorderFrac : 0), yFracTop, yFracTop - hBorderFrac);
-            if (borderBottom) index = putQuadXys(xyFrac, index, 0 + (borderLeft ? wBorderFrac : 0), 1, yFracBottom + hBorderFrac, yFracBottom);
-            if (borderRight) index = putQuadXys(xyFrac, index, 1 - wBorderFrac, 1, yFracTop, yFracBottom + (borderBottom ? hBorderFrac : 0));
-            if (borderLeft) index = putQuadXys(xyFrac, index, 0, 0 + wBorderFrac, yFracTop - (borderTop ? hBorderFrac : 0), yFracBottom);
+            if (borderTop) {
+                index = putQuadXys(xyFrac, index, 0, 1 - (borderRight ? wBorderFrac : 0), yFracTop, yFracTop - hBorderFrac);
+            }
+            if (borderBottom) {
+                index = putQuadXys(xyFrac, index, 0 + (borderLeft ? wBorderFrac : 0), 1, yFracBottom + hBorderFrac, yFracBottom);
+            }
+            if (borderRight) {
+                index = putQuadXys(xyFrac, index, 1 - wBorderFrac, 1, yFracTop, yFracBottom + (borderBottom ? hBorderFrac : 0));
+            }
+            if (borderLeft) {
+                index = putQuadXys(xyFrac, index, 0, 0 + wBorderFrac, yFracTop - (borderTop ? hBorderFrac : 0), yFracBottom);
+            }
 
             xyFracBuffer.setData(xyFrac.subarray(0, 2 * numBorderVertices));
             a_XyFrac.setDataAndEnable(gl, xyFracBuffer, 2, GL.FLOAT);
@@ -224,9 +232,9 @@ export function attachVerticalScrollMouseListeners(scrollbar: Pane, scrollLayout
 
     scrollbar.mouseDown.on(function (ev: PointerEvent) {
         if (isLeftMouseDown(ev.mouseEvent) && !hasval(grab)) {
-            let topFrac = (scrollLayout.hContent - scrollLayout.jOffset) / scrollLayout.hContent;
-            let fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
-            let pointerFrac = yFrac(ev);
+            const topFrac = (scrollLayout.hContent - scrollLayout.jOffset) / scrollLayout.hContent;
+            const fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
+            const pointerFrac = yFrac(ev);
             if (topFrac - fracExtent <= pointerFrac && pointerFrac <= topFrac) {
                 grab = (topFrac - pointerFrac) / fracExtent;
             }
@@ -243,21 +251,29 @@ export function attachVerticalScrollMouseListeners(scrollbar: Pane, scrollLayout
                 //
 
                 let direction = 0;
-                if (pointerFrac < topFrac - fracExtent) direction = +1;
-                else if (pointerFrac > topFrac) direction = -1;
+                if (pointerFrac < topFrac - fracExtent) {
+                    direction = +1;
+                }
+                else if (pointerFrac > topFrac) {
+                    direction = -1;
+                }
                 scrollLayout.jOffset += direction * Math.max(1, 0.875 * scrollLayout.hVisible);
                 drawable.redraw();
 
                 recentPointerFrac = pointerFrac;
-                let pageScroll = function () {
-                    let topFrac = (scrollLayout.hContent - scrollLayout.jOffset) / scrollLayout.hContent;
-                    let fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
-                    let pointerFrac = recentPointerFrac;
+                const pageScroll = function () {
+                    const pageTopFrac = (scrollLayout.hContent - scrollLayout.jOffset) / scrollLayout.hContent;
+                    const pageFracExtent = scrollLayout.hVisible / scrollLayout.hContent;
+                    const pagePointerFrac = recentPointerFrac;
 
-                    let direction = 0;
-                    if (pointerFrac < topFrac - fracExtent) direction = +1;
-                    else if (pointerFrac > topFrac) direction = -1;
-                    scrollLayout.jOffset += direction * Math.max(1, 0.875 * scrollLayout.hVisible);
+                    let pageDirection = 0;
+                    if (pagePointerFrac < pageTopFrac - pageFracExtent) {
+                        pageDirection = +1;
+                    }
+                    else if (pagePointerFrac > pageTopFrac) {
+                        pageDirection = -1;
+                    }
+                    scrollLayout.jOffset += pageDirection * Math.max(1, 0.875 * scrollLayout.hVisible);
                     drawable.redraw();
 
                     pageScrollTimer = setTimeout(pageScroll, 50);
@@ -268,10 +284,10 @@ export function attachVerticalScrollMouseListeners(scrollbar: Pane, scrollLayout
     });
 
     scrollbar.mouseMove.on(function (ev: PointerEvent) {
-        let pointerFrac = yFrac(ev);
+        const pointerFrac = yFrac(ev);
         if (hasval(grab)) {
-            let fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
-            let topFrac = pointerFrac + grab * fracExtent;
+            const fracExtent = scrollLayout.hVisible / scrollLayout.hContent;
+            const topFrac = pointerFrac + grab * fracExtent;
             scrollLayout.jOffset = scrollLayout.hContent - topFrac * scrollLayout.hContent;
             drawable.redraw();
         }

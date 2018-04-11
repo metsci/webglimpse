@@ -41,10 +41,10 @@ export function newOverlayLayout(): Layout {
     return <Layout>{
 
         updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
-            let underlays: LayoutEntry[] = [];
+            const underlays: LayoutEntry[] = [];
             for (let c = 0; c < children.length; c++) {
-                let child = children[c];
-                let isUnderlay = child.layoutArg;
+                const child = children[c];
+                const isUnderlay = child.layoutArg;
                 if (isUnderlay) {
                     underlays.push(child);
                 }
@@ -54,9 +54,9 @@ export function newOverlayLayout(): Layout {
                 let maxChildPrefWidth = 0;
                 let maxChildPrefHeight = 0;
                 for (let c = 0; c < underlays.length; c++) {
-                    let childPrefSize = underlays[c].prefSize;
+                    const childPrefSize = underlays[c].prefSize;
 
-                    let childPrefWidth = childPrefSize.w;
+                    const childPrefWidth = childPrefSize.w;
                     if (hasval(maxChildPrefWidth) && hasval(childPrefWidth)) {
                         maxChildPrefWidth = Math.max(maxChildPrefWidth, childPrefWidth);
                     }
@@ -64,7 +64,7 @@ export function newOverlayLayout(): Layout {
                         maxChildPrefWidth = null;
                     }
 
-                    let childPrefHeight = childPrefSize.h;
+                    const childPrefHeight = childPrefSize.h;
                     if (hasval(maxChildPrefHeight) && hasval(childPrefHeight)) {
                         maxChildPrefHeight = Math.max(maxChildPrefHeight, childPrefHeight);
                     }

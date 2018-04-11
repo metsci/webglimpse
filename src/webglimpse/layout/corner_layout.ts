@@ -37,7 +37,7 @@ export function newCornerLayout(hSide: Side, vSide: Side): Layout {
     return <Layout>{
         updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
             if (children.length === 1) {
-                let childPrefSize = children[0].prefSize;
+                const childPrefSize = children[0].prefSize;
                 parentPrefSize.w = childPrefSize.w;
                 parentPrefSize.h = childPrefSize.h;
             }
@@ -47,11 +47,11 @@ export function newCornerLayout(hSide: Side, vSide: Side): Layout {
         },
         updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
             if (children.length === 1) {
-                let child = children[0];
+                const child = children[0];
 
                 let iStart;
                 let iEnd;
-                let w = child.prefSize.w;
+                const w = child.prefSize.w;
                 if (hSide === Side.RIGHT) {
                     iEnd = parentViewport.iEnd;
                     iStart = (hasval(w) ? Math.max(iEnd - w, parentViewport.iStart) : parentViewport.iStart);
@@ -63,7 +63,7 @@ export function newCornerLayout(hSide: Side, vSide: Side): Layout {
 
                 let jStart;
                 let jEnd;
-                let h = child.prefSize.h;
+                const h = child.prefSize.h;
                 if (vSide === Side.BOTTOM) {
                     jStart = parentViewport.jStart;
                     jEnd = (hasval(h) ? Math.min(jStart + h, parentViewport.jEnd) : parentViewport.jEnd);

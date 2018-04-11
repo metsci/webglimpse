@@ -32,7 +32,7 @@ import {TextTextureFactory, TextTexture2D, createTextTextureFactory} from './tex
 import {Size, BoundsUnmodifiable} from './bounds';
 import {TextureRenderer} from './texture';
 import {GL, hasval} from './util/util';
-import {xFrac, yFrac, LayoutPhase1} from './core';
+import {LayoutPhase1} from './core';
 
 export class Label {
     private _font: string;
@@ -132,7 +132,7 @@ export class Label {
 
 export function fitToLabel(label: Label): LayoutPhase1 {
     return <LayoutPhase1>function (parentPrefSize: Size): void {
-        let texture = label.texture;
+        const texture = label.texture;
         parentPrefSize.w = (texture ? texture.w : 0);
         parentPrefSize.h = (texture ? texture.h : 0);
     };
@@ -140,7 +140,7 @@ export function fitToLabel(label: Label): LayoutPhase1 {
 
 
 export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnchor?: number, yAnchor?: number, rotation_CCWRAD?: number) {
-    let textureRenderer = new TextureRenderer();
+    const textureRenderer = new TextureRenderer();
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
         if (hasval(label.bgColor)) {
@@ -148,7 +148,7 @@ export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnc
             gl.clear(GL.COLOR_BUFFER_BIT);
         }
 
-        let texture = label.texture;
+        const texture = label.texture;
         if (texture) {
             textureRenderer.begin(gl, viewport);
             textureRenderer.draw(gl, texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
