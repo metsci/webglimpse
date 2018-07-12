@@ -274,8 +274,8 @@ export function effectiveEdges_PMILLIS(ui: TimelineUi, event: TimelineEventModel
         const iconStart_PMILLIS = iconTime_PMILLIS - (millisPerPx * icon.hAlign * icon.displayWidth);
         const iconEnd_PMILLIS = iconTime_PMILLIS + (millisPerPx * (1 - icon.hAlign) * icon.displayWidth);
 
-        start_PMILLIS = Math.min(start_PMILLIS, iconStart_PMILLIS);
-        end_PMILLIS = Math.max(end_PMILLIS, iconEnd_PMILLIS);
+        start_PMILLIS = Math.trunc(Math.min(start_PMILLIS, iconStart_PMILLIS));
+        end_PMILLIS = Math.trunc(Math.max(end_PMILLIS, iconEnd_PMILLIS));
     }
 
     return [start_PMILLIS, end_PMILLIS];

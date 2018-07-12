@@ -457,7 +457,7 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 for (let n = 0; n < eventDragEvents.length; n++) {
                     const event = eventDragEvents[n];
                     const newStart_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
-                    event.start_PMILLIS = Math.min(event.end_PMILLIS - wMin_MILLIS, newStart_PMILLIS);
+                    event.start_PMILLIS = Math.trunc(Math.min(event.end_PMILLIS - wMin_MILLIS, newStart_PMILLIS));
                 }
             }
         };
@@ -502,7 +502,7 @@ export function newEventsRowPaneFactory(eventsRowOpts?: TimelineEventsRowPaneOpt
                 for (let n = 0; n < eventDragEvents.length; n++) {
                     const event = eventDragEvents[n];
                     const newEnd_PMILLIS = eventDragPointer_PMILLIS - eventDragOffsets_MILLIS[event.eventGuid] + snapShift_MILLIS;
-                    event.end_PMILLIS = Math.max(event.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS);
+                    event.end_PMILLIS = Math.trunc(Math.max(event.start_PMILLIS + wMin_MILLIS, newEnd_PMILLIS));
                 }
             }
         };
