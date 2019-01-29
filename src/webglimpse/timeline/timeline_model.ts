@@ -168,6 +168,7 @@ export interface TimelineGroup {
     hidden?: boolean;
     collapsed?: boolean;
     highlighted?: boolean;
+    highlightColor?: Color;
     rowGuids: string[];
 }
 
@@ -1253,6 +1254,7 @@ export class TimelineGroupModel {
     private _label: string;
     private _collapsed: boolean;
     private _highlighted: boolean;
+    private _highlightColor: Color;
     private _rowGuids: OrderedStringSet;
 
     constructor(group: TimelineGroup) {
@@ -1286,6 +1288,7 @@ export class TimelineGroupModel {
         this._label = group.label;
         this._collapsed = group.collapsed;
         this._highlighted = hasval(group.highlighted) ? group.highlighted : false;
+        this._highlightColor = hasval(group.highlightColor) ? group.highlightColor : parseCssColor('white');
         this._attrsChanged.fire();
     }
 
@@ -1327,6 +1330,17 @@ export class TimelineGroupModel {
     set highlighted(highlighted: boolean) {
         if (highlighted !== this._highlighted) {
             this._highlighted = highlighted;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get highlightColor(): Color {
+        return this._highlightColor;
+    }
+
+    set highlightColor(highlightColor: Color) {
+        if (highlightColor !== this._highlightColor) {
+            this._highlightColor = highlightColor;
             this._attrsChanged.fire();
         }
     }

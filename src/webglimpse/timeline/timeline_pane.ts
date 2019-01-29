@@ -1025,7 +1025,7 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         /// handle rollup group row ///
 
         const groupHeaderHighlight = new Pane(newColumnLayout());
-        groupHeaderHighlight.addPane(newSolidPane(groupHighlightColor), 1, { width: 6, height: null });
+        groupHeaderHighlight.addPane(newSolidPane(group.highlightColor), 1, { width: 6, height: null });
 
         const groupHeaderStripe = new Pane(newRowLayout());
         groupHeaderStripe.addPane(new Pane(null), 0, { height: null });
