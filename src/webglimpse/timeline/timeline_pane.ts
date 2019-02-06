@@ -41,7 +41,7 @@ import { axisZoomStep, Axis1D } from '../plot/axis';
 import { newColumnLayout } from '../layout/column_layout';
 import { newCardLayout } from '../layout/card_layout';
 import { newRowLayout } from '../layout/row_layout';
-import { Side, newBackgroundPainter, xyFrac_VERTSHADER, solid_FRAGSHADER, putQuadXys, newSolidPane, Background } from '../misc';
+import { Side, newBackgroundPainter, xyFrac_VERTSHADER, solid_FRAGSHADER, putQuadXys, newSolidPane, Background, Highlight } from '../misc';
 import { newOverlayLayout } from '../layout/overlay_layout';
 import { alwaysTrue, GL, StringMap, hasval, isNumber } from '../util/util';
 import { BoundsUnmodifiable, Size } from '../bounds';
@@ -1025,7 +1025,10 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         /// handle rollup group row ///
 
         const groupHeaderHighlight = new Pane(newColumnLayout());
-        groupHeaderHighlight.addPane(newSolidPane(group.highlightColor), 1, { width: 6, height: null });
+        const groupHighlight = new Highlight(group.highlightColor);
+        const pane = newSolidPane(new Color(0, 0, 0, 1));
+        pane.addPainter(groupHighlight.newPainter());
+        groupHeaderHighlight.addPane(pane, 1, { width: 6, height: null });
 
         const groupHeaderStripe = new Pane(newRowLayout());
         groupHeaderStripe.addPane(new Pane(null), 0, { height: null });
@@ -1120,6 +1123,10 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             const groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
             let redraw = false;
             if (timelineGroup.highlighted !== (!groupHighlightLayoutOpts.hide)) {
+                groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;
+                redraw = true;
+            }
+            if (timelineGroup.highlightColor !== (groupHighlight.color)) {
                 groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;
                 redraw = true;
             }
@@ -1440,6 +1447,3 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         guidList.valueRemoved.off(unattachAttrsChangedListener);
     });
 }
-
-
-

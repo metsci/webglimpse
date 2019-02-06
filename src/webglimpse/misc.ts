@@ -86,6 +86,65 @@ export function newBlendingBackgroundPainter(color: Color): Painter {
     };
 }
 
+export class Highlight {
+
+    private _color: Color;
+
+    program = new Program(xyNdc_VERTSHADER, solid_FRAGSHADER);
+    u_Color = new UniformColor(this.program, 'u_Color');
+    a_XyNdc = new Attribute(this.program, 'a_XyNdc');
+
+    numVertices = 4;
+    xy_NDC = new Float32Array(2 * this.numVertices);
+    xyBuffer_NDC = newDynamicBuffer();
+
+    constructor(color?: Color) {
+        this._color = color;
+    }
+
+    get color(): Color {
+        return this._color;
+    }
+
+    set color(color: Color) {
+        if (!sameColor(this._color, color)) {
+            this._color = color;
+        }
+    }
+
+    newPainter() {
+        return (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) => {
+            if (this.color.a >= 1) {
+                gl.disable(GL.BLEND);
+            }
+            else {
+                gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+                gl.enable(GL.BLEND);
+            }
+
+            this.program.use(gl);
+            this.u_Color.setData(gl, this.color);
+
+            this.xy_NDC[0] = -1;
+            this.xy_NDC[1] = 1;
+            this.xy_NDC[2] = -1;
+            this.xy_NDC[3] = -1;
+            this.xy_NDC[4] = 1;
+            this.xy_NDC[5] = 1;
+            this.xy_NDC[6] = 1;
+            this.xy_NDC[7] = -1;
+
+            this.xyBuffer_NDC.setData(this.xy_NDC);
+            this.a_XyNdc.setDataAndEnable(gl, this.xyBuffer_NDC, 2, GL.FLOAT);
+
+            gl.drawArrays(GL.TRIANGLE_STRIP, 0, this.numVertices);
+
+            this.a_XyNdc.disable(gl);
+            this.program.endUse(gl);
+        };
+    }
+}
+
 export class Background {
 
     private _color: Color;
@@ -395,6 +454,3 @@ export class XyModel {
         }
     }
 }
-
-
-
