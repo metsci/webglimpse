@@ -994,6 +994,7 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
     const groupHeaderPanes: StringMap<Pane> = {};
     const groupContentPanes: StringMap<Pane> = {};
+    const groupContainerPanes: StringMap<Pane> = {};
 
     const addGroup = function (groupGuid: string, groupIndex: number) {
         const group = model.group(groupGuid);
@@ -1107,19 +1108,24 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
         }
 
+        const groupContainerColPane = new Pane(newColumnLayout());
+        const groupContainerRowPane = new Pane(newRowLayout());
         const groupContentPane = new Pane(newRowLayout());
-
-        timelineContentPane.updateLayoutArgs(function (layoutArg: any): any {
+        groupContainerColPane.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
+        groupContainerColPane.addPane(groupContainerRowPane);
+        groupContainerRowPane.updateLayoutArgs(function (layoutArg: any): any {
             const shift = (isNumber(layoutArg) && layoutArg >= 2 * groupIndex);
             return (shift ? layoutArg + 2 : layoutArg);
         });
-        timelineContentPane.addPane(groupHeaderPane, 2 * groupIndex);
-        timelineContentPane.addPane(groupContentPane, 2 * groupIndex + 1, { hide: group.collapsed });
+        groupContainerRowPane.addPane(groupHeaderPane, 2 * groupIndex);
+        groupContainerRowPane.addPane(groupContentPane, 2 * groupIndex + 1, { hide: group.collapsed });
+        timelineContentPane.addPane(groupContainerColPane, groupIndex);
         groupHeaderPanes[groupGuid] = groupHeaderPane;
         groupContentPanes[groupGuid] = groupContentPane;
+        groupContainerPanes[groupGuid] = groupContainerColPane;
 
         const groupAttrsChanged = function (timelineGroup: TimelineGroup) {
-            const groupContentLayoutOpts = timelineContentPane.layoutOptions(groupContentPane);
+            const groupContentLayoutOpts = groupContainerRowPane.layoutOptions(groupContentPane);
             const groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
             let redraw = false;
             if (timelineGroup.highlighted !== (!groupHighlightLayoutOpts.hide)) {
@@ -1127,7 +1133,15 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
                 redraw = true;
             }
             if (timelineGroup.highlightColor !== (groupHighlight.color)) {
-                groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;
+                groupHighlight.color = timelineGroup.highlightColor;
+                redraw = true;
+            }
+            if (timelineGroup.dashPattern !== (groupHighlight.dashPattern)) {
+                groupHighlight.dashPattern = timelineGroup.dashPattern;
+                redraw = true;
+            }
+            if (timelineGroup.dashLength !== (groupHighlight.dashLength)) {
+                groupHighlight.dashLength = timelineGroup.dashLength;
                 redraw = true;
             }
             if (timelineGroup.collapsed !== groupContentLayoutOpts.hide) {
@@ -1150,8 +1164,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         // Handle hidden property
         //
 
-        timelineContentPane.layoutOptions(groupContentPane).hide = group.hidden;
-        timelineContentPane.layoutOptions(groupHeaderPane).hide = group.hidden;
+        groupContainerRowPane.layoutOptions(groupContentPane).hide = group.hidden;
+        groupContainerRowPane.layoutOptions(groupHeaderPane).hide = group.hidden;
 
         setupRowContainerPane(args, groupContentPane, group.rowGuids, false, group.groupGuid);
 
@@ -1169,8 +1183,9 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         const nMax = Math.max(groupOldIndex, groupNewIndex);
         for (let n = nMin; n <= nMax; n++) {
             const groupGuidTemp = root.groupGuids.valueAt(n);
-            timelineContentPane.setLayoutArg(groupHeaderPanes[groupGuidTemp], 2 * n);
-            timelineContentPane.setLayoutArg(groupContentPanes[groupGuidTemp], 2 * n + 1);
+            timelineContentPane.setLayoutArg(groupContainerPanes[groupGuidTemp], n);
+            // timelineContentPane.setLayoutArg(groupHeaderPanes[groupGuidTemp], 2 * n);
+            // timelineContentPane.setLayoutArg(groupContentPanes[groupGuidTemp], 2 * n + 1);
         }
 
         drawable.redraw();
@@ -1178,18 +1193,24 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     root.groupGuids.valueMoved.on(moveGroup);
 
     const removeGroup = function (groupGuid: string, groupIndex: number) {
-        const contentPane: Pane = groupContentPanes[groupGuid];
-        const headerPane: Pane = groupHeaderPanes[groupGuid];
-        contentPane.dispose.fire();
-        headerPane.dispose.fire();
-        timelineContentPane.removePane(contentPane);
-        timelineContentPane.removePane(headerPane);
+        // const contentPane: Pane = groupContentPanes[groupGuid];
+        // const headerPane: Pane = groupHeaderPanes[groupGuid];
+        const groupPane: Pane = groupContainerPanes[groupGuid];
+        // contentPane.dispose.fire();
+        // headerPane.dispose.fire();
+        groupPane.dispose.fire();
+        // timelineContentPane.removePane(contentPane);
+        // timelineContentPane.removePane(headerPane);
+        timelineContentPane.removePane(groupPane);
         timelineContentPane.updateLayoutArgs(function (layoutArg: any): any {
-            const shift = (isNumber(layoutArg) && layoutArg > 2 * groupIndex + 1);
-            return (shift ? layoutArg - 2 : layoutArg);
+            // const shift = (isNumber(layoutArg) && layoutArg > 2 * groupIndex + 1);
+            // return (shift ? layoutArg - 2 : layoutArg);
+            const shift = (isNumber(layoutArg) && layoutArg > groupIndex);
+            return (shift ? layoutArg - 1 : layoutArg);
         });
-        delete groupHeaderPanes[groupGuid];
-        delete groupContentPanes[groupGuid];
+        // delete groupHeaderPanes[groupGuid];
+        // delete groupContentPanes[groupGuid];
+        delete groupContainerPanes[groupGuid];
 
         drawable.redraw();
     };

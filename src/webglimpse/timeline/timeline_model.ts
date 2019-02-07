@@ -169,6 +169,8 @@ export interface TimelineGroup {
     collapsed?: boolean;
     highlighted?: boolean;
     highlightColor?: Color;
+    dashPattern?: number;
+    dashLength?: number;
     rowGuids: string[];
 }
 
@@ -1255,6 +1257,8 @@ export class TimelineGroupModel {
     private _collapsed: boolean;
     private _highlighted: boolean;
     private _highlightColor: Color;
+    private _dashPattern: number;
+    private _dashLength: number;
     private _rowGuids: OrderedStringSet;
 
     constructor(group: TimelineGroup) {
@@ -1289,6 +1293,8 @@ export class TimelineGroupModel {
         this._collapsed = group.collapsed;
         this._highlighted = hasval(group.highlighted) ? group.highlighted : false;
         this._highlightColor = hasval(group.highlightColor) ? group.highlightColor : parseCssColor('white');
+        this._dashPattern = hasval(group.dashPattern) ? group.dashPattern : 0xFFFF;
+        this._dashLength = hasval(group.dashLength) ? group.dashLength : 16;
         this._attrsChanged.fire();
     }
 
@@ -1345,6 +1351,28 @@ export class TimelineGroupModel {
         }
     }
 
+    get dashPattern(): number {
+        return this._dashPattern;
+    }
+
+    set dashPattern(dashPattern: number) {
+        if (dashPattern !== this._dashPattern) {
+            this._dashPattern = dashPattern;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get dashLength(): number {
+        return this._dashLength;
+    }
+
+    set dashLength(dashLength: number) {
+        if (dashLength !== this._dashLength) {
+            this._dashLength = dashLength;
+            this._attrsChanged.fire();
+        }
+    }
+
     get rowGuids(): OrderedStringSet {
         return this._rowGuids;
     }
@@ -1357,6 +1385,9 @@ export class TimelineGroupModel {
             hidden: this._hidden,
             collapsed: (hasval(this._collapsed) ? this._collapsed : false),
             highlighted: (hasval(this._highlighted) ? this._highlighted : false),
+            highlightColor: hasval(this.highlightColor) ? this.highlightColor : parseCssColor('white'),
+            dashPattern: hasval(this.dashPattern) ? this.dashPattern : 0xFFFF,
+            dashLength: hasval(this.dashLength) ? this.dashLength : 16,
             rowGuids: this._rowGuids.toArray()
         };
     }
