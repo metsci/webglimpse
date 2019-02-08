@@ -112,6 +112,8 @@ export interface TimelinePaneOptions {
 
     // Sizing
     groupLabelInsets?: Insets;
+    groupHighlightWidth?: number;
+    groupHighlightInsets?: Insets;
     rowLabelInsets?: Insets;
     rowLabelPaneWidth?: number;
     rowSeparatorHeight?: number;
@@ -172,6 +174,8 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     // Sizing
     const groupLabelInsets = (hasval(options) && hasval(options.groupLabelInsets) ? options.groupLabelInsets : newInsets(6, 10));
+    const groupHighlightWidth = (hasval(options) && hasval(options.groupHighlightWidth) ? options.groupHighlightWidth : 2);
+    const groupHighlightInsets = (hasval(options) && hasval(options.groupHighlightInsets) ? options.groupHighlightInsets : newInsets(6, 0, 2, 4));
     const rowLabelInsets = (hasval(options) && hasval(options.rowLabelInsets) ? options.rowLabelInsets : newInsets(0, 35));
     const rowLabelPaneWidth = (hasval(options) && hasval(options.rowLabelPaneWidth) ? options.rowLabelPaneWidth : 140);
     const rowSeparatorHeight = (hasval(options) && hasval(options.rowSeparatorHeight) ? options.rowSeparatorHeight : 2);
@@ -235,7 +239,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // Scroll Pane
 
     const tickTimeZone = (showTopAxis ? topTimeZone : bottomTimeZone);
-    const contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
+    const contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, groupHighlightWidth: groupHighlightWidth, groupHighlightInsets: groupHighlightInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
     let contentPaneArgs;
     let contentPane: Pane = null;
 
@@ -918,6 +922,8 @@ interface TimelineContentPaneOptions {
     rowLabelBgColor: Color;
     groupLabelColor: Color;
     groupHighlightColor: Color;
+    groupHighlightWidth: number;
+    groupHighlightInsets: Insets;
     axisLabelColor: Color;
     bgColor: Color;
     rowBgColor: Color;
@@ -966,6 +972,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     const rowLabelColor = options.rowLabelColor;
     const groupLabelColor = options.groupLabelColor;
     const groupHighlightColor = options.groupHighlightColor;
+    const groupHighlightWidth = options.groupHighlightWidth;
+    const groupHighlightInsets = options.groupHighlightInsets;
     const axisLabelColor = options.axisLabelColor;
     const bgColor = options.bgColor;
     const rowBgColor = options.rowBgColor;
@@ -1025,12 +1033,6 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
         group.attrsChanged.on(redrawLabel);
         /// handle rollup group row ///
 
-        const groupHeaderHighlight = new Pane(newColumnLayout());
-        const groupHighlight = new Highlight(group.highlightColor);
-        const pane = newSolidPane(new Color(0, 0, 0, 1));
-        pane.addPainter(groupHighlight.newPainter());
-        groupHeaderHighlight.addPane(pane, 1, { width: 6, height: null });
-
         const groupHeaderStripe = new Pane(newRowLayout());
         groupHeaderStripe.addPane(new Pane(null), 0, { height: null });
         groupHeaderStripe.addPane(newSolidPane(groupLabelColor), 1, { height: 1 });
@@ -1081,9 +1083,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             refreshRollupContentPane();
 
             const groupButtonHeaderUnderlay = new Pane(newColumnLayout());
-            groupButtonHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
-            groupButtonHeaderUnderlay.addPane(groupButton, 1);
-            groupButtonHeaderUnderlay.addPane(groupHeaderStripe, 2, { ignoreHeight: true });
+            groupButtonHeaderUnderlay.addPane(groupButton, 0);
+            groupButtonHeaderUnderlay.addPane(groupHeaderStripe, 1, { ignoreHeight: true });
 
             groupHeaderUnderlay = new Pane(newColumnLayout());
             groupHeaderUnderlay.addPainter(newBackgroundPainter(bgColor));
@@ -1096,9 +1097,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
             groupHeaderUnderlay = new Pane(newColumnLayout());
             groupHeaderUnderlay.addPainter(newBackgroundPainter(bgColor));
-            groupHeaderUnderlay.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
-            groupHeaderUnderlay.addPane(groupButton, 1);
-            groupHeaderUnderlay.addPane(groupHeaderStripe, 2, { ignoreHeight: true });
+            groupHeaderUnderlay.addPane(groupButton, 0);
+            groupHeaderUnderlay.addPane(groupHeaderStripe, 1, { ignoreHeight: true });
             const groupHeaderOverlay = newTimeAxisPane(args, null);
             const groupHeaderOverlayInsets = newInsets(0, 0, 0, rowLabelPaneWidth);
 
@@ -1108,25 +1108,39 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
         }
 
-        const groupContainerColPane = new Pane(newColumnLayout());
+        const groupHeaderHighlight = new Pane(newColumnLayout(), false);
+        const groupHighlight = new Highlight(group.highlightColor || groupHighlightColor);
+        const highlightInnerPane = new Pane(null);
+        highlightInnerPane.addPainter(groupHighlight.newPainter());
+        const insets = group.highlightInsets || groupHighlightInsets;
+        const width = group.highlightWidth || groupHighlightWidth;
+        const containerWidth = insets ? insets.left + insets.right + width : width;
+        const highlightPane = newInsetPane(highlightInnerPane, insets);
+        groupHeaderHighlight.addPane(highlightPane, 0, { width: containerWidth, height: null });
+
+        const groupContainerOverlayPane = new Pane(newOverlayLayout());
         const groupContainerRowPane = new Pane(newRowLayout());
         const groupContentPane = new Pane(newRowLayout());
-        groupContainerColPane.addPane(groupHeaderHighlight, 0, { ignoreHeight: true });
-        groupContainerColPane.addPane(groupContainerRowPane);
+        groupContainerOverlayPane.addPane(groupContainerRowPane, true, { width: null, height: null });
+        groupContainerOverlayPane.addPane(groupHeaderHighlight, false, { width: null, height: null });
+
         groupContainerRowPane.updateLayoutArgs(function (layoutArg: any): any {
             const shift = (isNumber(layoutArg) && layoutArg >= 2 * groupIndex);
             return (shift ? layoutArg + 2 : layoutArg);
         });
+
         groupContainerRowPane.addPane(groupHeaderPane, 2 * groupIndex);
         groupContainerRowPane.addPane(groupContentPane, 2 * groupIndex + 1, { hide: group.collapsed });
-        timelineContentPane.addPane(groupContainerColPane, groupIndex);
+
+        timelineContentPane.addPane(groupContainerOverlayPane, groupIndex);
+
         groupHeaderPanes[groupGuid] = groupHeaderPane;
         groupContentPanes[groupGuid] = groupContentPane;
-        groupContainerPanes[groupGuid] = groupContainerColPane;
+        groupContainerPanes[groupGuid] = groupContainerOverlayPane;
 
         const groupAttrsChanged = function (timelineGroup: TimelineGroup) {
             const groupContentLayoutOpts = groupContainerRowPane.layoutOptions(groupContentPane);
-            const groupHighlightLayoutOpts = groupHeaderUnderlay.layoutOptions(groupHeaderHighlight);
+            const groupHighlightLayoutOpts = groupContainerOverlayPane.layoutOptions(groupHeaderHighlight);
             let redraw = false;
             if (timelineGroup.highlighted !== (!groupHighlightLayoutOpts.hide)) {
                 groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;

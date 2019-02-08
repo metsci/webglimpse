@@ -95,6 +95,7 @@ export class Highlight {
     program = new Program(xyNdc_VERTSHADER, dash2_FRAGSHADER);
     u_Color = new UniformColor(this.program, 'u_Color');
     a_XyNdc = new Attribute(this.program, 'a_XyNdc');
+    u_yOffset = new Uniform1f(this.program, 'u_yOffset');
     u_DashPattern = new Uniform1f(this.program, 'u_DashPattern');
     u_DashLength = new Uniform1f(this.program, 'u_DashLength');
 
@@ -138,6 +139,7 @@ export class Highlight {
             this.u_Color.setData(gl, this.color);
             this.u_DashPattern.setData(gl, this._dashPattern);
             this.u_DashLength.setData(gl, this._dashLength);
+            this.u_yOffset.setData(gl, viewport.j + viewport.h);
 
             this.xy_NDC[0] = -1;
             this.xy_NDC[1] = 1;
@@ -287,23 +289,26 @@ export let dash_FRAGSHADER = concatLines(
     '                                                           '
 );
 
-export let dash2_FRAGSHADER =
-`precision highp float;
-uniform float u_DashLength;
-uniform float u_DashPattern;
-uniform vec4 u_Color;
-const float maskLength = 16.0;
-
-void main( ) {
-    float dashPosition = fract(gl_FragCoord.y / u_DashLength);
-    float maskIndex = floor(dashPosition * maskLength);
-    float maskTest = floor(u_DashPattern / pow(2.0, maskIndex));
-
-    if(mod(maskTest, 2.0) < 1.0)
-        discard;
-    else
-        gl_FragColor = u_Color;
-}`;
+export let dash2_FRAGSHADER = concatLines(
+    '  precision highp float;                                                        ',
+    '  uniform float u_DashLength;                                                   ',
+    '  uniform float u_DashPattern;                                                  ',
+    '  uniform float u_yOffset;                                                      ',
+    '  uniform vec4 u_Color;                                                         ',
+    '  const float maskLength = 16.0;                                                ',
+    '                                                                                ',
+    '  void main( ) {                                                                ',
+    '      float dashPosition = fract((gl_FragCoord.y - u_yOffset) / u_DashLength);  ',
+    '      float maskIndex = floor(dashPosition * maskLength);                       ',
+    '      float maskTest = floor(u_DashPattern / pow(2.0, maskIndex));              ',
+    '                                                                                ',
+    '      if(mod(maskTest, 2.0) < 1.0)                                              ',
+    '          discard;                                                              ',
+    '      else                                                                      ',
+    '      gl_FragColor = u_Color;                                                   ',
+    '  };                                                                            ',
+    '                                                                                '
+);
 
 export let varyingColor_FRAGSHADER = concatLines(
     '                               ',

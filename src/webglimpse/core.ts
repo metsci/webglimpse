@@ -159,7 +159,7 @@ export class Pane {
     }
 
     get layout(): Layout {
-        return this.layout;
+        return this._layout;
     }
 
     set layout(layout: Layout) {

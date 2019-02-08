@@ -34,6 +34,7 @@ import { formatTime_ISO8601, order, hasval, parseTime_PMILLIS } from '../util/ut
 import { indexOf } from '../util/sorted_arrays';
 import { FillPattern } from './timeline_events_row';
 import { Axis1D } from '../plot/axis';
+import { Insets } from '../layout/inset_layout';
 
 
 export interface TimelineCursor {
@@ -169,6 +170,8 @@ export interface TimelineGroup {
     collapsed?: boolean;
     highlighted?: boolean;
     highlightColor?: Color;
+    highlightWidth?: number;
+    highlightInsets?: Insets;
     dashPattern?: number;
     dashLength?: number;
     rowGuids: string[];
@@ -1257,6 +1260,8 @@ export class TimelineGroupModel {
     private _collapsed: boolean;
     private _highlighted: boolean;
     private _highlightColor: Color;
+    private _highlightWidth: number;
+    private _highlightInsets: Insets;
     private _dashPattern: number;
     private _dashLength: number;
     private _rowGuids: OrderedStringSet;
@@ -1295,6 +1300,8 @@ export class TimelineGroupModel {
         this._highlightColor = hasval(group.highlightColor) ? group.highlightColor : parseCssColor('white');
         this._dashPattern = hasval(group.dashPattern) ? group.dashPattern : 0xFFFF;
         this._dashLength = hasval(group.dashLength) ? group.dashLength : 16;
+        this._highlightWidth = group.highlightWidth;
+        this._highlightInsets = group.highlightInsets;
         this._attrsChanged.fire();
     }
 
@@ -1351,6 +1358,28 @@ export class TimelineGroupModel {
         }
     }
 
+    get highlightWidth(): number {
+        return this._highlightWidth;
+    }
+
+    set highlightWidth(highlightWidth: number) {
+        if (highlightWidth !== this._highlightWidth) {
+            this._highlightWidth = highlightWidth;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get highlightInsets(): Insets {
+        return this._highlightInsets;
+    }
+
+    set highlightInsets(highlightInsets: Insets) {
+        if (highlightInsets !== this._highlightInsets) {
+            this._highlightInsets = highlightInsets;
+            this._attrsChanged.fire();
+        }
+    }
+
     get dashPattern(): number {
         return this._dashPattern;
     }
@@ -1386,6 +1415,8 @@ export class TimelineGroupModel {
             collapsed: (hasval(this._collapsed) ? this._collapsed : false),
             highlighted: (hasval(this._highlighted) ? this._highlighted : false),
             highlightColor: hasval(this.highlightColor) ? this.highlightColor : parseCssColor('white'),
+            highlightWidth: this._highlightWidth,
+            highlightInsets: this._highlightInsets,
             dashPattern: hasval(this.dashPattern) ? this.dashPattern : 0xFFFF,
             dashLength: hasval(this.dashLength) ? this.dashLength : 16,
             rowGuids: this._rowGuids.toArray()
