@@ -306,7 +306,7 @@ export let dash2_FRAGSHADER = concatLines(
     '          discard;                                                              ',
     '      else                                                                      ',
     '      gl_FragColor = u_Color;                                                   ',
-    '  };                                                                            ',
+    '  }                                                                             ',
     '                                                                                '
 );
 
