@@ -30,8 +30,8 @@
 import { Painter, Pane } from './core';
 import { BoundsUnmodifiable, Size } from './bounds';
 import { Color, sameColor } from './color';
-import { Program, UniformColor, Attribute } from './shader';
-import { newDynamicBuffer } from './buffer';
+import { Program, UniformColor, Attribute, Uniform1f } from './shader';
+import { newDynamicBuffer, DynamicBuffer } from './buffer';
 import { GL, concatLines, hasval } from './util/util';
 import { Texture2D, TextureDrawOptions, TextureRenderer } from './texture';
 import { Notification } from './util/notification';
@@ -84,6 +84,89 @@ export function newBlendingBackgroundPainter(color: Color): Painter {
         a_XyNdc.disable(gl);
         program.endUse(gl);
     };
+}
+
+export class Highlight {
+
+    private _color: Color;
+    private _dashPattern = 0xFFFF;
+    private _dashLength = 16;
+
+    program = new Program(xyNdc_VERTSHADER, dash2_FRAGSHADER);
+    u_Color = new UniformColor(this.program, 'u_Color');
+    a_XyNdc = new Attribute(this.program, 'a_XyNdc');
+    u_yOffset = new Uniform1f(this.program, 'u_yOffset');
+    u_DashPattern = new Uniform1f(this.program, 'u_DashPattern');
+    u_DashLength = new Uniform1f(this.program, 'u_DashLength');
+
+    numVertices = 4;
+    xy_NDC = new Float32Array(2 * this.numVertices);
+    xyBuffer_NDC: DynamicBuffer = newDynamicBuffer();
+
+    constructor(color?: Color) {
+        this._color = color;
+    }
+
+    get color(): Color {
+        return this._color;
+    }
+
+    set color(color: Color) {
+        if (!sameColor(this._color, color)) {
+            this._color = color;
+        }
+    }
+
+    get dashPattern(): number {
+        return this._dashPattern;
+    }
+
+    set dashPattern(pattern: number) {
+        this._dashPattern = pattern;
+    }
+
+    get dashLength(): number {
+        return this._dashLength;
+    }
+
+    set dashLength(length: number) {
+        this._dashLength = length;
+    }
+
+    newPainter() {
+        return (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) => {
+            if (this.color.a >= 1) {
+                gl.disable(GL.BLEND);
+            }
+            else {
+                gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+                gl.enable(GL.BLEND);
+            }
+
+            this.program.use(gl);
+            this.u_Color.setData(gl, this.color);
+            this.u_DashPattern.setData(gl, this._dashPattern);
+            this.u_DashLength.setData(gl, this._dashLength);
+            this.u_yOffset.setData(gl, viewport.j + viewport.h);
+
+            this.xy_NDC[0] = -1;
+            this.xy_NDC[1] = 1;
+            this.xy_NDC[2] = -1;
+            this.xy_NDC[3] = -1;
+            this.xy_NDC[4] = 1;
+            this.xy_NDC[5] = 1;
+            this.xy_NDC[6] = 1;
+            this.xy_NDC[7] = -1;
+
+            this.xyBuffer_NDC.setData(this.xy_NDC);
+            this.a_XyNdc.setDataAndEnable(gl, this.xyBuffer_NDC, 2, GL.FLOAT);
+
+            gl.drawArrays(GL.TRIANGLE_STRIP, 0, this.numVertices);
+
+            this.a_XyNdc.disable(gl);
+            this.program.endUse(gl);
+        };
+    }
 }
 
 export class Background {
@@ -214,6 +297,26 @@ export let dash_FRAGSHADER = concatLines(
     '                                                           '
 );
 
+export let dash2_FRAGSHADER = concatLines(
+    '  precision highp float;                                                        ',
+    '  uniform float u_DashLength;                                                   ',
+    '  uniform float u_DashPattern;                                                  ',
+    '  uniform float u_yOffset;                                                      ',
+    '  uniform vec4 u_Color;                                                         ',
+    '  const float maskLength = 16.0;                                                ',
+    '                                                                                ',
+    '  void main( ) {                                                                ',
+    '      float dashPosition = fract((gl_FragCoord.y - u_yOffset) / u_DashLength);  ',
+    '      float maskIndex = floor(dashPosition * maskLength);                       ',
+    '      float maskTest = floor(u_DashPattern / pow(2.0, maskIndex));              ',
+    '                                                                                ',
+    '      if(mod(maskTest, 2.0) < 1.0)                                              ',
+    '          discard;                                                              ',
+    '      else                                                                      ',
+    '      gl_FragColor = u_Color;                                                   ',
+    '  }                                                                             ',
+    '                                                                                '
+);
 
 export let varyingColor_FRAGSHADER = concatLines(
     '                               ',
@@ -395,6 +498,3 @@ export class XyModel {
         }
     }
 }
-
-
-
