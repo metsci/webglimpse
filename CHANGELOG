@@ -1,3 +1,10 @@
+Webglimpse 2.0.7 (release 2019-2-8)
+
+* Re-structure groups, so they are in a container pane.
+* Make group highlight extend to the height of the group instead of just the label.
+* Add ability to make group highlight dashed.
+* Make group highlight properties configurable per group.
+
 Webglimpse 2.0.6 (release 2018-7-12)
 
 * Truncate event start/end times, so they are never sub-millisecond.
@@ -59,7 +66,7 @@ Webglimpse 1.7.2-pre8 (released 2016-7-15)
 * Fix bug with maximized rows which broke y axis scrolling after unmaximizing.
 * Add TimelinePaneOptions.axisLabelAlign to control how date labels are centered relative to the start/end of the day on timeline.
 * Add TimelinePaneOptions.mouseWheelListener to provide an alternative listener to handle mouse wheel events on timeline.
-* Add TimelinePaneOptions.centerSelectedIntervalOnDoubleClick to control whether timeline selection centers on double clicks. 
+* Add TimelinePaneOptions.centerSelectedIntervalOnDoubleClick to control whether timeline selection centers on double clicks.
 
 Webglimpse 1.7.2-pre7 (released 2016-7-8)
 
@@ -107,9 +114,9 @@ Webglimpse 1.7.0 (released 2016-4-26)
 
 Webglimpse 1.7.0-pre4 (released 2016-3-12)
 
- * Lock row. Rows can be locked to the top or the bottom of the timeline so 
+ * Lock row. Rows can be locked to the top or the bottom of the timeline so
 that they are always visible.
- * Maximize row. A set of rows can be temporarily set to maximized. In that 
+ * Maximize row. A set of rows can be temporarily set to maximized. In that
 mode they take up all available timeline space.
  * Ability to customize individual row heights.
  * Fix bug with 0 length events when event overlaps are allowed.
