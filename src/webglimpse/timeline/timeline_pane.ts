@@ -1140,21 +1140,21 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
 
         const groupAttrsChanged = function (timelineGroup: TimelineGroup) {
             const groupContentLayoutOpts = groupContainerRowPane.layoutOptions(groupContentPane);
-            const groupHighlightLayoutOpts = groupContainerOverlayPane.layoutOptions(groupHeaderHighlight);
+            const groupHighlightLayoutOpts = groupHeaderHighlight.layoutOptions(highlightPane);
             let redraw = false;
             if (timelineGroup.highlighted !== (!groupHighlightLayoutOpts.hide)) {
                 groupHighlightLayoutOpts.hide = !timelineGroup.highlighted;
                 redraw = true;
             }
-            if (timelineGroup.highlightColor !== (groupHighlight.color)) {
+            if (timelineGroup.highlightColor !== groupHighlight.color) {
                 groupHighlight.color = timelineGroup.highlightColor;
                 redraw = true;
             }
-            if (timelineGroup.dashPattern !== (groupHighlight.dashPattern)) {
+            if (timelineGroup.dashPattern !== groupHighlight.dashPattern) {
                 groupHighlight.dashPattern = timelineGroup.dashPattern;
                 redraw = true;
             }
-            if (timelineGroup.dashLength !== (groupHighlight.dashLength)) {
+            if (timelineGroup.dashLength !== groupHighlight.dashLength) {
                 groupHighlight.dashLength = timelineGroup.dashLength;
                 redraw = true;
             }

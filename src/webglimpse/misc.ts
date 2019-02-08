@@ -117,8 +117,16 @@ export class Highlight {
         }
     }
 
+    get dashPattern(): number {
+        return this._dashPattern;
+    }
+
     set dashPattern(pattern: number) {
         this._dashPattern = pattern;
+    }
+
+    get dashLength(): number {
+        return this._dashLength;
     }
 
     set dashLength(length: number) {
