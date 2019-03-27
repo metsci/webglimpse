@@ -139,7 +139,7 @@ export function fitToLabel(label: Label): LayoutPhase1 {
 }
 
 
-export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnchor?: number, yAnchor?: number, rotation_CCWRAD?: number) {
+export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnchor?: number, yAnchor?: number, rotation_CCWRAD?: number, truncateLabel?: boolean) {
     const textureRenderer = new TextureRenderer();
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
@@ -148,10 +148,20 @@ export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnc
             gl.clear(GL.COLOR_BUFFER_BIT);
         }
 
-        const texture = label.texture;
-        if (texture) {
+        if (truncateLabel) {
+            const xRight = viewport.w - 2 / viewport.w;
+            while (!!label.text && label.text !== '...') {
+                if (label.texture.w > xRight) {
+                    label.text = label.text.substring(0, label.text.length - 4).concat('...');
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (label.texture) {
             textureRenderer.begin(gl, viewport);
-            textureRenderer.draw(gl, texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
+            textureRenderer.draw(gl, label.texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: label.texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
             textureRenderer.end(gl);
         }
     };

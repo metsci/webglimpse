@@ -146,6 +146,7 @@ export interface TimelineEvent {
 export interface TimelineRow {
     rowGuid: string;
     label: string;
+    truncate?: boolean;
     hidden?: boolean;
     rowHeight?: number;
     yMin?: number;
@@ -1070,6 +1071,7 @@ export class TimelineRowModel {
     private _rowHeight: number;
     private _hidden: boolean;
     private _label: string;
+    private _truncate: boolean;
     private _uiHint: string;
     private _eventGuids: OrderedStringSet;
     private _timeseriesGuids: OrderedStringSet;
@@ -1106,6 +1108,7 @@ export class TimelineRowModel {
     setAttrs(row: TimelineRow) {
         // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
         this._label = row.label;
+        this._truncate = row.truncate;
         this._uiHint = row.uiHint;
         this._hidden = row.hidden;
         this._rowHeight = row.rowHeight;
@@ -1160,6 +1163,17 @@ export class TimelineRowModel {
     set label(label: string) {
         if (label !== this._label) {
             this._label = label;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get truncate(): boolean {
+        return this._truncate;
+    }
+
+    set truncate(truncate: boolean) {
+        if (truncate !== this._truncate) {
+            this._truncate = truncate;
             this._attrsChanged.fire();
         }
     }
@@ -1235,6 +1249,7 @@ export class TimelineRowModel {
         return {
             rowGuid: this._rowGuid,
             label: this._label,
+            truncate: this._truncate,
             rowHeight: this._rowHeight,
             hidden: this._hidden,
             uiHint: this._uiHint,
