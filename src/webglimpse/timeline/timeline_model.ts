@@ -176,6 +176,7 @@ export interface TimelineGroup {
     dashPattern?: number;
     dashLength?: number;
     rowGuids: string[];
+    labelFont?: string;
 }
 
 
@@ -1279,6 +1280,7 @@ export class TimelineGroupModel {
     private _highlightInsets: Insets;
     private _dashPattern: number;
     private _dashLength: number;
+    private _labelFont: string;
     private _rowGuids: OrderedStringSet;
 
     constructor(group: TimelineGroup) {
@@ -1317,6 +1319,7 @@ export class TimelineGroupModel {
         this._dashLength = hasval(group.dashLength) ? group.dashLength : 16;
         this._highlightWidth = group.highlightWidth;
         this._highlightInsets = group.highlightInsets;
+        this._labelFont = group.labelFont;
         this._attrsChanged.fire();
     }
 
@@ -1417,6 +1420,17 @@ export class TimelineGroupModel {
         }
     }
 
+    get labelFont(): string {
+        return this._labelFont;
+    }
+
+    set labelFont(labelFont: string) {
+        if (labelFont !== this._labelFont) {
+            this._labelFont = labelFont;
+            this._attrsChanged.fire();
+        }
+    }
+
     get rowGuids(): OrderedStringSet {
         return this._rowGuids;
     }
@@ -1434,6 +1448,7 @@ export class TimelineGroupModel {
             highlightInsets: this._highlightInsets,
             dashPattern: hasval(this.dashPattern) ? this.dashPattern : 0xFFFF,
             dashLength: hasval(this.dashLength) ? this.dashLength : 16,
+            labelFont: this._labelFont,
             rowGuids: this._rowGuids.toArray()
         };
     }

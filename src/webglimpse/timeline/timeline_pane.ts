@@ -1007,7 +1007,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     const addGroup = function (groupGuid: string, groupIndex: number) {
         const group = model.group(groupGuid);
 
-        const groupLabel = new Label(group.label, font, groupLabelColor);
+        const groupLabelFont = hasval(group.labelFont) ? group.labelFont : font;
+        const groupLabel = new Label(group.label, groupLabelFont, groupLabelColor);
         const groupLabelPane = new Pane(<Layout>{ updatePrefSize: fitToLabel(groupLabel) }, false);
         groupLabelPane.addPainter(newLabelPainter(groupLabel, 0, 1, 0, 1));
 
