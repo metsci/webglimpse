@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import {Color, sameColor} from './color';
-import {TextTextureFactory, TextTexture2D, createTextTextureFactory} from './text';
+import {TextTextureFactory, TextTexture2D, createTextTextureFactory, getTextWidth} from './text';
 import {Size, BoundsUnmodifiable} from './bounds';
 import {TextureRenderer} from './texture';
 import {GL, hasval} from './util/util';
@@ -127,6 +127,7 @@ export class Label {
         }
         return this._texture;
     }
+
 }
 
 
@@ -148,17 +149,19 @@ export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnc
             gl.clear(GL.COLOR_BUFFER_BIT);
         }
 
+        let labelText = label.text;
         if (truncateLabel) {
             const xRight = viewport.w - 2 / viewport.w;
-            while (!!label.text && label.text !== '...') {
-                if (label.texture.w > xRight) {
-                    label.text = label.text.substring(0, label.text.length - 4).concat('...');
+            while (labelText && labelText !== '...') {
+                if (getTextWidth(label.font, labelText) > xRight) {
+                    labelText = labelText.substring(0, labelText.length - 4).concat('...');
                 } else {
                     break;
                 }
             }
         }
 
+        label.text = labelText;
         if (label.texture) {
             textureRenderer.begin(gl, viewport);
             textureRenderer.draw(gl, label.texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: label.texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
@@ -166,5 +169,6 @@ export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnc
         }
     };
 }
+
 
 
