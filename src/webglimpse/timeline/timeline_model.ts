@@ -146,6 +146,7 @@ export interface TimelineEvent {
 export interface TimelineRow {
     rowGuid: string;
     label: string;
+    truncate?: boolean;
     hidden?: boolean;
     rowHeight?: number;
     yMin?: number;
@@ -175,6 +176,7 @@ export interface TimelineGroup {
     dashPattern?: number;
     dashLength?: number;
     rowGuids: string[];
+    labelFont?: string;
 }
 
 
@@ -1070,6 +1072,7 @@ export class TimelineRowModel {
     private _rowHeight: number;
     private _hidden: boolean;
     private _label: string;
+    private _truncate: boolean;
     private _uiHint: string;
     private _eventGuids: OrderedStringSet;
     private _timeseriesGuids: OrderedStringSet;
@@ -1106,6 +1109,7 @@ export class TimelineRowModel {
     setAttrs(row: TimelineRow) {
         // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
         this._label = row.label;
+        this._truncate = row.truncate;
         this._uiHint = row.uiHint;
         this._hidden = row.hidden;
         this._rowHeight = row.rowHeight;
@@ -1160,6 +1164,17 @@ export class TimelineRowModel {
     set label(label: string) {
         if (label !== this._label) {
             this._label = label;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get truncate(): boolean {
+        return this._truncate;
+    }
+
+    set truncate(truncate: boolean) {
+        if (truncate !== this._truncate) {
+            this._truncate = truncate;
             this._attrsChanged.fire();
         }
     }
@@ -1235,6 +1250,7 @@ export class TimelineRowModel {
         return {
             rowGuid: this._rowGuid,
             label: this._label,
+            truncate: this._truncate,
             rowHeight: this._rowHeight,
             hidden: this._hidden,
             uiHint: this._uiHint,
@@ -1264,6 +1280,7 @@ export class TimelineGroupModel {
     private _highlightInsets: Insets;
     private _dashPattern: number;
     private _dashLength: number;
+    private _labelFont: string;
     private _rowGuids: OrderedStringSet;
 
     constructor(group: TimelineGroup) {
@@ -1302,6 +1319,7 @@ export class TimelineGroupModel {
         this._dashLength = hasval(group.dashLength) ? group.dashLength : 16;
         this._highlightWidth = group.highlightWidth;
         this._highlightInsets = group.highlightInsets;
+        this._labelFont = group.labelFont;
         this._attrsChanged.fire();
     }
 
@@ -1402,6 +1420,17 @@ export class TimelineGroupModel {
         }
     }
 
+    get labelFont(): string {
+        return this._labelFont;
+    }
+
+    set labelFont(labelFont: string) {
+        if (labelFont !== this._labelFont) {
+            this._labelFont = labelFont;
+            this._attrsChanged.fire();
+        }
+    }
+
     get rowGuids(): OrderedStringSet {
         return this._rowGuids;
     }
@@ -1419,6 +1448,7 @@ export class TimelineGroupModel {
             highlightInsets: this._highlightInsets,
             dashPattern: hasval(this.dashPattern) ? this.dashPattern : 0xFFFF,
             dashLength: hasval(this.dashLength) ? this.dashLength : 16,
+            labelFont: this._labelFont,
             rowGuids: this._rowGuids.toArray()
         };
     }

@@ -1007,7 +1007,8 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
     const addGroup = function (groupGuid: string, groupIndex: number) {
         const group = model.group(groupGuid);
 
-        const groupLabel = new Label(group.label, font, groupLabelColor);
+        const groupLabelFont = hasval(group.labelFont) ? group.labelFont : font;
+        const groupLabel = new Label(group.label, groupLabelFont, groupLabelColor);
         const groupLabelPane = new Pane(<Layout>{ updatePrefSize: fitToLabel(groupLabel) }, false);
         groupLabelPane.addPainter(newLabelPainter(groupLabel, 0, 1, 0, 1));
 
@@ -1323,7 +1324,7 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
 
         const rowLabel = new Label(row.label, rowLabelFont, rowLabelColorFg);
         const rowLabelPane = new Pane({ updatePrefSize: fitToLabel(rowLabel) }, false);
-        rowLabelPane.addPainter(newLabelPainter(rowLabel, 0, 0.5, 0, 0.5));
+        rowLabelPane.addPainter(newLabelPainter(rowLabel, 0, 0.5, 0, 0.5, undefined, row.truncate));
 
         const rowLabelBackground = new Background(rowLabelColorBg);
         const rowHeaderPane = new Pane(newInsetLayout(options.rowLabelInsets), true);

@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import {Color, sameColor} from './color';
-import {TextTextureFactory, TextTexture2D, createTextTextureFactory} from './text';
+import {TextTextureFactory, TextTexture2D, createTextTextureFactory, getTextWidth} from './text';
 import {Size, BoundsUnmodifiable} from './bounds';
 import {TextureRenderer} from './texture';
 import {GL, hasval} from './util/util';
@@ -127,6 +127,7 @@ export class Label {
         }
         return this._texture;
     }
+
 }
 
 
@@ -139,7 +140,7 @@ export function fitToLabel(label: Label): LayoutPhase1 {
 }
 
 
-export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnchor?: number, yAnchor?: number, rotation_CCWRAD?: number) {
+export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnchor?: number, yAnchor?: number, rotation_CCWRAD?: number, truncateLabel?: boolean) {
     const textureRenderer = new TextureRenderer();
     return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
 
@@ -148,13 +149,26 @@ export function newLabelPainter(label: Label, xFrac: number, yFrac: number, xAnc
             gl.clear(GL.COLOR_BUFFER_BIT);
         }
 
-        const texture = label.texture;
-        if (texture) {
+        let labelText = label.text;
+        if (truncateLabel) {
+            const xRight = viewport.w - 2 / viewport.w;
+            while (labelText && labelText !== '...') {
+                if (getTextWidth(label.font, labelText) > xRight) {
+                    labelText = labelText.substring(0, labelText.length - 4).concat('...');
+                } else {
+                    break;
+                }
+            }
+        }
+
+        label.text = labelText;
+        if (label.texture) {
             textureRenderer.begin(gl, viewport);
-            textureRenderer.draw(gl, texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
+            textureRenderer.draw(gl, label.texture, xFrac, yFrac, { xAnchor: xAnchor, yAnchor: label.texture.yAnchor(yAnchor), rotation_CCWRAD: rotation_CCWRAD });
             textureRenderer.end(gl);
         }
     };
 }
+
 
 
