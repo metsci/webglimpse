@@ -145,7 +145,7 @@ const getRawFontMetrics = (function () {
 })();
 
 
-const getTextWidth = (function () {
+export const getTextWidth = (function () {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
@@ -535,5 +535,3 @@ export class HintedTextRenderer {
         this.program.endUse(gl);
     }
 }
-
-
