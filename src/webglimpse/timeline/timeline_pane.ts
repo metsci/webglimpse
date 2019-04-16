@@ -1163,6 +1163,10 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
                 groupContentLayoutOpts.hide = timelineGroup.collapsed;
                 redraw = true;
             }
+            if (timelineGroup.labelFont !== groupContentLayoutOpts.labelFont) {
+                groupLabel.font = timelineGroup.labelFont;
+                redraw = true;
+            }
             if (redraw) {
                 drawable.redraw();
             }
