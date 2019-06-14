@@ -75,6 +75,7 @@ export interface TimelinePaneOptions {
     // Misc
     font?: string;
     rowPaneFactoryChooser?: TimelineRowPaneFactoryChooser;
+    showGrabHand?: boolean;
 
     // Scroll
     showScrollbar?: boolean;
@@ -145,6 +146,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // Misc
     const font = (hasval(options) && hasval(options.font) ? options.font : '11px verdana,sans-serif');
     const rowPaneFactoryChooser = (hasval(options) && hasval(options.rowPaneFactoryChooser) ? options.rowPaneFactoryChooser : rowPaneFactoryChooser_DEFAULT);
+    const showGrabHand = (hasval(options) && hasval(options.showGrabHand) ? options.showGrabHand : false);
 
     // Scroll
     const showScrollbar = (hasval(options) && hasval(options.showScrollbar) ? options.showScrollbar : true);
@@ -312,7 +314,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // top time axis pane
     const axisOpts = { tickSpacing: tickSpacing, font: font, textColor: axisLabelColor, tickColor: axisLabelColor, labelAlign: axisLabelAlign, referenceDate: options.referenceDate, isFuturePositive: options.isFuturePositive, timeAxisFormat: options.timeAxisFormat };
     if (showTopAxis) {
-        const topAxisPane = newTimeAxisPane(contentPaneArgs, null);
+        const topAxisPane = newTimeAxisPane(contentPaneArgs, null, showGrabHand);
         ui.addPane('top-axis-pane', topAxisPane);
         topAxisPane.addPainter(newTimeAxisPainter(timeAxis, Side.TOP, topTimeZone, tickTimeZone, axisOpts));
         underlayPane.addPane(newInsetPane(topAxisPane, axisInsets), 0, { height: axisPaneHeight, width: null });
@@ -343,7 +345,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
 
     // bottom time axis pane
     if (showBottomAxis) {
-        const bottomAxisPane = newTimeAxisPane(contentPaneArgs, null);
+        const bottomAxisPane = newTimeAxisPane(contentPaneArgs, null, showGrabHand);
         ui.addPane('bottom-axis-pane', bottomAxisPane);
         bottomAxisPane.addPainter(newTimeAxisPainter(timeAxis, Side.BOTTOM, bottomTimeZone, tickTimeZone, axisOpts));
         underlayPane.addPane(newInsetPane(bottomAxisPane, axisInsets), 4, { height: axisPaneHeight, width: null });
@@ -463,7 +465,7 @@ function attachTimeAxisMouseListeners(pane: Pane, axis: Axis1D, args: TimelineCo
     pane.mouseWheel.on(args.options.mouseWheelListener);
 }
 
-function newTimeAxisPane(args: TimelineContentPaneArguments, row: TimelineRowModel): Pane {
+function newTimeAxisPane(args: TimelineContentPaneArguments, row: TimelineRowModel, showGrabHand: boolean): Pane {
     const timeAxis = args.timeAxis;
     const ui = args.ui;
     const draggableEdgeWidth = args.options.draggableEdgeWidth;
@@ -512,6 +514,10 @@ function newTimeAxisPane(args: TimelineContentPaneArguments, row: TimelineRowMod
         input.contextMenu.fire(ev);
     };
     axisPane.contextMenu.on(onContextMenu);
+
+    if (showGrabHand) {
+        axisPane.mouseCursor = 'move';
+    }
 
     if (selectedIntervalMode === 'single' || selectedIntervalMode === 'range') {
         const selection = ui.selection;
@@ -1100,7 +1106,7 @@ function newTimelineContentPane(args: TimelineContentPaneArguments): Pane {
             groupHeaderUnderlay.addPainter(newBackgroundPainter(bgColor));
             groupHeaderUnderlay.addPane(groupButton, 0);
             groupHeaderUnderlay.addPane(groupHeaderStripe, 1, { ignoreHeight: true });
-            const groupHeaderOverlay = newTimeAxisPane(args, null);
+            const groupHeaderOverlay = newTimeAxisPane(args, null, group.showGrabHand);
             const groupHeaderOverlayInsets = newInsets(0, 0, 0, rowLabelPaneWidth);
 
             groupHeaderPane = new Pane(newOverlayLayout());
@@ -1287,7 +1293,7 @@ function newRowBackgroundPainter(args: TimelineContentPaneArguments, guidList: O
 }
 
 function newRowBackgroundPanes(args: TimelineContentPaneArguments, guidList: OrderedStringSet, row: TimelineRowModel) {
-    const rowBackgroundPane = newTimeAxisPane(args, row);
+    const rowBackgroundPane = newTimeAxisPane(args, row, row.showGrabHand);
     rowBackgroundPane.addPainter(newRowBackgroundPainter(args, guidList, row));
 
     const timeGridOpts = { tickSpacing: args.options.gridTickSpacing, gridColor: args.options.gridColor, referenceDate: args.options.referenceDate };
