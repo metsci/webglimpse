@@ -1,4 +1,11 @@
+Webglimpse 2.2.0 (release 2019-6-19)
+
+* Added ability to specify custom mouse cursor for TimelineRow and TimelineGroup.
+* Updated Typescript to ~3.4.5 and other dev dependencies.
+* Replaced deprecated MouseWheelEvent listener with WheelEvent listener.
+
 Webglimpse 2.1.1 (release 2019-4-16)
+
 * Added support for truncating label text with ellipsis.
 * Added support for changing row and group label fonts.
 

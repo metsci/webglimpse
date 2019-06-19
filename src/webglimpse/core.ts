@@ -400,10 +400,10 @@ function jMouse(element: HTMLElement, ev: MouseEvent): number {
 }
 
 
-function mouseWheelSteps(ev: MouseWheelEvent): number {
-    // Firefox puts the scroll amount in the 'detail' field; everybody else puts it in 'wheelDelta'
+function mouseWheelSteps(ev: WheelEvent): number {
+    // MouseWheelEvent.wheelDelta is deprecated, use WheelEvent.deltaY instead.
     // Firefox uses positive values for a downward scroll; everybody else uses positive for upward
-    const raw = (ev.wheelDelta !== undefined ? ev.wheelDelta : -ev.detail);
+    const raw = (ev.deltaY !== undefined ? ev.deltaY : -ev.detail);
     if (raw > 0) { return -1; }
     if (raw < 0) { return +1; }
     return 0;
@@ -672,8 +672,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     }
 
 
-    // Firefox uses event type 'DOMMouseScroll' for mouse-wheel events; everybody else uses 'mousewheel'
-    const handleMouseWheel = function (ev: MouseWheelEvent) {
+    const handleMouseWheel = function (ev: WheelEvent) {
         const i = iMouse(element, ev);
         const j = jMouse(element, ev);
 
@@ -696,8 +695,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
             currentPanes[n].fireMouseWheel(i, j, wheelSteps, ev);
         }
     };
-    element.addEventListener('mousewheel', handleMouseWheel);
-    element.addEventListener('DOMMouseScroll', handleMouseWheel, false);
+    element.addEventListener('wheel', handleMouseWheel);
 
     element.addEventListener('contextmenu', function (ev: MouseEvent) {
         const i = iMouse(element, ev);
@@ -783,6 +781,3 @@ export function newDrawable(canvas: HTMLCanvasElement): Drawable {
         }
     };
 }
-
-
-
