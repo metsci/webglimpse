@@ -160,6 +160,7 @@ export interface TimelineRow {
     fgLabelColor?: string;
     bgLabelColor?: string;
     labelFont?: string;
+    cursor?: string;
 }
 
 
@@ -177,6 +178,7 @@ export interface TimelineGroup {
     dashLength?: number;
     rowGuids: string[];
     labelFont?: string;
+    cursor?: string;
 }
 
 
@@ -1083,6 +1085,7 @@ export class TimelineRowModel {
     private _labelFont: string;
     private _dataAxis: Axis1D;
     private _bgColor: Color;
+    private _cursor: string;
 
     constructor(row: TimelineRow) {
         this._rowGuid = row.rowGuid;
@@ -1118,6 +1121,7 @@ export class TimelineRowModel {
         this._fgLabelColor = (hasval(row.fgLabelColor) ? parseCssColor(row.fgLabelColor) : null);
         this._bgLabelColor = (hasval(row.bgLabelColor) ? parseCssColor(row.bgLabelColor) : null);
         this._labelFont = row.labelFont;
+        this._cursor = row.cursor;
         this._attrsChanged.fire();
     }
 
@@ -1234,6 +1238,17 @@ export class TimelineRowModel {
         }
     }
 
+    get cursor(): string {
+        return this._cursor;
+    }
+
+    set cursor(cursor: string) {
+        if (cursor !== this._cursor) {
+            this._cursor = cursor;
+            this._attrsChanged.fire();
+        }
+    }
+
     get eventGuids(): OrderedStringSet {
         return this._eventGuids;
     }
@@ -1261,7 +1276,8 @@ export class TimelineRowModel {
             bgColor: (hasval(this._bgColor) ? this._bgColor.cssString : null),
             bgLabelColor: (hasval(this._bgLabelColor) ? this._bgLabelColor.cssString : null),
             fgLabelColor: (hasval(this._fgLabelColor) ? this._fgLabelColor.cssString : null),
-            labelFont: this._labelFont
+            labelFont: this._labelFont,
+            cursor: this._cursor
         };
     }
 }
@@ -1282,6 +1298,7 @@ export class TimelineGroupModel {
     private _dashLength: number;
     private _labelFont: string;
     private _rowGuids: OrderedStringSet;
+    private _cursor: string;
 
     constructor(group: TimelineGroup) {
         this._groupGuid = group.groupGuid;
@@ -1320,6 +1337,7 @@ export class TimelineGroupModel {
         this._highlightWidth = group.highlightWidth;
         this._highlightInsets = group.highlightInsets;
         this._labelFont = group.labelFont;
+        this._cursor = group.cursor;
         this._attrsChanged.fire();
     }
 
@@ -1431,6 +1449,17 @@ export class TimelineGroupModel {
         }
     }
 
+    get cursor(): string {
+        return this._cursor;
+    }
+
+    set cursor(cursor: string) {
+        if (cursor !== this._cursor) {
+            this._cursor = cursor;
+            this._attrsChanged.fire();
+        }
+    }
+
     get rowGuids(): OrderedStringSet {
         return this._rowGuids;
     }
@@ -1449,6 +1478,7 @@ export class TimelineGroupModel {
             dashPattern: hasval(this.dashPattern) ? this.dashPattern : 0xFFFF,
             dashLength: hasval(this.dashLength) ? this.dashLength : 16,
             labelFont: this._labelFont,
+            cursor: this._cursor,
             rowGuids: this._rowGuids.toArray()
         };
     }
