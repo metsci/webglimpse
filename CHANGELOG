@@ -1,3 +1,7 @@
+Webglimpse 2.2.0 (release 2019-11-8)
+
+* Added ability to disable picking of timeline annotations. Set `picking` to false.
+
 Webglimpse 2.2.0 (release 2019-6-19)
 
 * Added ability to specify custom mouse cursor for TimelineRow and TimelineGroup.

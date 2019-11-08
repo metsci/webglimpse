@@ -277,6 +277,9 @@ export function newTimeseriesRowPaneFactory(rowOptions?: TimelineTimeseriesRowPa
                 for (let annotationIdx = 0; annotationIdx < row.annotationGuids.length; annotationIdx++) {
                     const annotationGuid: string = row.annotationGuids.valueAt(annotationIdx);
                     const annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
+                    if (!annotation.pickable) {
+                        continue;
+                    }
                     const styleGuid: string = annotation.styleGuid;
                     const style: TimelineAnnotationStyleUi = ui.annotationStyle(styleGuid);
 

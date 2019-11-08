@@ -57,6 +57,7 @@ export interface TimelineAnnotation {
     y?: number;
     label: string;
     styleGuid: string;
+    pickable?: boolean;
 }
 
 
@@ -283,6 +284,7 @@ export class TimelineAnnotationModel {
     private _y: number;
     private _label: string;
     private _styleGuid: string;
+    private _pickable: boolean;
 
     constructor(annotation: TimelineAnnotation) {
         this._annotationGuid = annotation.annotationGuid;
@@ -351,12 +353,24 @@ export class TimelineAnnotationModel {
         }
     }
 
+    get pickable(): boolean {
+        return this._pickable;
+    }
+
+    set pickable(pickable: boolean) {
+        if (pickable !== this.pickable) {
+            this._pickable = pickable;
+            this._attrsChanged.fire();
+        }
+    }
+
     setAttrs(annotation: TimelineAnnotation) {
         // Don't both checking whether values are going to change -- it's not that important, and it would be obnoxious here
         this._time_PMILLIS = hasval(annotation.time_ISO8601) ? parseTime_PMILLIS(annotation.time_ISO8601) : undefined;
         this._y = annotation.y;
         this._label = annotation.label;
         this._styleGuid = annotation.styleGuid;
+        this._pickable = hasval(annotation.pickable) ? annotation.pickable : true;
         this._attrsChanged.fire();
     }
 
@@ -367,6 +381,7 @@ export class TimelineAnnotationModel {
             styleGuid: this._styleGuid,
             time_ISO8601: formatTime_ISO8601(this._time_PMILLIS),
             y: this._y,
+            pickable: this._pickable,
         };
     }
 }
