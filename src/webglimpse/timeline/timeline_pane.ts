@@ -1336,6 +1336,16 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         const rowLabelPane = new Pane({ updatePrefSize: fitToLabel(rowLabel) }, false);
         rowLabelPane.addPainter(newLabelPainter(rowLabel, 0, 0.5, 0, 0.5, undefined, row.truncate));
 
+        //const rowHeaderHighlight = new Pane(newColumnLayout(), false);
+        const rowHighlight = new Highlight(rgb(1, 0, 0));
+        const highlightInnerPane = new Pane(newRowLayout());
+        highlightInnerPane.addPainter(rowHighlight.newPainter());
+        const insets = newInsets(0, 0, 0, 6);
+        const width = 4;
+        const containerWidth = insets ? insets.left + insets.right + width : width;
+        const highlightPane = newInsetPane(highlightInnerPane, insets);
+        //rowHeaderHighlight.addPane(highlightPane, 0, { width: containerWidth, height: null });
+
         const rowLabelBackground = new Background(rowLabelColorBg);
         const rowHeaderPane = new Pane(newInsetLayout(options.rowLabelInsets), true);
         rowHeaderPane.addPainter(rowLabelBackground.newPainter());
@@ -1355,8 +1365,9 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         const rowInsetPane = rowBackgroundPanes.rowInsetPane;
 
         const rowPane = new Pane(newColumnLayout());
-        rowPane.addPane(rowHeaderPane, 0, { width: options.rowLabelPaneWidth });
-        rowPane.addPane(rowBackgroundPane, 1, { width: null });
+        rowPane.addPane(highlightPane, 0, { width: containerWidth });
+        rowPane.addPane(rowHeaderPane, 1, { width: options.rowLabelPaneWidth });
+        rowPane.addPane(rowBackgroundPane, 2, { width: null });
 
         // expose panes in api via TimelineRowUi
         rowUi.addPane(keyPrefix + '-background', rowBackgroundPane);
