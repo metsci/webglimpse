@@ -85,6 +85,7 @@ export interface TimelinePaneOptions {
     fgColor?: Color;
     rowLabelColor?: Color;
     rowLabelBgColor?: Color;
+    rowHighlightColor?: Color;
     groupLabelColor?: Color;
     groupHighlightColor?: Color;
     axisLabelColor?: Color;
@@ -118,6 +119,8 @@ export interface TimelinePaneOptions {
     rowLabelInsets?: Insets;
     rowLabelPaneWidth?: number;
     rowSeparatorHeight?: number;
+    rowHighlightWidth?: number;
+    rowHighlightInsets?: Insets;
     scrollbarWidth?: number;
     axisPaneHeight?: number;
     draggableEdgeWidth?: number;
@@ -157,6 +160,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     const bgColor = (hasval(options) && hasval(options.bgColor) ? options.bgColor : rgb(0.098, 0.165, 0.243));
     const rowLabelColor = (hasval(options) && hasval(options.rowLabelColor) ? options.rowLabelColor : fgColor);
     const rowLabelBgColor = (hasval(options) && hasval(options.rowLabelBgColor) ? options.rowLabelBgColor : bgColor);
+    const rowHighlightColor = (hasval(options) && hasval(options.rowHighlightColor) ? options.rowHighlightColor : rgb(1, 0.623, 0));
     const groupLabelColor = (hasval(options) && hasval(options.groupLabelColor) ? options.groupLabelColor : fgColor);
     const groupHighlightColor = (hasval(options) && hasval(options.groupHighlightColor) ? options.groupHighlightColor : rgb(0, 1, 1));
     const axisLabelColor = (hasval(options) && hasval(options.axisLabelColor) ? options.axisLabelColor : fgColor);
@@ -180,6 +184,8 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     const groupHighlightInsets = (hasval(options) && hasval(options.groupHighlightInsets) ? options.groupHighlightInsets : newInsets(6, 0, 2, 4));
     const rowLabelInsets = (hasval(options) && hasval(options.rowLabelInsets) ? options.rowLabelInsets : newInsets(0, 35));
     const rowLabelPaneWidth = (hasval(options) && hasval(options.rowLabelPaneWidth) ? options.rowLabelPaneWidth : 140);
+    const rowHighlightWidth = (hasval(options) && hasval(options.rowHighlightWidth) ? options.rowHighlightWidth : 2);
+    const rowHighlightInsets = (hasval(options) && hasval(options.rowHighlightInsets) ? options.rowHighlightInsets : newInsets(1, 0, 2, 8));
     const rowSeparatorHeight = (hasval(options) && hasval(options.rowSeparatorHeight) ? options.rowSeparatorHeight : 2);
     let scrollbarWidth = (hasval(options) && hasval(options.scrollbarWidth) ? options.scrollbarWidth : 16);
     scrollbarWidth = showScrollbar ? scrollbarWidth : 0; // if the scrollbar is not showing, set its width to 0
@@ -241,7 +247,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     // Scroll Pane
 
     const tickTimeZone = (showTopAxis ? topTimeZone : bottomTimeZone);
-    const contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, groupHighlightWidth: groupHighlightWidth, groupHighlightInsets: groupHighlightInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
+    const contentPaneOpts = { selectedIntervalMode: selectedIntervalMode, rowPaneFactoryChooser: rowPaneFactoryChooser, font: font, fgColor: fgColor, rowLabelColor: rowLabelColor, rowLabelBgColor: rowLabelBgColor, rowHighlightColor: rowHighlightColor, groupLabelColor: groupLabelColor, groupHighlightColor: groupHighlightColor, axisLabelColor: axisLabelColor, bgColor: bgColor, rowBgColor: rowBgColor, rowAltBgColor: rowAltBgColor, gridColor: gridColor, gridTickSpacing: tickSpacing, gridTimeZone: tickTimeZone, referenceDate: options.referenceDate, groupLabelInsets: groupLabelInsets, groupHighlightWidth: groupHighlightWidth, groupHighlightInsets: groupHighlightInsets, rowLabelInsets: rowLabelInsets, rowLabelPaneWidth: rowLabelPaneWidth, rowHighlightWidth: rowHighlightWidth, rowHighlightInsets: rowHighlightInsets, rowSeparatorHeight: rowSeparatorHeight, draggableEdgeWidth: draggableEdgeWidth, snapToDistance: snapToDistance, mouseWheelListener: mouseWheelListener };
     let contentPaneArgs;
     let contentPane: Pane = null;
 
@@ -926,6 +932,9 @@ interface TimelineContentPaneOptions {
     fgColor: Color;
     rowLabelColor: Color;
     rowLabelBgColor: Color;
+    rowHighlightColor: Color;
+    rowHighlightWidth: number;
+    rowHighlightInsets: Insets;
     groupLabelColor: Color;
     groupHighlightColor: Color;
     groupHighlightWidth: number;
@@ -1322,7 +1331,7 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
     const ui = args.ui;
     const options = args.options;
 
-    const rowPanes: StringMap<Pane> = {};
+    const rowContainerPanes: StringMap<Pane> = {};
 
     const addRow = function (rowGuid: string, rowIndex: number) {
         const row = model.row(rowGuid);
@@ -1336,38 +1345,47 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         const rowLabelPane = new Pane({ updatePrefSize: fitToLabel(rowLabel) }, false);
         rowLabelPane.addPainter(newLabelPainter(rowLabel, 0, 0.5, 0, 0.5, undefined, row.truncate));
 
-        //const rowHeaderHighlight = new Pane(newColumnLayout(), false);
-        const rowHighlight = new Highlight(rgb(1, 0, 0));
+        const rowHeaderHighlight = new Pane(newColumnLayout(), false);
+        const rowHighlight = new Highlight(row.highlightColor || options.rowHighlightColor);
         const highlightInnerPane = new Pane(newRowLayout());
         highlightInnerPane.addPainter(rowHighlight.newPainter());
-        const insets = newInsets(0, 0, 0, 6);
-        const width = 4;
+        const insets = row.highlightInsets || options.rowHighlightInsets;
+        const width = row.highlightWidth || options.rowHighlightWidth;
         const containerWidth = insets ? insets.left + insets.right + width : width;
         const highlightPane = newInsetPane(highlightInnerPane, insets);
-        //rowHeaderHighlight.addPane(highlightPane, 0, { width: containerWidth, height: null });
+        rowHeaderHighlight.addPane(highlightPane, 0, { width: containerWidth, height: null,  hide: !row.highlighted });
 
         const rowLabelBackground = new Background(rowLabelColorBg);
         const rowHeaderPane = new Pane(newInsetLayout(options.rowLabelInsets), true);
+
         rowHeaderPane.addPainter(rowLabelBackground.newPainter());
         rowHeaderPane.addPane(rowLabelPane);
-
-        const rowAttrsChanged = function () {
-            rowLabel.text = row.label;
-            rowLabel.fgColor = hasval(row.fgLabelColor) ? row.fgLabelColor : options.rowLabelColor;
-            rowLabel.font = hasval(row.labelFont) ? row.labelFont : options.font;
-            rowLabelBackground.color = hasval(row.bgLabelColor) ? row.bgLabelColor : options.bgColor;
-            drawable.redraw();
-        };
-        row.attrsChanged.on(rowAttrsChanged);
 
         const rowBackgroundPanes = newRowBackgroundPanes(args, guidList, row);
         const rowBackgroundPane = rowBackgroundPanes.rowBackgroundPane;
         const rowInsetPane = rowBackgroundPanes.rowInsetPane;
 
         const rowPane = new Pane(newColumnLayout());
-        rowPane.addPane(highlightPane, 0, { width: containerWidth });
-        rowPane.addPane(rowHeaderPane, 1, { width: options.rowLabelPaneWidth });
-        rowPane.addPane(rowBackgroundPane, 2, { width: null });
+        rowPane.addPane(rowHeaderPane, 0, { width: options.rowLabelPaneWidth });
+        rowPane.addPane(rowBackgroundPane, 1, { width: null });
+
+        const rowContainerOverlayPane = new Pane(newOverlayLayout());
+        rowContainerOverlayPane.addPane(rowPane, true, { width: null, height: null });
+        rowContainerOverlayPane.addPane(rowHeaderHighlight, false, { width: null, height: null });
+
+        const rowAttrsChanged = function () {
+            rowLabel.text = row.label;
+            rowLabel.fgColor = hasval(row.fgLabelColor) ? row.fgLabelColor : options.rowLabelColor;
+            rowLabel.font = hasval(row.labelFont) ? row.labelFont : options.font;
+            rowLabelBackground.color = hasval(row.bgLabelColor) ? row.bgLabelColor : options.bgColor;
+
+            const rowHighlightLayoutOpts = rowHeaderHighlight.layoutOptions(highlightPane);
+            rowHighlightLayoutOpts.hide = !row.highlighted;
+            rowHighlight.color = row.highlightColor;
+
+            drawable.redraw();
+        };
+        row.attrsChanged.on(rowAttrsChanged);
 
         // expose panes in api via TimelineRowUi
         rowUi.addPane(keyPrefix + '-background', rowBackgroundPane);
@@ -1408,17 +1426,17 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
             const shift = (isNumber(layoutArg) && layoutArg >= rowIndex);
             return (shift ? layoutArg + 1 : layoutArg);
         });
-        parentPane.addPane(rowPane, rowIndex);
-        rowPanes[rowGuid] = rowPane;
+        parentPane.addPane(rowContainerOverlayPane, rowIndex);
+        rowContainerPanes[rowGuid] = rowContainerOverlayPane;
 
 
         // Handle hidden property
         //
-        parentPane.layoutOptions(rowPane).hide = row.hidden;
+        parentPane.layoutOptions(rowContainerOverlayPane).hide = row.hidden;
 
         drawable.redraw();
 
-        rowPane.dispose.on(function () {
+        rowContainerOverlayPane.dispose.on(function () {
             row.attrsChanged.off(rowAttrsChanged);
             rowUi.paneFactoryChanged.off(refreshRowContentPane);
             row.attrsChanged.off(refreshRowContentPane);
@@ -1441,7 +1459,7 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
         const nMax = Math.max(rowOldIndex, rowNewIndex);
         for (let n = nMin; n <= nMax; n++) {
             const rowGuidTemp = guidList.valueAt(n);
-            parentPane.setLayoutArg(rowPanes[rowGuidTemp], n);
+            parentPane.setLayoutArg(rowContainerPanes[rowGuidTemp], n);
         }
 
         drawable.redraw();
@@ -1449,14 +1467,14 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
     guidList.valueMoved.on(valueMoved);
 
     const removeRow = function (rowGuid: string, rowIndex: number) {
-        const pane: Pane = rowPanes[rowGuid];
+        const pane: Pane = rowContainerPanes[rowGuid];
         pane.dispose.fire();
         parentPane.removePane(pane);
         parentPane.updateLayoutArgs(function (layoutArg: any): any {
             const shift = (isNumber(layoutArg) && layoutArg > rowIndex);
             return (shift ? layoutArg - 1 : layoutArg);
         });
-        delete rowPanes[rowGuid];
+        delete rowContainerPanes[rowGuid];
 
         drawable.redraw();
     };
@@ -1470,8 +1488,8 @@ function setupRowContainerPane(args: TimelineContentPaneArguments, parentPane: P
     const attachAttrsChangedListener = function (rowGuid: string, rowIndex: number) {
         const row = model.row(rowGuid);
         const attrsChangedListener = function () {
-            if (hasval(row.hidden && hasval(rowPanes[rowGuid]))) {
-                parentPane.layoutOptions(rowPanes[rowGuid]).hide = row.hidden;
+            if (hasval(row.hidden && hasval(rowContainerPanes[rowGuid]))) {
+                parentPane.layoutOptions(rowContainerPanes[rowGuid]).hide = row.hidden;
                 drawable.redraw();
             }
         };

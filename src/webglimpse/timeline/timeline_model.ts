@@ -162,6 +162,10 @@ export interface TimelineRow {
     bgLabelColor?: string;
     labelFont?: string;
     cursor?: string;
+    highlighted?: boolean;
+    highlightColor?: Color;
+    highlightWidth?: number;
+    highlightInsets?: Insets;
 }
 
 
@@ -1101,6 +1105,10 @@ export class TimelineRowModel {
     private _dataAxis: Axis1D;
     private _bgColor: Color;
     private _cursor: string;
+    private _highlighted: boolean;
+    private _highlightColor: Color;
+    private _highlightWidth: number;
+    private _highlightInsets: Insets;
 
     constructor(row: TimelineRow) {
         this._rowGuid = row.rowGuid;
@@ -1137,6 +1145,10 @@ export class TimelineRowModel {
         this._bgLabelColor = (hasval(row.bgLabelColor) ? parseCssColor(row.bgLabelColor) : null);
         this._labelFont = row.labelFont;
         this._cursor = row.cursor;
+        this._highlighted = hasval(row.highlighted) ? row.highlighted : false;
+        this._highlightColor = hasval(row.highlightColor) ? row.highlightColor : parseCssColor('white');
+        this._highlightWidth = row.highlightWidth;
+        this._highlightInsets = row.highlightInsets;
         this._attrsChanged.fire();
     }
 
@@ -1264,6 +1276,50 @@ export class TimelineRowModel {
         }
     }
 
+    get highlighted(): boolean {
+        return this._highlighted;
+    }
+
+    set highlighted(highlighted: boolean) {
+        if (highlighted !== this._highlighted) {
+            this._highlighted = highlighted;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get highlightColor(): Color {
+        return this._highlightColor;
+    }
+
+    set highlightColor(highlightColor: Color) {
+        if (highlightColor !== this._highlightColor) {
+            this._highlightColor = highlightColor;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get highlightWidth(): number {
+        return this._highlightWidth;
+    }
+
+    set highlightWidth(highlightWidth: number) {
+        if (highlightWidth !== this._highlightWidth) {
+            this._highlightWidth = highlightWidth;
+            this._attrsChanged.fire();
+        }
+    }
+
+    get highlightInsets(): Insets {
+        return this._highlightInsets;
+    }
+
+    set highlightInsets(highlightInsets: Insets) {
+        if (highlightInsets !== this._highlightInsets) {
+            this._highlightInsets = highlightInsets;
+            this._attrsChanged.fire();
+        }
+    }
+
     get eventGuids(): OrderedStringSet {
         return this._eventGuids;
     }
@@ -1292,7 +1348,11 @@ export class TimelineRowModel {
             bgLabelColor: (hasval(this._bgLabelColor) ? this._bgLabelColor.cssString : null),
             fgLabelColor: (hasval(this._fgLabelColor) ? this._fgLabelColor.cssString : null),
             labelFont: this._labelFont,
-            cursor: this._cursor
+            cursor: this._cursor,
+            highlighted: (hasval(this._highlighted) ? this._highlighted : false),
+            highlightColor: hasval(this.highlightColor) ? this.highlightColor : parseCssColor('white'),
+            highlightWidth: this._highlightWidth,
+            highlightInsets: this._highlightInsets
         };
     }
 }
