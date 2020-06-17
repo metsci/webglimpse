@@ -185,7 +185,7 @@ export function newTimelinePane(drawable: Drawable, timeAxis: TimeAxis1D, model:
     const rowLabelInsets = (hasval(options) && hasval(options.rowLabelInsets) ? options.rowLabelInsets : newInsets(0, 35));
     const rowLabelPaneWidth = (hasval(options) && hasval(options.rowLabelPaneWidth) ? options.rowLabelPaneWidth : 140);
     const rowHighlightWidth = (hasval(options) && hasval(options.rowHighlightWidth) ? options.rowHighlightWidth : 2);
-    const rowHighlightInsets = (hasval(options) && hasval(options.rowHighlightInsets) ? options.rowHighlightInsets : newInsets(1, 0, 2, 8));
+    const rowHighlightInsets = (hasval(options) && hasval(options.rowHighlightInsets) ? options.rowHighlightInsets : newInsets(1, 0, 2, 10));
     const rowSeparatorHeight = (hasval(options) && hasval(options.rowSeparatorHeight) ? options.rowSeparatorHeight : 2);
     let scrollbarWidth = (hasval(options) && hasval(options.scrollbarWidth) ? options.scrollbarWidth : 16);
     scrollbarWidth = showScrollbar ? scrollbarWidth : 0; // if the scrollbar is not showing, set its width to 0
