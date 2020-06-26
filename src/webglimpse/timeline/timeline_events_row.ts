@@ -988,7 +988,7 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
     const cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
     const defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
     const defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
-    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
+    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : null);
     const minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
     const dashLength = (hasval(barOpts) && hasval(barOpts.dashLength) ? barOpts.dashLength : 5);
     const defaultSecondaryColor = new Color(0, 0, 0, 0);
@@ -1165,7 +1165,7 @@ function eventDashedBorderPainterHelper(barOpts: TimelineEventBarsPainterOptions
                 let borderColor = (event.borderColor || event.bgColor || defaultBorderColor);
                 const borderSecondaryColor = (event.borderSecondaryColor || defaultSecondaryColor);
                 if (selection.selectedEvents.hasValue(event)) {
-                    borderColor = selectedBorderColor;
+                    borderColor = (selectedBorderColor || borderColor);
                 }
                 if (borderColor) {
                     let startIndex = 0;
@@ -1758,7 +1758,7 @@ function eventBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawabl
     const cornerType = (hasval(barOpts) && hasval(barOpts.cornerType) ? barOpts.cornerType : JointType.BEVEL);
     const defaultColor = (hasval(barOpts) && hasval(barOpts.defaultColor) ? barOpts.defaultColor : options.timelineFgColor.withAlphaTimes(0.4));
     const defaultBorderColor = (hasval(barOpts) && hasval(barOpts.defaultBorderColor) ? barOpts.defaultBorderColor : null);
-    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : options.timelineFgColor);
+    const selectedBorderColor = (hasval(barOpts) && hasval(barOpts.selectedBorderColor) ? barOpts.selectedBorderColor : null);
     const minimumVisibleWidth = (hasval(barOpts) && hasval(barOpts.minimumVisibleWidth) ? barOpts.minimumVisibleWidth : 0);
 
     const selection = ui.selection;
@@ -1856,7 +1856,7 @@ function eventBarPainterHelper(barOpts: TimelineEventBarsPainterOptions, drawabl
                 // Border
                 let borderColor = (event.borderColor || (event.bgColor ? fillColor : null) || defaultBorderColor || fillColor);
                 if (selection.selectedEvents.hasValue(event)) {
-                    borderColor = selectedBorderColor;
+                    borderColor = (selectedBorderColor || borderColor);
                 }
                 if (borderColor) {
                     switch (cornerType) {
