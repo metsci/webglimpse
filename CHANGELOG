@@ -1,3 +1,10 @@
+Webglimpse 2.4.0 (release 2020-6-26)
+
+* Added ability to highlight a row, similar to group highlight.
+* By default selecting an event no longer changes the border color unless
+  the `selectedBorderColor` property is set on the `newEventBarsPainterFactory`
+  style.
+
 Webglimpse 2.3.0 (release 2019-11-8)
 
 * Added ability to disable picking of timeline annotations. Set `picking` to false.
