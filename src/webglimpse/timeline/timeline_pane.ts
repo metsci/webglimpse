@@ -528,7 +528,7 @@ function newTimeAxisPane(args: TimelineContentPaneArguments, row: TimelineRowMod
     if (selectedIntervalMode === 'single' || selectedIntervalMode === 'range') {
         const selection = ui.selection;
         const selectedIntervalPane = new Pane(null, true, newTimeIntervalMask(timeAxis, selection.selectedInterval, selectedIntervalMode));
-        attachTimeSelectionMouseListeners(selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode);
+        attachTimeSelectionMouseListeners(selectedIntervalPane, timeAxis, selection.selectedInterval, input, draggableEdgeWidth, selectedIntervalMode, args.options.mouseWheelListener);
         axisPane.addPane(selectedIntervalPane, false);
 
         selectedIntervalPane.mouseMove.on(onMouseMove);
@@ -556,7 +556,8 @@ function attachTimeSelectionMouseListeners(pane: Pane,
     interval: TimeIntervalModel,
     input: TimelineInput,
     draggableEdgeWidth: number,
-    selectedIntervalMode: string) {
+    selectedIntervalMode: string,
+    mouseWheelListener: (PointerEvent: PointerEvent) => void) {
 
     if (selectedIntervalMode === 'single') {
 
@@ -564,7 +565,7 @@ function attachTimeSelectionMouseListeners(pane: Pane,
             return 'center';
         };
 
-        attachTimeIntervalSelectionMouseListeners(pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode);
+        attachTimeIntervalSelectionMouseListeners(pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode, mouseWheelListener);
 
     }
     else if (selectedIntervalMode === 'range') {
@@ -604,7 +605,7 @@ function attachTimeSelectionMouseListeners(pane: Pane,
             }
         };
 
-        attachTimeIntervalSelectionMouseListeners(pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode);
+        attachTimeIntervalSelectionMouseListeners(pane, timeAxis, interval, input, draggableEdgeWidth, selectedIntervalMode, chooseDragMode, mouseWheelListener);
     }
 }
 
@@ -614,7 +615,8 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
     input: TimelineInput,
     draggableEdgeWidth: number,
     selectedIntervalMode: string,
-    chooseDragMode: (ev: PointerEvent) => string) {
+    chooseDragMode: (ev: PointerEvent) => string,
+    mouseWheelListener: (PointerEvent: PointerEvent) => void) {
 
     // see comments in attachTimeSelectionMouseListeners( ... )
     const minIntervalWidthForEdgeDraggability = 3 * draggableEdgeWidth;
@@ -622,12 +624,7 @@ function attachTimeIntervalSelectionMouseListeners(pane: Pane,
 
     // Hook up input notifications
     //
-
-    pane.mouseWheel.on(function (ev: PointerEvent) {
-        const zoomFactor = Math.pow(axisZoomStep, ev.wheelSteps);
-        timeAxis.zoom(zoomFactor, timeAxis.vAtFrac(xFrac(ev)));
-    });
-
+    pane.mouseWheel.on(mouseWheelListener);
     pane.contextMenu.on(function (ev: PointerEvent) {
         input.contextMenu.fire(ev);
     });
