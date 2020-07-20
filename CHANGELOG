@@ -1,3 +1,8 @@
+Webglimpse 2.4.1 (release 2020-7-20)
+
+* Fixed a bug when scrolling the mouse wheel over the time selector when using
+  a custom mouse wheel listener.
+
 Webglimpse 2.4.0 (release 2020-6-26)
 
 * Added ability to highlight a row, similar to group highlight.
