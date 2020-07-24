@@ -239,7 +239,6 @@ export class OrderedSet<V> {
             this._ids.splice(oldIndex, 1);
             this._valuesArray.splice(oldIndex, 1);
             if (newIndex > oldIndex) {
-                newIndex--;
                 this._ids.splice(newIndex, 0, id);
                 this._valuesArray.splice(newIndex, 0, value);
                 for (let n = oldIndex; n <= newIndex; n++) {
@@ -510,7 +509,6 @@ export class OrderedStringSet {
         else if (newIndex !== oldIndex && moveIfExists) {
             this._valuesArray.splice(oldIndex, 1);
             if (newIndex > oldIndex) {
-                newIndex--;
                 this._valuesArray.splice(newIndex, 0, value);
                 for (let n = oldIndex; n <= newIndex; n++) {
                     this._indexes[this._valuesArray[n]] = n;
