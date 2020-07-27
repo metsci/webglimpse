@@ -1,3 +1,7 @@
+Webglimpse 2.4.2 (release 2020-7-27)
+* Fixed a bug with the insertion index of an OrderedSet when moveIfExists is
+  set to true.
+
 Webglimpse 2.4.1 (release 2020-7-20)
 
 * Fixed a bug when scrolling the mouse wheel over the time selector when using
