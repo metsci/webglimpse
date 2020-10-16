@@ -1,0 +1,147 @@
+Webglimpse 1.9.1 (released 2016-11-22)
+
+* Allow truncation of event text (feature intended for 1.9.0 but inadvertently left out)
+
+Webglimpse 1.9.0 (released 2016-10-26)
+
+* Add stippled event borders and striped event fill.
+* Fix bug when attempting to paint axes contained in 0 size Panes.
+
+Webglimpse 1.9.0-pre2 (released 2016-9-12)
+
+* Fixes to relative time labeling.
+
+Webglimpse 1.9.0-pre1 (released 2016-8-4)
+
+* Add timeseries cursors. Crosshairs can appear over timeseries rows, with indicators when the crosshairs crosses a timeseries.
+
+Webglimpse 1.8.0 (released 2016-8-2)
+
+* Public release.
+
+Webglimpse 1.7.2-pre9 (released 2016-7-29)
+
+* Add TimelinePaneOptions.referenceDate allowing timeline tick marks to be labeled in days relative to the reference.
+
+Webglimpse 1.7.2-pre8 (released 2016-7-15)
+
+* Fix bug with maximized rows which broke y axis scrolling after unmaximizing.
+* Add TimelinePaneOptions.axisLabelAlign to control how date labels are centered relative to the start/end of the day on timeline.
+* Add TimelinePaneOptions.mouseWheelListener to provide an alternative listener to handle mouse wheel events on timeline.
+* Add TimelinePaneOptions.centerSelectedIntervalOnDoubleClick to control whether timeline selection centers on double clicks. 
+
+Webglimpse 1.7.2-pre7 (released 2016-7-8)
+
+* Updates to TimelineEventModel.order now properly adjust rendering order if modified after an event is added to a row.
+* Default row label background color can be set using TimelinePaneOptions.rowLabelBgColor.
+* Fixed issue with reloading timeline with different TimelinePaneOptions.
+
+Webglimpse 1.7.2-pre6 (released 2016-6-2)
+
+* Add option (TimelinePaneOptions.allowEventMultiSelection) to turn on/off multiple event selection.
+
+Webglimpse 1.7.2-pre5 (released 2016-6-1)
+
+* Add event start/end limits to event model. Add painters to visualize the limits for the selected events.
+
+Webglimpse 1.7.2-pre4 (released 2016-5-23)
+
+* Fix issue with ui Pane references after recreating timeline to adjust settings.
+
+Webglimpse 1.7.2-pre3 (released 2016-5-23)
+
+* Fix event label placement issues caused by additional event text options
+
+Webglimpse 1.7.2-pre2 (released 2016-5-9)
+
+ * Allow disabling timeline scrollbar via TimelinePaneOptions.showScrollbar = false.
+ * Fix mouse cursor bug when dragging selected time region.
+ * Add additional Notification options to Drawable
+
+Webglimpse 1.7.2-pre1 (released 2016-5-4)
+
+ * Enable custom coloring of individual row labels.
+ * Fix timeline layout issue introduced by pinned row feature.
+
+Webglimpse 1.7.1 (released 2016-5-3)
+
+ * Enable multiple selection of events.
+ * Additional options to position text and icon of events (labelHAlign and labelHPos).
+ * Add additional selectedIntervalModes (single-unmodifiable and range-unmodifiable) to allow disabling user adjustment of the selection interval.
+ * Fix bug merging timelines with pinned or maximized rows.
+
+Webglimpse 1.7.0 (released 2016-4-26)
+
+ * Public release.
+
+Webglimpse 1.7.0-pre4 (released 2016-3-12)
+
+ * Lock row. Rows can be locked to the top or the bottom of the timeline so 
+that they are always visible.
+ * Maximize row. A set of rows can be temporarily set to maximized. In that 
+mode they take up all available timeline space.
+ * Ability to customize individual row heights.
+ * Fix bug with 0 length events when event overlaps are allowed.
+
+Webglimpse 1.7.0-pre3 (released 2016-1-13)
+
+ * Exposed various timeline Panes through TimelineRowUi.getPane( )
+ * Generalized Pane mouse listeners to report all mouseDown / mouseDrag events, not just left mouse button
+
+Webglimpse 1.7.0-pre2 (released 2015-12-18)
+
+ * Background color of timeline rows can be independently set in json row description using bgColor attribute.
+ * Position of event text and icon can be set independently for each event using labelTopMargin, labelBottomMargin, and labelVAlign attributes.
+
+Webglimpse 1.7.0-pre1 (released 2015-9-10)
+
+  * Event z-order specified using TimelineEvent.order when TimelineEventsRowPaneOptions.allowMultipleLanes = false
+  * Height of individual events can be controlled with TimelineEventModel.bottomMargin and .topMargin
+  * Added notification of mouse hovers over annotations TimelineSelectionModel.hoveredAnnotation
+  * Groups can have rollup rows instead of simple group divider by setting TimelineGroupModel.rollupGuid
+  * Group labels show expand/contract arrow
+  * Timeline can be scrolled horizontally as well as vertically with mouse drag
+
+Webglimpse 1.6.0
+
+  * Annotation support (horizontal/vertical line or point with icons and text)
+  * Custom axis label support
+
+Webglimpse 1.5.1
+
+  * fixed bug with Webglimpse 1.4.2-pre3 feature enabling hidden attribute for row and group
+
+Webglimpse 1.5.0
+
+  * ui mouseUp events are properly delivered when over an event or timeseries point
+
+Webglimpse 1.4.2-pre3 (released 2015-2-20)
+
+  * Added hidden attribute to row and group
+  * Enabled dragging of timeseries points via the mouse cursor
+
+Webglimpse 1.4.2-pre2 (released 2015-2-11)
+
+  * Added TimelineEventModel.styleGuid setter
+  * Added TimelineEventsRowPaneOptions.allowMultipleLanes option (to enable/disable stacking of events)
+  * Added TimelineEventBarsPainterOptions.minimumVisibleWidth option (to hide event bars when they are very small horizontally)
+  * Fixed additional listener leaks
+
+Webglimpse 1.4.2-pre1 (released 2015-2-3)
+
+  * Proper handling of disposal of panes (permanent workaround for performance issue triggered by clearing an event row)
+  * Fix to "stuck-dragging" bug which should work in Chrome/Firefox/IE
+  * Enabled selection of timeseries points via the mouse cursor
+  * TimelinePaneOptions may be modified by reloading an existing TimelinePane
+  * Added single time selection mode (an alternative to time range selection mode)
+  * Added mouseUp notification to TimelineInput
+
+Webglimpse 1.4.1 (released 2014-10-29)
+
+  * Minor performance improvements to notifications
+  * Temporary workaround for performance issue triggered by clearing an event row
+
+
+Webglimpse 1.4.0 (released 2014-10-20)
+
+  * Initial open-source release

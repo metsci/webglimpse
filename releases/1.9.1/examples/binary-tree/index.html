@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Binary Tree Test</title>
+    <link rel="shortcut icon" href="../favicon.ico">
+
+    <!-- DEV_BEGIN --><!--
+    <script type="text/javascript" charset="UTF-8" src="../../webglimpse-dev.js"></script>
+    --><!-- DEV_END -->
+
+    <!-- RELEASE_BEGIN -->
+    <script type="text/javascript" charset="UTF-8" src="../../webglimpse.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="timeline.js"></script>
+    <!-- RELEASE_END -->
+</head>
+<body>
+    <script type="text/javascript" charset="UTF-8">
+    
+        var tree = new Webglimpse.SortedStringMultimap( new Webglimpse.NumberComparator( ) );
+ 
+                        
+        console.log( tree.toString( '    ' ) );
+        
+        tree.insert( 1, 'a' );
+        tree.insert( 2, 'b' );
+        tree.insert( 5, 'c' );
+        tree.insert( 3, 'd' );
+        tree.insert( 2, 'e' );
+        tree.insert( 10, 'f' );
+        tree.insert( 2, 'g' );
+        tree.insert( 1, 'h' );
+        tree.insert( 5, 'i' );
+        tree.insert( 3, 'j' );
+        
+        for ( var i = 0 ; i < 11 ; i++ ) {
+            console.log( 'Value: ' + i );
+        	console.log( 'Lower: ' + tree.lower( i ) );
+        	console.log( 'Higher: ' + tree.higher( i ) );
+        	console.log( 'headSet: ' + tree.headSet( i ) );
+        }
+        
+        
+        var n = [];
+        
+        var i = Webglimpse.indexAtOrAfter( n, 0 );
+        n.splice( i, 0, 0 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, -1 );
+        n.splice( i, 0, -1 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, 3 );
+        n.splice( i, 0, 3 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, undefined );
+        n.splice( i, 0, undefined );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, -10 );
+        n.splice( i, 0, -10 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, -5 );
+        n.splice( i, 0, -5 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, 10 );
+        n.splice( i, 0, 10 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, 8 );
+        n.splice( i, 0, 8 );
+        console.log( n.slice( ) );
+        
+        i = Webglimpse.indexAtOrAfter( n, undefined );
+        n.splice( i, 0, undefined );
+        console.log( n.slice( ) );
+    </script>
+</body>
+</html>

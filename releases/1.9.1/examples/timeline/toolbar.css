@@ -1,0 +1,108 @@
+/* Toolbar Style */
+
+nav
+{
+	display: block;
+}
+
+a, a:visited {
+	text-decoration:none;
+	outline:none;
+	color:#54a6de;
+}
+
+#toolbar {
+    background-color:lightgray;
+}
+
+#toolbar > ul{
+    padding: 0px;
+    margin: 0px;
+    margin-left: 10px;
+}
+
+#toolbar > ul > li{ /* will style only the top level li */
+	list-style: none;
+	display: inline-block;
+	position:relative;
+}
+
+#toolbar > ul > li > a{
+	color:rgb(5,22,42);
+	text-decoration:none !important;
+	font-size:24px;
+	padding: 8px;
+}
+
+#toolbar li ul {
+	position:absolute;
+	list-style:none;
+	text-align:center;
+	width:180px;
+	left:100%;
+	margin-left:-90px;
+	top:15px;
+	font:bold 12px 'verdana', sans-serif;
+	z-index: 1;
+	
+	/* This is important for the show/hide CSS animation */
+	max-height:0px;
+	overflow:hidden;
+	
+	-webkit-transition:max-height 0.2s linear;
+	-moz-transition:max-height 0.2s linear;
+	transition:max-height 0.2s linear;
+}
+
+#toolbar li ul li{
+	background-color:#313131;
+}
+
+#toolbar li ul li a{
+	padding:12px;
+	color:#fff !important;
+	text-decoration:none !important;
+	display:block;
+}
+
+#toolbar li ul li:nth-child(odd){ /* zebra stripes */
+	background-color:#363636;
+}
+
+#toolbar li ul li:hover{
+	background-color:#444;
+}
+
+#toolbar li ul li:first-child{
+	border-radius:3px 3px 0 0;
+	margin-top:25px;
+	position:relative;
+}
+
+#toolbar li ul li:first-child:before{ /* the pointer tip */
+	content:'';
+	position:absolute;
+	width:1px;
+	height:1px;
+	border:5px solid transparent;
+	border-bottom-color:#313131;
+	left:17%;
+	top:-10px;
+	margin-left:-5px;
+}
+
+#toolbar li ul li:last-child{
+	border-bottom-left-radius:3px;
+	border-bottom-right-radius:3px;
+}
+
+/* This will trigger the CSS */
+/* transition animation on hover */
+
+#toolbar li:hover ul{
+	max-height:200px; /* Increase when adding more dropdown items */
+}
+
+li.spacer {
+    width: 20px;
+}

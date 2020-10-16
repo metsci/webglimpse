@@ -1,0 +1,83 @@
+{
+    "eventStyles": [ {
+        "styleGuid": "metsci.timelineExample.eventStyle01",
+        "icons": [ {
+            "url": "images/fugue/weather.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0,
+            "hPos": 0
+        }, {
+            "url": "images/fugue/weather-clouds.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 1,
+            "hPos": 1
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.eventStyle02",
+        "icons": [ {
+            "url": "images/fugue/glass.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0,
+            "hPos": 0
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.eventStyle03",
+        "icons": [ {
+            "url": "images/fugue/alarm-clock-blue.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "hPos": 0.5
+        } ]
+    } ],
+    "annotationStyles": [ {
+        "styleGuid": "metsci.timelineExample.annotationStyle01",
+        "color": "white",
+        "vTextOffset": 0,
+        "hTextOffset": 10,
+        "uiHint": "point",
+        "icons": [ {
+            "url": "images/fugue/marker--exclamation.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "vAlign": 0.5,
+            "hOffset": 0,
+            "vOffset": 9
+        }, {
+            "url": "images/fugue/minus-shield.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0.5,
+            "vAlign": 0.5,
+            "hOffset": 0,
+            "vOffset": -9
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.annotationStyle02",
+        "color": "red",
+        "vTextOffset": 9,
+        "hTextOffset": -20,
+        "vTextAlign": 0.5,
+        "hTextAlign": 1,
+        "align": 1,
+        "uiHint": "horizontal-line",
+        "icons": [ {
+            "url": "images/fugue/chart.png",
+            "displayWidth": 16,
+            "displayHeight": 16,
+            "hAlign": 0,
+            "vAlign": 0,
+            "hOffset": -18,
+            "vOffset": 2
+        } ]
+    }, {
+        "styleGuid": "metsci.timelineExample.annotationStyle03",
+        "color": "rgba(255,0,0,0.5)",
+        "uiHint": "vertical-line",
+        "icons": [ ]
+    } ]
+}
