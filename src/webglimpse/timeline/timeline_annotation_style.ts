@@ -52,6 +52,9 @@ export interface TimelineAnnotationStyle {
     // annotation line (0 = bottom/left, 1=top/right)
     uiHint?: string; // one of: point, horizontal-line, vertical-line
     icons?: TimelineAnnotationIcon[];
+    bgColor?: string;
+    bgPadding?: number;
+    bgBorderRadius?: number;
 }
 
 export class TimelineAnnotationIconUi {
@@ -111,6 +114,9 @@ export class TimelineAnnotationStyleUi {
     private _align: number;
     private _uiHint: string;
     private _icons: TimelineAnnotationIconUi[];
+    private _bgColor?: Color;
+    private _bgPadding?: number;
+    private _bgBorderRadius?: number;
 
     constructor(style: TimelineAnnotationStyle) {
         this._styleGuid = style.styleGuid;
@@ -131,6 +137,9 @@ export class TimelineAnnotationStyleUi {
         this._align = style.align;
         this._uiHint = style.uiHint;
         this._icons = hasval(style.color) ? style.icons.map((icon) => new TimelineAnnotationIconUi(icon)) : [];
+        this._bgColor = hasval(style.bgColor) ? parseCssColor(style.bgColor) : undefined;
+        this._bgPadding = style.bgPadding;
+        this._bgBorderRadius = style.bgBorderRadius;
     }
 
     get numIcons(): number {
@@ -173,6 +182,17 @@ export class TimelineAnnotationStyleUi {
         return this._uiHint;
     }
 
+    get bgColor(): Color {
+        return this._bgColor;
+    }
+
+    get bgPadding(): number {
+        return this._bgPadding;
+    }
+    get bgBorderRadius(): number {
+        return this._bgBorderRadius;
+    }
+
     snapshot(): TimelineAnnotationStyle {
         return {
             styleGuid: this._styleGuid,
@@ -184,7 +204,10 @@ export class TimelineAnnotationStyleUi {
             hTextAlign: this._vTextAlign,
             align: this._align,
             uiHint: this._uiHint,
-            icons: this._icons.map((ui) => ui.snapshot())
+            icons: this._icons.map((ui) => ui.snapshot()),
+            bgColor: this._bgColor.cssString,
+            bgPadding: this._bgPadding,
+            bgBorderRadius: this._bgBorderRadius
         };
     }
 }
