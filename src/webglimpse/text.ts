@@ -161,12 +161,15 @@ export const getTextWidth = (function () {
 
 export class TextTexture2D extends Texture2D {
     private _jBaseline: number;
+    private _bgPadding?: number;
 
     get jBaseline(): number { return this._jBaseline; }
+    get bgPadding(): number { return this._bgPadding; }
 
-    constructor(w: number, h: number, jBaseline: number, minFilter: number, magFilter: number, draw: ImageDrawer) {
+    constructor(w: number, h: number, jBaseline: number, minFilter: number, magFilter: number, bgPadding = 0, draw: ImageDrawer) {
         super(w, h, minFilter, magFilter, draw);
         this._jBaseline = jBaseline;
+        this._bgPadding = bgPadding;
     }
 
     yAnchor(textFrac: number) {
@@ -261,7 +264,7 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
             jBaseline = jBaseline + addedPadding;
         }
 
-        return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, function (g: CanvasRenderingContext2D) {
+        return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, bgPadding, function (g: CanvasRenderingContext2D) {
             // Some browsers use hinting for canvas fillText! This behaves poorly on a transparent
             // background -- so we draw white text onto a black background, then infer alpha from
             // the pixel color (black = transparent, white = opaque).
@@ -272,24 +275,25 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
 
             // If background color not transparent show background color, else follow comment above.
             if (bgColor && bgColor.a !== 0) {
+                g.fillStyle = bgColor.cssString;
                 // Round corners of text background
                 if (bgBorderRadius) {
+                    bgBorderRadius = Math.min(bgBorderRadius, bgPadding);
                     g.beginPath();
-                    g.moveTo(0 + bgBorderRadius, 0);
-                    g.lineTo(0 + w - bgBorderRadius, 0);
-                    g.quadraticCurveTo(0 + w, 0, 0 + w, 0 + bgBorderRadius);
-                    g.lineTo(0 + w, 0 + h - bgBorderRadius);
-                    g.quadraticCurveTo(0 + w, 0 + h, 0 + w - bgBorderRadius, 0 + h);
-                    g.lineTo(0 + bgBorderRadius, 0 + h);
-                    g.quadraticCurveTo(0, 0 + h, 0, 0 + h - bgBorderRadius);
-                    g.lineTo(0, 0 + bgBorderRadius);
-                    g.quadraticCurveTo(0, 0, 0 + bgBorderRadius, 0);
+                    g.moveTo(bgBorderRadius, 0);
+                    g.lineTo(w - bgBorderRadius, 0);
+                    g.quadraticCurveTo(w, 0, w, bgBorderRadius);
+                    g.lineTo(w, h - bgBorderRadius);
+                    g.quadraticCurveTo(w, h, w - bgBorderRadius, h);
+                    g.lineTo(bgBorderRadius, h);
+                    g.quadraticCurveTo(0, h, 0, h - bgBorderRadius);
+                    g.lineTo(0, bgBorderRadius);
+                    g.quadraticCurveTo(0, 0, bgBorderRadius, 0);
                     g.closePath();
-                    g.strokeStyle = bgColor.cssString;
-                    g.stroke();
+                    g.fill();
+                } else {
+                    g.fillRect(0, 0, w, h);
                 }
-                g.fillStyle = bgColor.cssString;
-                g.fill();
 
                 g.font = font;
                 g.textAlign = 'center';
