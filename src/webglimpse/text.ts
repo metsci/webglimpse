@@ -161,15 +161,12 @@ export const getTextWidth = (function () {
 
 export class TextTexture2D extends Texture2D {
     private _jBaseline: number;
-    private _bgPadding?: number;
 
     get jBaseline(): number { return this._jBaseline; }
-    get bgPadding(): number { return this._bgPadding; }
 
-    constructor(w: number, h: number, jBaseline: number, minFilter: number, magFilter: number, bgPadding = 0, draw: ImageDrawer) {
+    constructor(w: number, h: number, jBaseline: number, minFilter: number, magFilter: number, draw: ImageDrawer) {
         super(w, h, minFilter, magFilter, draw);
         this._jBaseline = jBaseline;
-        this._bgPadding = bgPadding;
     }
 
     yAnchor(textFrac: number) {
@@ -226,13 +223,13 @@ export function newTextTextureCache3(): ThreeKeyCache<TextTexture2D> {
 
 export function newTextTextureCache6(): SixKeyCache<TextTexture2D> {
     return new SixKeyCache<TextTexture2D>({
-        create: function (font: string, rgbaString: string, text: string, rgbaBgString: string, bgPadding: string, lineWidth: string): TextTexture2D {
+        create: function (font: string, rgbaString: string, text: string, rgbaBgString: string, bgPadding: string, bgBorderRadius: string): TextTexture2D {
             const createTextTexture = createTextTextureFactory(font);
             const color = parseRgba(rgbaString);
             const bgColor = parseRgba(rgbaBgString);
-            const lineWidthNumber = parseInt(lineWidth, 10);
+            const bgBorderRadiusNumber = parseInt(bgBorderRadius, 10);
             const paddingNumber = parseInt(bgPadding, 10);
-            return createTextTexture(color, text, bgColor, paddingNumber, lineWidthNumber);
+            return createTextTexture(color, text, bgColor, paddingNumber, bgBorderRadiusNumber);
         },
         dispose: function (texture: Texture2D) {
             texture.dispose();
@@ -264,7 +261,7 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
             jBaseline = jBaseline + addedPadding;
         }
 
-        return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, bgPadding, function (g: CanvasRenderingContext2D) {
+        return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, function (g: CanvasRenderingContext2D) {
             // Some browsers use hinting for canvas fillText! This behaves poorly on a transparent
             // background -- so we draw white text onto a black background, then infer alpha from
             // the pixel color (black = transparent, white = opaque).
