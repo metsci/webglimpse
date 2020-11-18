@@ -256,7 +256,7 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
     let h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
 
     return function (color: Color, text: string, bgColor: Color, bgPadding = 0, bgBorderRadius = 0): TextTexture2D {
-        let w = getTextWidth(font, text);
+        let w = Math.ceil(getTextWidth(font, text));
         if (bgColor && bgColor.a !== 0) {
             const addedPadding = bgPadding * 2;
             w = w + addedPadding + 4;
@@ -278,7 +278,7 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
                 g.fillStyle = bgColor.cssString;
                 // Round corners of text background
                 if (bgBorderRadius) {
-                    bgBorderRadius = Math.min(bgBorderRadius, bgPadding);
+                    bgBorderRadius = Math.min(bgBorderRadius, h / 2, w / 2);
                     g.beginPath();
                     g.moveTo(bgBorderRadius, 0);
                     g.lineTo(w - bgBorderRadius, 0);
