@@ -99,8 +99,9 @@ export function parseRgba(rgbaString: string): Color {
  *  - rgb/rgba
  *  - hsl/hsla
  *  - named colors
- *
  * Behavior is undefined for strings that are not in one of the listed notations.
+ *
+ * Optional alphaOverride provided for forcing value of rbga alpha.
  *
  * Note that different browsers may use different color values for the named colors.
  *
@@ -110,7 +111,7 @@ export let parseCssColor = (function () {
     canvas.width = 1;
     canvas.height = 1;
     const g = canvas.getContext('2d');
-    return function (cssColorString: string): Color {
+    return function (cssColorString: string, alphaOverride?: number): Color {
         g.clearRect(0, 0, 1, 1);
         g.fillStyle = cssColorString;
         g.fillRect(0, 0, 1, 1);
@@ -119,7 +120,7 @@ export let parseCssColor = (function () {
         const R = rgbaData[0] / 255;
         const G = rgbaData[1] / 255;
         const B = rgbaData[2] / 255;
-        const A = rgbaData[3] / 255;
+        const A = hasval(alphaOverride) ? alphaOverride : rgbaData[3] / 255;
         return rgba(R, G, B, A);
     };
 })();

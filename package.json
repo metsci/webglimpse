@@ -1,6 +1,6 @@
 {
   "name": "webglimpse",
-  "version": "2.4.2",
+  "version": "2.5.0-rc.2",
   "description": "Webglimpse is a data visualization library for the web.",
   "repository": {
     "type": "git",
@@ -28,18 +28,18 @@
     "moment": "^2.24.0"
   },
   "devDependencies": {
-    "@angular/animations": "^8.0.2",
-    "@angular/cli": "^8.0.3",
-    "@angular/common": "^8.0.2",
-    "@angular/compiler": "^8.0.2",
-    "@angular/compiler-cli": "^8.0.2",
-    "@angular/core": "^8.0.2",
-    "@angular/forms": "^8.0.2",
+    "@angular/animations": "^10.2.3",
+    "@angular/cli": "^10.2.0",
+    "@angular/common": "^10.2.3",
+    "@angular/compiler": "^10.2.3",
+    "@angular/compiler-cli": "^10.2.3",
+    "@angular/core": "^10.2.3",
+    "@angular/forms": "^10.2.3",
     "@angular/http": "^5.2.0",
-    "@angular/language-service": "^8.0.2",
-    "@angular/platform-browser": "^8.0.2",
-    "@angular/platform-browser-dynamic": "^8.0.2",
-    "@angular/router": "^8.0.2",
+    "@angular/language-service": "^10.2.3",
+    "@angular/platform-browser": "^10.2.3",
+    "@angular/platform-browser-dynamic": "^10.2.3",
+    "@angular/router": "^10.2.3",
     "@compodoc/compodoc": "~1.0.8",
     "@types/jasmine": "~3.3.13",
     "@types/jasminewd2": "~2.0.6",
@@ -57,8 +57,8 @@
     "ng-packagr": "^5.3.0",
     "protractor": "~5.4.2",
     "rxjs": "^6.5.2",
-    "tslint": "~5.17.0",
-    "typescript": "~3.4.5",
-    "zone.js": "^0.9.1"
+    "tslint": "~6.1.0",
+    "typescript": "~4.0.5",
+    "zone.js": "^0.10.3"
   }
 }

@@ -199,4 +199,30 @@ export class ThreeKeyCache<V> {
     clear() { this.cache.clear(); }
 }
 
+export interface SixKeyCacheHelper<V> {
+    create(keyPart1: string, keyPart2: string, keyPart3: string, keyPart4: string, keyPart5: string, keyPart6: string): V;
+    dispose(value: V, keyPart1: string, keyPart2: string, keyPart3: string, keyPart4: string, keyPart5: string, keyPart6: string): void;
+}
+export class SixKeyCache<V> {
+    private cache: MultiKeyCache<V>;
+
+    constructor(helper: SixKeyCacheHelper<V>) {
+        this.cache = new MultiKeyCache<V>({
+            create: function (keyParts: string[]): V {
+                return helper.create(keyParts[0], keyParts[1], keyParts[2], keyParts[3], keyParts[4], keyParts[5]);
+            },
+            dispose: function (value: V, keyParts: string[]) {
+                helper.dispose(value, keyParts[0], keyParts[1], keyParts[2], keyParts[3], keyParts[4], keyParts[5]);
+            }
+        });
+    }
+
+    value(keyPart1: string, keyPart2: string, keyPart3: string, keyPart4: string, keyPart5: string, keyPart6: string): V { return this.cache.value(keyPart1, keyPart2, keyPart3, keyPart4, keyPart5, keyPart6); }
+    remove(keyPart1: string, keyPart2: string, keyPart3: string, keyPart4: string, keyPart5: string, keyPart6: string) { this.cache.remove(keyPart1, keyPart2, keyPart3, keyPart4, keyPart5, keyPart6); }
+    retain(keyPart1: string, keyPart2: string, keyPart3: string, keyPart4: string, keyPart5: string, keyPart6: string) { this.cache.retain(keyPart1, keyPart2, keyPart3, keyPart4, keyPart5, keyPart6); }
+    resetTouches() { this.cache.resetTouches(); }
+    retainTouched() { this.cache.retainTouched(); }
+    clear() { this.cache.clear(); }
+}
+
 

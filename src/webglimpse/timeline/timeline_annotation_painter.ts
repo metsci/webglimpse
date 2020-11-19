@@ -33,7 +33,7 @@ import { TimeAxis1D } from './time_axis';
 import { Axis1D } from '../plot/axis';
 import { TimelineModel, TimelineRowModel, TimelineAnnotationModel } from './timeline_model';
 import { TimelineUi } from './timeline_ui';
-import { newTextTextureCache3 } from '../text';
+import { newTextTextureCache6 } from '../text';
 import { TextureRenderer } from '../texture';
 import { Program, UniformColor, Attribute } from '../shader';
 import { xyFrac_VERTSHADER, solid_FRAGSHADER } from '../misc';
@@ -47,7 +47,7 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
     // Painter Factory
     return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi): Painter {
 
-        const textTextures = newTextTextureCache3();
+        const textTextures = newTextTextureCache6();
         const textureRenderer = new TextureRenderer();
 
         const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
@@ -75,6 +75,9 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
 
                 const font = hasval(annotationStyle.font) ? annotationStyle.font : '11px verdana,sans-serif';
                 const color = hasval(annotationStyle.color) ? annotationStyle.color : white;
+                const bgColorString = hasval(annotationStyle.bgColor) ? annotationStyle.bgColor.rgbaString : '#ffffff00';
+                const bgPadding = hasval(annotationStyle.bgPadding) ? annotationStyle.bgPadding : 0;
+                const bgBorderRadius = hasval(annotationStyle.bgBorderRadius) ? annotationStyle.bgBorderRadius : 0;
 
                 const hTextOffset = hasval(annotationStyle.hTextOffset) ? annotationStyle.hTextOffset : 0;
                 const vTextOffset = hasval(annotationStyle.vTextOffset) ? annotationStyle.vTextOffset : 0;
@@ -142,8 +145,14 @@ export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPaint
 
                 // draw text label
                 if (hasval(annotation.label)) {
-
-                    const textTexture = textTextures.value(font, color.rgbaString, annotation.label);
+                    const textTexture = textTextures.value(
+                        font,
+                        color.rgbaString,
+                        annotation.label,
+                        bgColorString,
+                        bgPadding.toString(),
+                        bgBorderRadius.toString()
+                    );
 
                     const xFracOffset = xFrac + hTextOffset / viewport.w;
                     const yFracOffset = yFrac + vTextOffset / viewport.h;

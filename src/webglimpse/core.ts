@@ -379,7 +379,7 @@ export function requireGL(canvasElement: HTMLCanvasElement): WebGLRenderingConte
     catch (e) { }
 
     try {
-        const glB = canvasElement.getContext('experimental-webgl');
+        const glB = canvasElement.getContext('experimental-webgl') as WebGLRenderingContext;
         if (glB) {
             return glB;
         }
@@ -655,7 +655,7 @@ function attachEventListeners(element: HTMLElement, contentPane: Pane) {
     while (w.parent !== w) {
         try {
             w.parent.addEventListener('mousemove', handleMissedMouseUp);
-            w = w.parent;
+            w = w.parent as Window & typeof globalThis;
         }
         catch (e) {
             // Cross-origin security may prevent us from adding a listener to a window other than our own -- in that case,

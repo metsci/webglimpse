@@ -30,7 +30,7 @@
 import { Cache } from './util/cache';
 import { Texture2D, ImageDrawer } from './texture';
 import { Color, black, parseRgba } from './color';
-import { TwoKeyCache, ThreeKeyCache } from './util/multikey_cache';
+import { TwoKeyCache, ThreeKeyCache, SixKeyCache } from './util/multikey_cache';
 import { GL, concatLines, hasval } from './util/util';
 import { Program, Uniform2f, Uniform1f, UniformSampler2D, Attribute } from './shader';
 import { Buffer, newStaticBuffer } from './buffer';
@@ -221,17 +221,45 @@ export function newTextTextureCache3(): ThreeKeyCache<TextTexture2D> {
     });
 }
 
+export function newTextTextureCache6(): SixKeyCache<TextTexture2D> {
+    return new SixKeyCache<TextTexture2D>({
+        create: function (font: string, rgbaString: string, text: string, rgbaBgString: string, bgPadding: string, bgBorderRadius: string): TextTexture2D {
+            const createTextTexture = createTextTextureFactory(font);
+            const color = parseRgba(rgbaString);
+            const bgColor = parseRgba(rgbaBgString);
+            const bgBorderRadiusNumber = parseInt(bgBorderRadius, 10);
+            const paddingNumber = parseInt(bgPadding, 10);
+            return createTextTexture(color, text, bgColor, paddingNumber, bgBorderRadiusNumber);
+        },
+        dispose: function (texture: Texture2D) {
+            texture.dispose();
+        }
+    });
+}
 
-export type TextTextureFactory = (color: Color, text: string) => TextTexture2D;
+
+export type TextTextureFactory = (
+    color: Color,
+    text: string,
+    bgColor?: Color,
+    bgPadding?: number,
+    bgBorderRadius?: number
+) => TextTexture2D;
 
 
 export function createTextTextureFactory(font: string): TextTextureFactory {
     const rawFontMetrics = getRawFontMetrics(font);
-    const jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
-    const h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
+    let jBaseline = rawFontMetrics.jBaseline - rawFontMetrics.jTop;
+    let h = rawFontMetrics.jBottom - rawFontMetrics.jTop + 1;
 
-    return function (color: Color, text: string): TextTexture2D {
-        const w = getTextWidth(font, text);
+    return function (color: Color, text: string, bgColor: Color, bgPadding = 0, bgBorderRadius = 0): TextTexture2D {
+        let w = Math.ceil(getTextWidth(font, text));
+        if (bgColor && bgColor.a !== 0) {
+            const addedPadding = bgPadding * 2;
+            w = w + addedPadding + 4;
+            h = h + addedPadding;
+            jBaseline = jBaseline + addedPadding;
+        }
 
         return new TextTexture2D(w, h, jBaseline, GL.NEAREST, GL.NEAREST, function (g: CanvasRenderingContext2D) {
             // Some browsers use hinting for canvas fillText! This behaves poorly on a transparent
@@ -242,38 +270,67 @@ export function createTextTextureFactory(font: string): TextTextureFactory {
             // de-hinting it.
             //
 
-            g.fillStyle = 'black';
-            g.fillRect(0, 0, w, h);
-
-            g.font = font;
-            g.textAlign = 'left';
-            g.textBaseline = 'top';
-            g.fillStyle = 'white';
-
-            g.save();
-            g.translate(0, -rawFontMetrics.jTop);
-            g.fillText(text, 0, 0);
-            g.restore();
-
-            const r255 = 255 * color.r;
-            const g255 = 255 * color.g;
-            const b255 = 255 * color.b;
-            const aFactor = color.a / 3;
-
-            const pixels = g.getImageData(0, 0, w, h);
-            for (let j = 0; j < pixels.height; j++) {
-                for (let i = 0; i < pixels.width; i++) {
-                    const pixelOffset = (j * pixels.width + i) * 4;
-                    const a255 = aFactor * (pixels.data[pixelOffset + 0] + pixels.data[pixelOffset + 1] + pixels.data[pixelOffset + 2]);
-
-                    pixels.data[pixelOffset + 0] = r255;
-                    pixels.data[pixelOffset + 1] = g255;
-                    pixels.data[pixelOffset + 2] = b255;
-                    pixels.data[pixelOffset + 3] = a255;
+            // If background color not transparent show background color, else follow comment above.
+            if (bgColor && bgColor.a !== 0) {
+                g.fillStyle = bgColor.cssString;
+                // Round corners of text background
+                if (bgBorderRadius) {
+                    bgBorderRadius = Math.min(bgBorderRadius, h / 2, w / 2);
+                    g.beginPath();
+                    g.moveTo(bgBorderRadius, 0);
+                    g.lineTo(w - bgBorderRadius, 0);
+                    g.quadraticCurveTo(w, 0, w, bgBorderRadius);
+                    g.lineTo(w, h - bgBorderRadius);
+                    g.quadraticCurveTo(w, h, w - bgBorderRadius, h);
+                    g.lineTo(bgBorderRadius, h);
+                    g.quadraticCurveTo(0, h, 0, h - bgBorderRadius);
+                    g.lineTo(0, bgBorderRadius);
+                    g.quadraticCurveTo(0, 0, bgBorderRadius, 0);
+                    g.closePath();
+                    g.fill();
+                } else {
+                    g.fillRect(0, 0, w, h);
                 }
-            }
 
-            g.putImageData(pixels, 0, 0);
+                g.font = font;
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.fillStyle = color.cssString;
+                g.fillText(text, w / 2, h / 2);
+            } else {
+                g.fillStyle = 'black';
+                g.fillRect(0, 0, w, h);
+
+                g.font = font;
+                g.textAlign = 'left';
+                g.textBaseline = 'top';
+                g.fillStyle = 'white';
+
+                g.save();
+                g.translate(0, -rawFontMetrics.jTop);
+                g.fillText(text, 0, 0);
+                g.restore();
+
+                const r255 = 255 * color.r;
+                const g255 = 255 * color.g;
+                const b255 = 255 * color.b;
+                const aFactor = color.a / 3;
+
+                const pixels = g.getImageData(0, 0, w, h);
+                for (let j = 0; j < pixels.height; j++) {
+                    for (let i = 0; i < pixels.width; i++) {
+                        const pixelOffset = (j * pixels.width + i) * 4;
+                        const a255 = aFactor * (pixels.data[pixelOffset + 0] + pixels.data[pixelOffset + 1] + pixels.data[pixelOffset + 2]);
+
+                        pixels.data[pixelOffset + 0] = r255;
+                        pixels.data[pixelOffset + 1] = g255;
+                        pixels.data[pixelOffset + 2] = b255;
+                        pixels.data[pixelOffset + 3] = a255;
+                    }
+                }
+
+                g.putImageData(pixels, 0, 0);
+            }
         });
     };
 }
