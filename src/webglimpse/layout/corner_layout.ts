@@ -27,57 +27,59 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Side } from '../misc';
+import { Layout, LayoutEntry } from '../core';
+import { Size, BoundsUnmodifiable } from '../bounds';
+import { hasval } from '../util/util';
 
 
-    export function newCornerLayout( hSide : Side, vSide : Side ) : Layout {
-        return {
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                if ( children.length === 1 ) {
-                    var childPrefSize = children[ 0 ].prefSize;
-                    parentPrefSize.w = childPrefSize.w;
-                    parentPrefSize.h = childPrefSize.h;
-                }
-                else if ( children.length > 1 ) {
-                    throw new Error( 'Corner layout only works with 1 child, but pane has ' + this.children.length + ' children' );
-                }
-            },
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                if ( children.length === 1 ) {
-                    var child = children[ 0 ];
-
-                    var iStart;
-                    var iEnd;
-                    var w = child.prefSize.w;
-                    if ( hSide === Side.RIGHT ) {
-                        iEnd = parentViewport.iEnd;
-                        iStart = ( hasval( w ) ? Math.max( iEnd-w, parentViewport.iStart ) : parentViewport.iStart );
-                    }
-                    else {
-                        iStart = parentViewport.iStart;
-                        iEnd = ( hasval( w ) ? Math.min( iStart+w, parentViewport.iEnd ) : parentViewport.iEnd );
-                    }
-
-                    var jStart;
-                    var jEnd;
-                    var h = child.prefSize.h;
-                    if ( vSide === Side.BOTTOM ) {
-                        jStart = parentViewport.jStart;
-                        jEnd = ( hasval( h ) ? Math.min( jStart+h, parentViewport.jEnd ) : parentViewport.jEnd );
-                    }
-                    else {
-                        jEnd = parentViewport.jEnd;
-                        jStart = ( hasval( h ) ? Math.max( jEnd-h, parentViewport.jStart ) : parentViewport.jStart );
-                    }
-
-                    child.viewport.setEdges( iStart, iEnd, jStart, jEnd );
-                }
-                else if ( children.length > 1 ) {
-                    throw new Error( 'Corner layout only works with 1 child, but pane has ' + this.children.length + ' children' );
-                }
+export function newCornerLayout(hSide: Side, vSide: Side): Layout {
+    return <Layout>{
+        updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
+            if (children.length === 1) {
+                const childPrefSize = children[0].prefSize;
+                parentPrefSize.w = childPrefSize.w;
+                parentPrefSize.h = childPrefSize.h;
             }
-        };
-    }
+            else if (children.length > 1) {
+                throw new Error('Corner layout only works with 1 child, but pane has ' + this.children.length + ' children');
+            }
+        },
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            if (children.length === 1) {
+                const child = children[0];
 
+                let iStart;
+                let iEnd;
+                const w = child.prefSize.w;
+                if (hSide === Side.RIGHT) {
+                    iEnd = parentViewport.iEnd;
+                    iStart = (hasval(w) ? Math.max(iEnd - w, parentViewport.iStart) : parentViewport.iStart);
+                }
+                else {
+                    iStart = parentViewport.iStart;
+                    iEnd = (hasval(w) ? Math.min(iStart + w, parentViewport.iEnd) : parentViewport.iEnd);
+                }
 
+                let jStart;
+                let jEnd;
+                const h = child.prefSize.h;
+                if (vSide === Side.BOTTOM) {
+                    jStart = parentViewport.jStart;
+                    jEnd = (hasval(h) ? Math.min(jStart + h, parentViewport.jEnd) : parentViewport.jEnd);
+                }
+                else {
+                    jEnd = parentViewport.jEnd;
+                    jStart = (hasval(h) ? Math.max(jEnd - h, parentViewport.jStart) : parentViewport.jStart);
+                }
+
+                child.viewport.setEdges(iStart, iEnd, jStart, jEnd);
+            }
+            else if (children.length > 1) {
+                throw new Error('Corner layout only works with 1 child, but pane has ' + this.children.length + ' children');
+            }
+        }
+    };
 }
+
+

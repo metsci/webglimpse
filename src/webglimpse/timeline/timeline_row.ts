@@ -27,28 +27,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Color } from '../color';
+import { PointerEvent, Drawable, Pane } from '../core';
+import { TimeAxis1D } from './time_axis';
+import { Axis1D } from '../plot/axis';
+import { TimelineModel, TimelineRowModel } from './timeline_model';
+import { TimelineUi } from './timeline_ui';
 
-    export interface TimelineRowPaneOptions {
-        timelineFont : string;
-        timelineFgColor : Color;
-        draggableEdgeWidth : number;
-        snapToDistance : number;
-        isMaximized : boolean;
-        mouseWheelListener? : ( PointerEvent ) => void;
-    }
-
-    export interface TimelineRowPaneFactory {
-        ( drawable : Drawable,
-          timeAxis : TimeAxis1D,
-          dataAxis : Axis1D,
-          model : TimelineModel,
-          row : TimelineRowModel,
-          ui : TimelineUi,
-          options : TimelineRowPaneOptions ) : Pane;
-    }
-
-    export interface TimelineRowPaneFactoryChooser {
-        ( row : TimelineRowModel ) : TimelineRowPaneFactory;
-    }
+export interface TimelineRowPaneOptions {
+    timelineFont: string;
+    timelineFgColor: Color;
+    draggableEdgeWidth: number;
+    snapToDistance: number;
+    isMaximized: boolean;
+    mouseWheelListener?: (PointerEvent: PointerEvent) => void;
 }
+
+export type TimelineRowPaneFactory = (drawable: Drawable,
+        timeAxis: TimeAxis1D,
+        dataAxis: Axis1D,
+        model: TimelineModel,
+        row: TimelineRowModel,
+        ui: TimelineUi,
+        options: TimelineRowPaneOptions) => Pane;
+
+export type TimelineRowPaneFactoryChooser = (row: TimelineRowModel) => TimelineRowPaneFactory;

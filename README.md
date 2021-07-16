@@ -2,6 +2,17 @@
 
 Webglimpse is a data visualization library for the web.
 
+## Installation
+
+To install the Webglimpse library, run the following command.
+
+`npm install --save webglimpse`
+
+## Usage
+
+To use Webglimpse, import into your typescript project.
+
+`import * as Webglimpse from 'webglimpse'`
 
 ## WebGL
 

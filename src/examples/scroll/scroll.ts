@@ -1,3 +1,12 @@
+import { createTextTextureFactory } from '../../webglimpse/text';
+import { newDrawable, Pane } from '../../webglimpse/core';
+import { newRowLayout } from '../../webglimpse/layout/row_layout';
+import { newVerticalScrollLayout, newVerticalScrollbar } from '../../webglimpse/scroll';
+import { newBackgroundPainter, fixedSize, newTexturePainter } from '../../webglimpse/misc';
+import { newInsetPane, newInsets } from '../../webglimpse/layout/inset_layout';
+import { white, black, green, blue, cyan } from '../../webglimpse/color';
+import { newColumnLayout } from '../../webglimpse/layout/column_layout';
+
 /*
  * Copyright (c) 2014, Metron, Inc.
  * All rights reserved.
@@ -27,82 +36,82 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
-
-
-    export function runScrollExample( container : Node ) {
-
-
-        // DOM Setup
-        //
-
-        var canvas = document.createElement( 'canvas' );
-        canvas.id = 'exampleCanvas';
-        canvas.style.padding = '0';
-        container.appendChild( canvas );
-
-        var drawable = newDrawable( canvas );
-
-        var updateCanvasSize = function( ) {
-            canvas.width = $( canvas ).width( );
-            canvas.height = $( canvas ).height( );
-            drawable.redraw( );
-        };
-        $( window ).resize( updateCanvasSize );
-        updateCanvasSize( );
 
 
 
-        // Scroll-pane Setup
-        //
-
-        var rowsPane = new Pane( newRowLayout( ) );
-
-        var scrollLayout = newVerticalScrollLayout( );
-        var scrollable = new Pane( scrollLayout, false );
-        scrollable.addPainter( newBackgroundPainter( white ) );
-        scrollable.addPane( newInsetPane( rowsPane, newInsets( 12, 10 ), white ), 0 );
-
-        var scrollbar = newVerticalScrollbar( scrollLayout, drawable );
-
-        var scrollPane = new Pane( newColumnLayout( false ), false );
-        scrollPane.addPane( scrollbar, 0, { width: 16 } );
-        scrollPane.addPane( scrollable, 1 );
-
-        drawable.setContentPane( scrollPane );
-        drawable.redraw( );
+export function runScrollExample(container: Node) {
 
 
+    // DOM Setup
+    //
 
-        // Example Content
-        //
+    var canvas = document.createElement('canvas');
+    canvas.id = 'exampleCanvas';
+    canvas.style.padding = '0';
+    container.appendChild(canvas);
 
-        var numRows = 500;
-        var rowBgColors = [ black, green, blue, cyan ];
-        var rowFgColors = [ white, black, white, black ];
+    var drawable = newDrawable(canvas);
 
-        var createTextTexture = createTextTextureFactory( '20px verdana,sans-serif' );
-        for ( var r = 0; r < numRows; r++ ) {
-            var row = new Pane( { updatePrefSize: fixedSize( null, 50 ) } );
-            row.addPainter( newBackgroundPainter( rowBgColors[ r % rowBgColors.length ] ) );
-
-            var text = r.toFixed( 0 );
-            if ( r === 0 ) text += ' first';
-            if ( r === numRows-1 ) text += ' last';
-
-            var labelTexture =  createTextTexture( rowFgColors[ r % rowFgColors.length ], text );
-            row.addPainter( newTexturePainter( labelTexture, 0, 0.5, { xAnchor: 0, yAnchor: labelTexture.yAnchor( 0.5 ) } ) );
-
-            setTimeout( ( function( row : Pane, r : number ) {
-                return function( ) {
-                    rowsPane.addPane( row, r );
-                    drawable.redraw( );
-                };
-            } )( row, r ), 10*r );
-        }
+    var updateCanvasSize = function () {
+        canvas.width = $(canvas).width();
+        canvas.height = $(canvas).height();
+        drawable.redraw();
+    };
+    $(window).resize(updateCanvasSize);
+    updateCanvasSize();
 
 
+
+    // Scroll-pane Setup
+    //
+
+    var rowsPane = new Pane(newRowLayout());
+
+    var scrollLayout = newVerticalScrollLayout();
+    var scrollable = new Pane(scrollLayout, false);
+    scrollable.addPainter(newBackgroundPainter(white));
+    scrollable.addPane(newInsetPane(rowsPane, newInsets(12, 10), white), 0);
+
+    var scrollbar = newVerticalScrollbar(scrollLayout, drawable);
+
+    var scrollPane = new Pane(newColumnLayout(false), false);
+    scrollPane.addPane(scrollbar, 0, { width: 16 });
+    scrollPane.addPane(scrollable, 1);
+
+    drawable.setContentPane(scrollPane);
+    drawable.redraw();
+
+
+
+    // Example Content
+    //
+
+    var numRows = 500;
+    var rowBgColors = [black, green, blue, cyan];
+    var rowFgColors = [white, black, white, black];
+
+    var createTextTexture = createTextTextureFactory('20px verdana,sans-serif');
+    for (var r = 0; r < numRows; r++) {
+        var row = new Pane({ updatePrefSize: fixedSize(null, 50) });
+        row.addPainter(newBackgroundPainter(rowBgColors[r % rowBgColors.length]));
+
+        var text = r.toFixed(0);
+        if (r === 0) text += ' first';
+        if (r === numRows - 1) text += ' last';
+
+        var labelTexture = createTextTexture(rowFgColors[r % rowFgColors.length], text);
+        row.addPainter(newTexturePainter(labelTexture, 0, 0.5, { xAnchor: 0, yAnchor: labelTexture.yAnchor(0.5) }));
+
+        setTimeout((function (row: Pane, r: number) {
+            return function () {
+                rowsPane.addPane(row, r);
+                drawable.redraw();
+            };
+        })(row, r), 10 * r);
     }
 
 
 }
+
+
+

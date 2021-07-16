@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2014, Metron, Inc.
  * All rights reserved.
@@ -28,119 +27,146 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { TimelineTimeseriesPainterFactory } from './timeline_timeseries_row';
+import { Drawable, Painter } from '../core';
+import { TimeAxis1D } from './time_axis';
+import { Axis1D } from '../plot/axis';
+import { TimelineModel, TimelineRowModel, TimelineAnnotationModel } from './timeline_model';
+import { TimelineUi } from './timeline_ui';
+import { newTextTextureCache6 } from '../text';
+import { TextureRenderer } from '../texture';
+import { Program, UniformColor, Attribute } from '../shader';
+import { xyFrac_VERTSHADER, solid_FRAGSHADER } from '../misc';
+import { ensureCapacityFloat32, GL, hasval } from '../util/util';
+import { newDynamicBuffer } from '../buffer';
+import { BoundsUnmodifiable } from '../bounds';
+import { TimelineAnnotationStyleUi, TimelineAnnotationIcon } from './timeline_annotation_style';
+import { white } from '../color';
 
-    export function newTimeseriesAnnotationPainterFactory( ) : TimelineTimeseriesPainterFactory {
-        // Painter Factory
-        return function( drawable : Drawable, timeAxis : TimeAxis1D, dataAxis : Axis1D, model : TimelineModel, rowModel : TimelineRowModel, ui : TimelineUi ) : Painter {
-            
-            var textTextures = newTextTextureCache3( );
-            var textureRenderer = new TextureRenderer( );
-            
-            var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
-            var u_Color = new UniformColor( program, 'u_Color' );
-            var a_Position = new Attribute( program, 'a_XyFrac' );
-            
-            var xys = new Float32Array( 0 );
-            xys = ensureCapacityFloat32( xys, 4 );
-            var xysBuffer = newDynamicBuffer( );
-            
-            // Painter
-            return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
-                gl.enable( GL.BLEND );
-                
-                textTextures.resetTouches( );
-                
-                for ( var i = 0 ; i < rowModel.annotationGuids.length ; i++ ) {
-                    var annotationGuid : string = rowModel.annotationGuids.valueAt(i);
-                    var annotation : TimelineAnnotationModel = model.annotation( annotationGuid );
-                    var annotationStyle : TimelineAnnotationStyleUi = ui.annotationStyle( annotation.styleGuid );
-                    
-                    var font = hasval( annotationStyle.font ) ? annotationStyle.font : '11px verdana,sans-serif';
-                    var color = hasval( annotationStyle.color ) ? annotationStyle.color : white;
-                    
-                    var hTextOffset = hasval( annotationStyle.hTextOffset ) ? annotationStyle.hTextOffset : 0;
-                    var vTextOffset = hasval( annotationStyle.vTextOffset ) ? annotationStyle.vTextOffset : 0;
-                
-                    // draw line
-                    if ( annotationStyle.uiHint === 'horizontal-line' || annotationStyle.uiHint === 'vertical-line' ) {
-                        
-                        if ( annotationStyle.uiHint === 'horizontal-line' ) {
-                            var xFrac = hasval( annotationStyle.align ) ? annotationStyle.align : 1 ;
-                            var yFrac = dataAxis.vFrac( annotation.y );
-                            
-                            xys[0] = 0;
-                            xys[1] = yFrac;
-                            xys[2] = 1;
-                            xys[3] = yFrac;
-                        }
-                        else if ( annotationStyle.uiHint === 'vertical-line' ) {
-                            var xFrac = timeAxis.tFrac( annotation.time_PMILLIS );
-                            var yFrac = hasval( annotationStyle.align ) ? annotationStyle.align : 1 ;
-                            
-                            xys[0] = xFrac;
-                            xys[1] = 0;
-                            xys[2] = xFrac;
-                            xys[3] = 1;
-                        }
-                        
-                        program.use( gl );
-                        
-                        u_Color.setData( gl, color );
-                    
-                        xysBuffer.setData( xys.subarray( 0, 4 ) );
-                        a_Position.setDataAndEnable( gl, xysBuffer, 2, GL.FLOAT );
-                    
-                        gl.drawArrays( GL.LINES, 0, 2 );
-                        
-                        program.endUse( gl );
+export function newTimeseriesAnnotationPainterFactory(): TimelineTimeseriesPainterFactory {
+    // Painter Factory
+    return function (drawable: Drawable, timeAxis: TimeAxis1D, dataAxis: Axis1D, model: TimelineModel, rowModel: TimelineRowModel, ui: TimelineUi): Painter {
+
+        const textTextures = newTextTextureCache6();
+        const textureRenderer = new TextureRenderer();
+
+        const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+        const u_Color = new UniformColor(program, 'u_Color');
+        const a_Position = new Attribute(program, 'a_XyFrac');
+
+        let xys = new Float32Array(0);
+        xys = ensureCapacityFloat32(xys, 4);
+        const xysBuffer = newDynamicBuffer();
+
+        // Painter
+        return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
+            gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+            gl.enable(GL.BLEND);
+
+            textTextures.resetTouches();
+
+            let xFrac = 0;
+            let yFrac = 0;
+
+            for (let i = 0; i < rowModel.annotationGuids.length; i++) {
+                const annotationGuid: string = rowModel.annotationGuids.valueAt(i);
+                const annotation: TimelineAnnotationModel = model.annotation(annotationGuid);
+                const annotationStyle: TimelineAnnotationStyleUi = ui.annotationStyle(annotation.styleGuid);
+
+                const font = hasval(annotationStyle.font) ? annotationStyle.font : '11px verdana,sans-serif';
+                const color = hasval(annotationStyle.color) ? annotationStyle.color : white;
+                const bgColorString = hasval(annotationStyle.bgColor) ? annotationStyle.bgColor.rgbaString : '#ffffff00';
+                const bgPadding = hasval(annotationStyle.bgPadding) ? annotationStyle.bgPadding : 0;
+                const bgBorderRadius = hasval(annotationStyle.bgBorderRadius) ? annotationStyle.bgBorderRadius : 0;
+
+                const hTextOffset = hasval(annotationStyle.hTextOffset) ? annotationStyle.hTextOffset : 0;
+                const vTextOffset = hasval(annotationStyle.vTextOffset) ? annotationStyle.vTextOffset : 0;
+
+                // draw line
+                if (annotationStyle.uiHint === 'horizontal-line' || annotationStyle.uiHint === 'vertical-line') {
+
+                    if (annotationStyle.uiHint === 'horizontal-line') {
+                        xFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
+                        yFrac = dataAxis.vFrac(annotation.y);
+
+                        xys[0] = 0;
+                        xys[1] = yFrac;
+                        xys[2] = 1;
+                        xys[3] = yFrac;
                     }
-                    else {
-                        var xFrac = timeAxis.tFrac( annotation.time_PMILLIS );
-                        var yFrac = dataAxis.vFrac( annotation.y );
+                    else if (annotationStyle.uiHint === 'vertical-line') {
+                        xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
+                        yFrac = hasval(annotationStyle.align) ? annotationStyle.align : 1;
+
+                        xys[0] = xFrac;
+                        xys[1] = 0;
+                        xys[2] = xFrac;
+                        xys[3] = 1;
                     }
-                    
-                    textureRenderer.begin( gl, viewport );
-                    
-                    // draw icons
-                    for ( var n = 0; n < annotationStyle.numIcons; n++ ) {
-                        var icon : TimelineAnnotationIcon = annotationStyle.icon( n );
-                        
-                        var xFracOffset = xFrac + ( hasval( icon.hOffset ) ? icon.hOffset : 0 ) / viewport.w;
-                        var yFracOffset = yFrac + ( hasval( icon.vOffset ) ? icon.vOffset : 0 ) / viewport.h;
-                        
-                        var iconTexture = ui.loadImage( icon.url, function( ) { drawable.redraw( ); } );
-                        if ( iconTexture ) {
-                            var options = { xAnchor: ( hasval( icon.hAlign ) ? icon.hAlign : 0.5 ),
-                                            yAnchor: ( hasval( icon.hAlign ) ? icon.hAlign : 0.5 ),
-                                            width: icon.displayWidth,
-                                            height: icon.displayHeight,
-                                            rotation_CCWRAD: 0 };
-                            
-                            textureRenderer.draw( gl, iconTexture, xFracOffset, yFracOffset, options );
-                        }
-                    }
-                    
-                    // draw text label
-                    if ( hasval( annotation.label ) ) {
-                        
-                        var textTexture = textTextures.value( font, color.rgbaString, annotation.label );
-                        
-                        var xFracOffset = xFrac + hTextOffset / viewport.w;
-                        var yFracOffset = yFrac + vTextOffset / viewport.h;
-                        
-                        var xAnchor = hasval( annotationStyle.hTextAlign ) ? annotationStyle.hTextAlign : 0;
-                        var yAnchor = textTexture.yAnchor( hasval( annotationStyle.vTextAlign ) ? annotationStyle.vTextAlign : 0.5 );
-                        
-                        textureRenderer.draw( gl, textTexture, xFracOffset, yFracOffset, { xAnchor: xAnchor, yAnchor: yAnchor } );
-                    }
-                    
-                    textureRenderer.end( gl );
+
+                    program.use(gl);
+
+                    u_Color.setData(gl, color);
+
+                    xysBuffer.setData(xys.subarray(0, 4));
+                    a_Position.setDataAndEnable(gl, xysBuffer, 2, GL.FLOAT);
+
+                    gl.drawArrays(GL.LINES, 0, 2);
+
+                    program.endUse(gl);
                 }
-                
-                textTextures.retainTouched( );
-            };
+                else {
+                    xFrac = timeAxis.tFrac(annotation.time_PMILLIS);
+                    yFrac = dataAxis.vFrac(annotation.y);
+                }
+
+                textureRenderer.begin(gl, viewport);
+
+                // draw icons
+                for (let n = 0; n < annotationStyle.numIcons; n++) {
+                    const icon: TimelineAnnotationIcon = annotationStyle.icon(n);
+
+                    const xFracOffset = xFrac + (hasval(icon.hOffset) ? icon.hOffset : 0) / viewport.w;
+                    const yFracOffset = yFrac + (hasval(icon.vOffset) ? icon.vOffset : 0) / viewport.h;
+
+                    const iconTexture = ui.loadImage(icon.url, function () { drawable.redraw(); });
+                    if (iconTexture) {
+                        const options = {
+                            xAnchor: (hasval(icon.hAlign) ? icon.hAlign : 0.5),
+                            yAnchor: (hasval(icon.hAlign) ? icon.hAlign : 0.5),
+                            width: icon.displayWidth,
+                            height: icon.displayHeight,
+                            rotation_CCWRAD: 0
+                        };
+
+                        textureRenderer.draw(gl, iconTexture, xFracOffset, yFracOffset, options);
+                    }
+                }
+
+                // draw text label
+                if (hasval(annotation.label)) {
+                    const textTexture = textTextures.value(
+                        font,
+                        color.rgbaString,
+                        annotation.label,
+                        bgColorString,
+                        bgPadding.toString(),
+                        bgBorderRadius.toString()
+                    );
+
+                    const xFracOffset = xFrac + hTextOffset / viewport.w;
+                    const yFracOffset = yFrac + vTextOffset / viewport.h;
+
+                    const xAnchor = hasval(annotationStyle.hTextAlign) ? annotationStyle.hTextAlign : 0;
+                    const yAnchor = textTexture.yAnchor(hasval(annotationStyle.vTextAlign) ? annotationStyle.vTextAlign : 0.5);
+
+                    textureRenderer.draw(gl, textTexture, xFracOffset, yFracOffset, { xAnchor: xAnchor, yAnchor: yAnchor });
+                }
+
+                textureRenderer.end(gl);
+            }
+
+            textTextures.retainTouched();
         };
-    }
+    };
 }

@@ -1,17 +1,64 @@
 {
   "name": "webglimpse",
-  "private": true,
+  "version": "2.5.0",
+  "description": "Webglimpse is a data visualization library for the web.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skaughtx0r/webglimpse"
+  },
+  "keywords": [
+    "webglimpse",
+    "data",
+    "visualization",
+    "timeline",
+    "webgl"
+  ],
+  "main": "webglimpse.js",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "build": "ng-packagr -p ng-package.json",
+    "docs": "node_modules/.bin/compodoc -p tsconfig.json -d docs --theme readthedocs",
+    "serve-docs": "node_modules/.bin/compodoc -s -d docs"
+  },
+  "dependencies": {
+    "moment": "^2.24.0"
+  },
   "devDependencies": {
-    "typescript": "1.0.1",
-    "grunt": "~0.4.2",
-    "grunt-ts": "~1.7.2",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-contrib-connect": "~0.6.0",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-copy": "~0.5.0",
-    "grunt-contrib-uglify": "~0.6.0",
-    "grunt-text-replace": "~0.3.10",
-    "load-grunt-tasks": "~0.3.0",
-    "lodash": "~2.4.1"
+    "@angular/animations": "^10.2.3",
+    "@angular/cli": "^10.2.0",
+    "@angular/common": "^10.2.3",
+    "@angular/compiler": "^10.2.3",
+    "@angular/compiler-cli": "^10.2.3",
+    "@angular/core": "^10.2.3",
+    "@angular/forms": "^10.2.3",
+    "@angular/http": "^5.2.0",
+    "@angular/language-service": "^10.2.3",
+    "@angular/platform-browser": "^10.2.3",
+    "@angular/platform-browser-dynamic": "^10.2.3",
+    "@angular/router": "^10.2.3",
+    "@compodoc/compodoc": "~1.0.8",
+    "@types/jasmine": "~3.3.13",
+    "@types/jasminewd2": "~2.0.6",
+    "@types/node": "~6.0.60",
+    "codelyzer": "^5.1.0",
+    "core-js": "^3.1.4",
+    "jasmine-core": "~3.4.0",
+    "jasmine-spec-reporter": "~4.2.1",
+    "karma": "~4.1.0",
+    "karma-chrome-launcher": "~2.2.0",
+    "karma-cli": "~1.0.1",
+    "karma-coverage-istanbul-reporter": "^2.0.5",
+    "karma-jasmine": "~2.0.1",
+    "karma-jasmine-html-reporter": "^1.4.2",
+    "ng-packagr": "^5.3.0",
+    "protractor": "~5.4.2",
+    "rxjs": "^6.5.2",
+    "tslint": "~6.1.0",
+    "typescript": "~4.0.5",
+    "zone.js": "^0.10.3"
   }
 }

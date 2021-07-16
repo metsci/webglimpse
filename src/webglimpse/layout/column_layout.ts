@@ -27,149 +27,150 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { LayoutEntry, Layout } from '../core';
+import { Size, BoundsUnmodifiable } from '../bounds';
+import { hasval, isNumber } from '../util/util';
 
 
-    function childWidth( child : LayoutEntry ) : number {
-        var usePrefWidth = ( !hasval( child.layoutOptions ) || child.layoutOptions.width === undefined || child.layoutOptions.width === 'pref' );
-        return ( usePrefWidth ? child.prefSize.w : child.layoutOptions.width );
-    }
+function childWidth(child: LayoutEntry): number {
+    const usePrefWidth = (!hasval(child.layoutOptions) || child.layoutOptions.width === undefined || child.layoutOptions.width === 'pref');
+    return (usePrefWidth ? child.prefSize.w : child.layoutOptions.width);
+}
 
 
-    export function newColumnLayout( leftToRight : boolean = true ) : Layout {
+export function newColumnLayout(leftToRight: boolean = true): Layout {
 
-        return {
-
-
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                var childrenToPlace = <LayoutEntry[]> [ ];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    if ( isNumber( child.layoutArg ) && !( child.layoutOptions && child.layoutOptions.hide ) ) {
-                        childrenToPlace.push( child );
-                    }
-                }
-
-                var hMax = 0;
-                var wSum = 0;
-                for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                    var child = childrenToPlace[ c ];
-
-                    var honorChildHeight = !( child.layoutOptions && child.layoutOptions.ignoreHeight );
-                    if ( honorChildHeight ) {
-                        var h = child.prefSize.h;
-                        if ( hasval( hMax ) && hasval( h ) ) {
-                            hMax = Math.max( hMax, h );
-                        }
-                        else {
-                            hMax = null;
-                        }
-                    }
-
-                    var w = childWidth( child );
-                    if ( hasval( wSum ) && hasval( w ) ) {
-                        wSum += w;
-                    }
-                    else {
-                        wSum = null;
-                    }
-                }
-                parentPrefSize.w = wSum;
-                parentPrefSize.h = hMax;
-            },
+    return <Layout>{
 
 
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                var childrenToPlace = <LayoutEntry[]> [ ];
-                var childrenToHide = <LayoutEntry[]> [ ];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    if ( isNumber( child.layoutArg ) && !( child.layoutOptions && child.layoutOptions.hide ) ) {
-                        childrenToPlace.push( child );
-                    }
-                    else {
-                        childrenToHide.push( child );
-                    }
-                }
-
-                // Use the original index to make the sort stable
-                var indexProp = 'webglimpse_columnLayout_index';
-                for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                    var child = childrenToPlace[ c ];
-                    child[ indexProp ] = c;
-                }
-
-                childrenToPlace.sort( function( a : LayoutEntry, b : LayoutEntry ) {
-                    var orderDiff = a.layoutArg - b.layoutArg;
-                    return ( orderDiff !== 0 ? orderDiff : ( a[ indexProp ] - b[ indexProp ] ) );
-                } );
-
-                var numFlexible = 0;
-                var totalFlexWidth = parentViewport.w;
-                for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                    var w = childWidth( childrenToPlace[ c ] );
-                    if ( hasval( w ) ) {
-                        totalFlexWidth -= w;
-                    }
-                    else {
-                        numFlexible++;
-                    }
-                }
-                var flexWidth = totalFlexWidth / numFlexible;
-
-                if ( leftToRight ) {
-                    var jStart = parentViewport.jStart;
-                    var jEnd = parentViewport.jEnd;
-                    var iStart = parentViewport.iStart;
-                    var iRemainder = 0;
-                    for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                        var child = childrenToPlace[ c ];
-
-                        var iEnd : number;
-                        var w = childWidth( child );
-                        if ( hasval( w ) ) {
-                            iEnd = iStart + w;
-                        }
-                        else {
-                            var iEnd0 = iStart + flexWidth + iRemainder;
-                            iEnd = Math.round( iEnd0 );
-                            iRemainder = iEnd0 - iEnd;
-                        }
-
-                        child.viewport.setEdges( iStart, iEnd, jStart, jEnd );
-                        iStart = iEnd;
-                    }
-                }
-                else {
-                    var jStart = parentViewport.jStart;
-                    var jEnd = parentViewport.jEnd;
-                    var iEnd = parentViewport.iEnd;
-                    var iRemainder = 0;
-                    for ( var c = 0; c < childrenToPlace.length; c++ ) {
-                        var child = childrenToPlace[ c ];
-
-                        var iStart : number;
-                        var w = childWidth( child );
-                        if ( hasval( w ) ) {
-                            iStart = iEnd - w;
-                        }
-                        else {
-                            var iStart0 = iEnd - flexWidth - iRemainder;
-                            iStart = Math.round( iStart0 );
-                            iRemainder = iStart - iStart0;
-                        }
-
-                        child.viewport.setEdges( iStart, iEnd, jStart, jEnd );
-                        iEnd = iStart;
-                    }
-                }
-
-                for ( var c = 0; c < childrenToHide.length; c++ ) {
-                    childrenToHide[ c ].viewport.setEdges( 0, 0, 0, 0 );
+        updatePrefSize: function (parentPrefSize: Size, children: LayoutEntry[]) {
+            const childrenToPlace = <LayoutEntry[]>[];
+            for (let c = 0; c < children.length; c++) {
+                const child = children[c];
+                if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
+                    childrenToPlace.push(child);
                 }
             }
 
+            let hMax = 0;
+            let wSum = 0;
+            for (let c = 0; c < childrenToPlace.length; c++) {
+                const child = childrenToPlace[c];
 
-        };
-    }
+                const honorChildHeight = !(child.layoutOptions && child.layoutOptions.ignoreHeight);
+                if (honorChildHeight) {
+                    const h = child.prefSize.h;
+                    if (hasval(hMax) && hasval(h)) {
+                        hMax = Math.max(hMax, h);
+                    }
+                    else {
+                        hMax = null;
+                    }
+                }
+
+                const w = childWidth(child);
+                if (hasval(wSum) && hasval(w)) {
+                    wSum += w;
+                }
+                else {
+                    wSum = null;
+                }
+            }
+            parentPrefSize.w = wSum;
+            parentPrefSize.h = hMax;
+        },
+
+
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            const childrenToPlace = <LayoutEntry[]>[];
+            const childrenToHide = <LayoutEntry[]>[];
+            for (let c = 0; c < children.length; c++) {
+                const child = children[c];
+                if (isNumber(child.layoutArg) && !(child.layoutOptions && child.layoutOptions.hide)) {
+                    childrenToPlace.push(child);
+                }
+                else {
+                    childrenToHide.push(child);
+                }
+            }
+
+            // Use the original index to make the sort stable
+            const indexProp = 'webglimpse_columnLayout_index';
+            for (let c = 0; c < childrenToPlace.length; c++) {
+                const child = childrenToPlace[c];
+                child[indexProp] = c;
+            }
+
+            childrenToPlace.sort(function (a: LayoutEntry, b: LayoutEntry) {
+                const orderDiff = a.layoutArg - b.layoutArg;
+                return (orderDiff !== 0 ? orderDiff : (a[indexProp] - b[indexProp]));
+            });
+
+            let numFlexible = 0;
+            let totalFlexWidth = parentViewport.w;
+            for (let c = 0; c < childrenToPlace.length; c++) {
+                const w = childWidth(childrenToPlace[c]);
+                if (hasval(w)) {
+                    totalFlexWidth -= w;
+                }
+                else {
+                    numFlexible++;
+                }
+            }
+            const flexWidth = totalFlexWidth / numFlexible;
+
+            if (leftToRight) {
+                const jStart = parentViewport.jStart;
+                const jEnd = parentViewport.jEnd;
+                let iStart = parentViewport.iStart;
+                let iRemainder = 0;
+                for (let c = 0; c < childrenToPlace.length; c++) {
+                    const child = childrenToPlace[c];
+
+                    let iEnd: number;
+                    const w = childWidth(child);
+                    if (hasval(w)) {
+                        iEnd = iStart + w;
+                    }
+                    else {
+                        const iEnd0 = iStart + flexWidth + iRemainder;
+                        iEnd = Math.round(iEnd0);
+                        iRemainder = iEnd0 - iEnd;
+                    }
+
+                    child.viewport.setEdges(iStart, iEnd, jStart, jEnd);
+                    iStart = iEnd;
+                }
+            }
+            else {
+                const jStart = parentViewport.jStart;
+                const jEnd = parentViewport.jEnd;
+                let iEnd = parentViewport.iEnd;
+                let iRemainder = 0;
+                for (let c = 0; c < childrenToPlace.length; c++) {
+                    const child = childrenToPlace[c];
+
+                    let iStart: number;
+                    const w = childWidth(child);
+                    if (hasval(w)) {
+                        iStart = iEnd - w;
+                    }
+                    else {
+                        const iStart0 = iEnd - flexWidth - iRemainder;
+                        iStart = Math.round(iStart0);
+                        iRemainder = iStart - iStart0;
+                    }
+
+                    child.viewport.setEdges(iStart, iEnd, jStart, jEnd);
+                    iEnd = iStart;
+                }
+            }
+
+            for (let c = 0; c < childrenToHide.length; c++) {
+                childrenToHide[c].viewport.setEdges(0, 0, 0, 0);
+            }
+        }
+
+
+    };
 }

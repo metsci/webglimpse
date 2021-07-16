@@ -27,92 +27,99 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { newDrawable, Pane } from '../../webglimpse/core';
+import { rgb, black, green, yellow, cyan, magenta } from '../../webglimpse/color';
+import { newAxis2D, attachAxisMouseListeners2D, attachAxisMouseListeners1D } from '../../webglimpse/plot/axis';
+import { newBackgroundPainter, Side } from '../../webglimpse/misc';
+import { newBorderPainter } from '../../webglimpse/painter/border_painter';
+import { newEdgeAxisPainter } from '../../webglimpse/plot/edge_axis_painter';
+import { newPlotLayout } from '../../webglimpse/plot/plot_layout';
+import { jet, reverseBone } from '../../webglimpse/gradient';
 
 
-    export function runPlotExample( container : Node ) {
+export function runPlotExample(container: Node) {
 
 
-        // DOM Setup
-        //
+    // DOM Setup
+    //
 
-        var canvas = document.createElement( 'canvas' );
-        canvas.id = 'exampleCanvas';
-        canvas.style.padding = '0';
-        container.appendChild( canvas );
+    var canvas = document.createElement('canvas');
+    canvas.id = 'exampleCanvas';
+    canvas.style.padding = '0';
+    container.appendChild(canvas);
 
-        var drawable = newDrawable( canvas );
+    var drawable = newDrawable(canvas);
 
-        var updateCanvasSize = function( ) {
-            canvas.width = $( canvas ).width( );
-            canvas.height = $( canvas ).height( );
-            drawable.redraw( );
-        };
-        $( window ).resize( updateCanvasSize );
-        updateCanvasSize( );
-
-
-
-        // Settings
-        //
-
-        var bgColor = rgb( 0.965, 0.957, 0.949 );
-        var textColor = black;
-        var tickColor = black;
-
-        var xyAxis = newAxis2D( -1, 7, -1000, 5000 );
-        var xAxis = xyAxis.xAxis;
-        var yAxis = xyAxis.yAxis;
-
-        xyAxis.onLimitsChanged( drawable.redraw );
+    var updateCanvasSize = function () {
+        canvas.width = $(canvas).width();
+        canvas.height = $(canvas).height();
+        drawable.redraw();
+    };
+    $(window).resize(updateCanvasSize);
+    updateCanvasSize();
 
 
 
-        // Panes & Painters
-        //
+    // Settings
+    //
 
-        var centerPane = new Pane( null );
-        centerPane.addPainter( newBackgroundPainter( bgColor ) );
-        centerPane.addPainter( newBorderPainter( tickColor ) );
-        attachAxisMouseListeners2D( centerPane, xyAxis );
+    var bgColor = rgb(0.965, 0.957, 0.949);
+    var textColor = black;
+    var tickColor = black;
 
-        var topPane = new Pane( null );
-        topPane.addPainter( newBackgroundPainter( green ) );
-        topPane.addPainter( newEdgeAxisPainter( xAxis, Side.TOP, { label: 'Top', textColor: textColor, tickColor: tickColor, tickSize : 12, gradientFill : jet, showBorder: true } ) );
-        attachAxisMouseListeners1D( topPane, xAxis, false );
+    var xyAxis = newAxis2D(-1, 7, -1000, 5000);
+    var xAxis = xyAxis.xAxis;
+    var yAxis = xyAxis.yAxis;
 
-        var leftPane = new Pane( null );
-        leftPane.addPainter( newBackgroundPainter( yellow ) );
-        leftPane.addPainter( newEdgeAxisPainter( yAxis, Side.LEFT, { label: 'Y', textColor: textColor, tickColor: tickColor, tickSize : 12, gradientFill : reverseBone, showBorder: true } ) );
-        attachAxisMouseListeners1D( leftPane, yAxis, true );
-
-        var bottomPane = new Pane( null );
-        bottomPane.addPainter( newBackgroundPainter( cyan ) );
-        bottomPane.addPainter( newEdgeAxisPainter( xAxis, Side.BOTTOM, { label: 'X', textColor: textColor, tickColor: tickColor, tickSize : 12, gradientFill : reverseBone, showBorder: true } ) );
-        attachAxisMouseListeners1D( bottomPane, xAxis, false );
-
-        var rightPane = new Pane( null );
-        rightPane.addPainter( newBackgroundPainter( magenta ) );
-        rightPane.addPainter( newEdgeAxisPainter( yAxis, Side.RIGHT, { label: 'Right', textColor: textColor, tickColor: tickColor, tickSize : 12, gradientFill : jet, showBorder: true } ) );
-        attachAxisMouseListeners1D( rightPane, yAxis, true );
-
-        var plotPane = new Pane( newPlotLayout( ) );
-        plotPane.addPane( topPane, Side.TOP );
-        plotPane.addPane( leftPane, Side.LEFT );
-        plotPane.addPane( rightPane, Side.RIGHT );
-        plotPane.addPane( bottomPane, Side.BOTTOM );
-        plotPane.addPane( centerPane, null );
+    xyAxis.onLimitsChanged(drawable.redraw);
 
 
 
-        // Show
-        //
+    // Panes & Painters
+    //
 
-        drawable.setContentPane( plotPane );
-        drawable.redraw( );
+    var centerPane = new Pane(null);
+    centerPane.addPainter(newBackgroundPainter(bgColor));
+    centerPane.addPainter(newBorderPainter(tickColor));
+    attachAxisMouseListeners2D(centerPane, xyAxis);
+
+    var topPane = new Pane(null);
+    topPane.addPainter(newBackgroundPainter(green));
+    topPane.addPainter(newEdgeAxisPainter(xAxis, Side.TOP, { label: 'Top', textColor: textColor, tickColor: tickColor, tickSize: 12, gradientFill: jet, showBorder: true }));
+    attachAxisMouseListeners1D(topPane, xAxis, false);
+
+    var leftPane = new Pane(null);
+    leftPane.addPainter(newBackgroundPainter(yellow));
+    leftPane.addPainter(newEdgeAxisPainter(yAxis, Side.LEFT, { label: 'Y', textColor: textColor, tickColor: tickColor, tickSize: 12, gradientFill: reverseBone, showBorder: true }));
+    attachAxisMouseListeners1D(leftPane, yAxis, true);
+
+    var bottomPane = new Pane(null);
+    bottomPane.addPainter(newBackgroundPainter(cyan));
+    bottomPane.addPainter(newEdgeAxisPainter(xAxis, Side.BOTTOM, { label: 'X', textColor: textColor, tickColor: tickColor, tickSize: 12, gradientFill: reverseBone, showBorder: true }));
+    attachAxisMouseListeners1D(bottomPane, xAxis, false);
+
+    var rightPane = new Pane(null);
+    rightPane.addPainter(newBackgroundPainter(magenta));
+    rightPane.addPainter(newEdgeAxisPainter(yAxis, Side.RIGHT, { label: 'Right', textColor: textColor, tickColor: tickColor, tickSize: 12, gradientFill: jet, showBorder: true }));
+    attachAxisMouseListeners1D(rightPane, yAxis, true);
+
+    var plotPane = new Pane(newPlotLayout());
+    plotPane.addPane(topPane, Side.TOP);
+    plotPane.addPane(leftPane, Side.LEFT);
+    plotPane.addPane(rightPane, Side.RIGHT);
+    plotPane.addPane(bottomPane, Side.BOTTOM);
+    plotPane.addPane(centerPane, null);
 
 
-    }
+
+    // Show
+    //
+
+    drawable.setContentPane(plotPane);
+    drawable.redraw();
 
 
 }
+
+
+
