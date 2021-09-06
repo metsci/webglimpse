@@ -97,9 +97,12 @@ module Webglimpse {
      *  - hsl/hsla
      *  - named colors
      *
+     * Also, this can take in an array of rgba values as an optimization. Example: [ 0.5, 0.5, 0.5, 0.5 ]
+     * 
      * Behavior is undefined for strings that are not in one of the listed notations.
      *
      * Note that different browsers may use different color values for the named colors.
+     * Typescript 1.0.1 doesn't seem to support the | operator, so using the 'any' type until webglimpse moves to a newer version.
      *
      */
     export var parseCssColor = ( function( ) {
@@ -107,17 +110,21 @@ module Webglimpse {
         canvas.width = 1;
         canvas.height = 1;
         var g = canvas.getContext( '2d' );
-        return function( cssColorString : string ) : Color {
-            g.clearRect( 0, 0, 1, 1 );
-            g.fillStyle = cssColorString;
-            g.fillRect( 0, 0, 1, 1 );
+        return function( cssColorString : any ) : Color {
+            if(!Array.isArray(cssColorString)) {
+                g.clearRect( 0, 0, 1, 1 );
+                g.fillStyle = cssColorString;
+                g.fillRect( 0, 0, 1, 1 );
 
-            var rgbaData = g.getImageData( 0, 0, 1, 1 ).data;
-            var R = rgbaData[ 0 ] / 255;
-            var G = rgbaData[ 1 ] / 255;
-            var B = rgbaData[ 2 ] / 255;
-            var A = rgbaData[ 3 ] / 255;
-            return rgba( R, G, B, A );
+                var rgbaData = g.getImageData( 0, 0, 1, 1 ).data;
+                var R = rgbaData[ 0 ] / 255;
+                var G = rgbaData[ 1 ] / 255;
+                var B = rgbaData[ 2 ] / 255;
+                var A = rgbaData[ 3 ] / 255;
+                return rgba( R, G, B, A );
+            } else {
+                return rgba(cssColorString[0], cssColorString[1], cssColorString[2], cssColorString[3]);
+            }
         }
     } )( );
 
