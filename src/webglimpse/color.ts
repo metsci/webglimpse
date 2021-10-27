@@ -107,12 +107,18 @@ module Webglimpse {
         canvas.width = 1;
         canvas.height = 1;
         var g = canvas.getContext( '2d' );
+        var rgbCache = {};      
         return function( cssColorString : string ) : Color {
             g.clearRect( 0, 0, 1, 1 );
             g.fillStyle = cssColorString;
             g.fillRect( 0, 0, 1, 1 );
-
-            var rgbaData = g.getImageData( 0, 0, 1, 1 ).data;
+            var rgbaData;
+            if(!rgbCache.hasOwnProperty(cssColorString)) {
+                rgbaData = g.getImageData(0, 0, 1, 1).data;
+                rgbCache[cssColorString] = rgbaData;
+            } else {
+                rgbaData = rgbCache[cssColorString];
+            }
             var R = rgbaData[ 0 ] / 255;
             var G = rgbaData[ 1 ] / 255;
             var B = rgbaData[ 2 ] / 255;
