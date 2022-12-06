@@ -112,16 +112,13 @@ export class Axis1D {
         if (vAmount + this._vMin < this._vMinLimit) {
             this._vMax = this._vMinLimit + this.vSize;
             this._vMin = this._vMinLimit;
-            this._limitsChanged.fire();
-            return;
         } else if (vAmount + this._vMax > this._vMaxLimit) {
             this._vMin = this._vMaxLimit - this.vSize;
             this._vMax = this._vMaxLimit;
-            this._limitsChanged.fire();
-            return;
+        } else {
+            this._vMin += vAmount;
+            this._vMax += vAmount;
         }
-        this._vMin += vAmount;
-        this._vMax += vAmount;
         this._limitsChanged.fire();
     }
 
