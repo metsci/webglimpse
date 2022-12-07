@@ -20,7 +20,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "build": "ng-packagr -p ng-package.json --config tsconfig.json",
+    "build": "ng-packagr -p ng-package.json --config tsconfig.ng-packagr.json",
     "docs": "node_modules/.bin/compodoc -p tsconfig.json -d docs --theme readthedocs",
     "serve-docs": "node_modules/.bin/compodoc -s -d docs"
   },
