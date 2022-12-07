@@ -1,12 +1,9 @@
 {
-  "$schema": "./node_modules/ng-packagr/package.schema.json",
+  "$schema": "./node_modules/ng-packagr/ng-package.schema.json",
   "lib": {
-    "entryFile": "src/public_api.ts",
-    "umdModuleIds": {
-      "moment": "moment"
-    }
+    "entryFile": "src/public_api.ts"
   },
-  "whitelistedNonPeerDependencies": [
+  "allowedNonPeerDependencies": [
     "moment"
   ]
 }
