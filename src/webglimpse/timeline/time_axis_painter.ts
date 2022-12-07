@@ -41,8 +41,7 @@ import { BoundsUnmodifiable } from '../bounds';
 import { ensureCapacityFloat32, GL, hasval, parseTime_PMILLIS, clamp } from '../util/util';
 import { minutesToMillis, millisToDays, hoursToMillis, daysToMillis, millisToHours, secondsToMillis } from '../time';
 import { Axis1D, getTickInterval, getTickCount, getTickPositions } from '../plot/axis';
-import * as momentNs from 'moment';
-const moment = momentNs;
+import moment, { Moment } from 'moment';
 
 // XXX: Much of this is duplicated from edge_axis_painter
 
@@ -427,16 +426,16 @@ class TimeStruct {
     public viewEnd_PMILLIS: number;
     public textCenter_PMILLIS: number;
 
-    setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
+    setTime(time_PMILLIS: number, timeZone: string): Moment {
         return moment(time_PMILLIS).zone(timeZone);
     }
 
-    incrementTime(m: momentNs.Moment) {
+    incrementTime(m: Moment) {
     }
 }
 
 class YearStruct extends TimeStruct {
-    setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
+    setTime(time_PMILLIS: number, timeZone: string): Moment {
         const m = moment(time_PMILLIS).zone(timeZone);
         m.month(0);
         m.date(0);
@@ -446,14 +445,14 @@ class YearStruct extends TimeStruct {
         return m;
     }
 
-    incrementTime(m: momentNs.Moment) {
+    incrementTime(m: Moment) {
         m.add('years', 1);
     }
 }
 
 
 class MonthStruct extends TimeStruct {
-    setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
+    setTime(time_PMILLIS: number, timeZone: string): Moment {
         const m = moment(time_PMILLIS).zone(timeZone);
         m.date(0);
         m.hours(0);
@@ -462,14 +461,14 @@ class MonthStruct extends TimeStruct {
         return m;
     }
 
-    incrementTime(m: momentNs.Moment) {
+    incrementTime(m: Moment) {
         m.add('months', 1);
     }
 }
 
 
 class DayStruct extends TimeStruct {
-    setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
+    setTime(time_PMILLIS: number, timeZone: string): Moment {
         const m = moment(time_PMILLIS).zone(timeZone);
         m.hours(0);
         m.minutes(0);
@@ -477,21 +476,21 @@ class DayStruct extends TimeStruct {
         return m;
     }
 
-    incrementTime(m: momentNs.Moment) {
+    incrementTime(m: Moment) {
         m.add('days', 1);
     }
 }
 
 
 class HourStruct extends TimeStruct {
-    setTime(time_PMILLIS: number, timeZone: string): momentNs.Moment {
+    setTime(time_PMILLIS: number, timeZone: string): Moment {
         const m = moment(time_PMILLIS).zone(timeZone);
         m.minutes(0);
         m.seconds(0);
         return m;
     }
 
-    incrementTime(m: momentNs.Moment) {
+    incrementTime(m: Moment) {
         m.add('hours', 1);
     }
 }

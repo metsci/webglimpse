@@ -173,8 +173,7 @@ export function concatLines(...lines: string[]) {
  * places.
  *
  */
-import * as momentNs from 'moment';
-const moment = momentNs;
+import moment from 'moment';
 
 export function parseTime_PMILLIS(time_ISO8601: string): number {
 
