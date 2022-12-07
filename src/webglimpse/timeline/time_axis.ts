@@ -34,9 +34,9 @@ export class TimeAxis1D extends Axis1D {
 
     private _epoch_PMILLIS: number;
 
-    constructor(tMin_PMILLIS: number, tMax_PMILLIS: number) {
+    constructor(tMin_PMILLIS: number, tMax_PMILLIS: number, tMinLimit_PMILLIS = 0, tMaxLimit_PMILLIS = 253402329599000) {
         const epoch_PMILLIS = 0.5 * (tMin_PMILLIS + tMax_PMILLIS);
-        super(tMin_PMILLIS - epoch_PMILLIS, tMax_PMILLIS - epoch_PMILLIS);
+        super(tMin_PMILLIS - epoch_PMILLIS, tMax_PMILLIS - epoch_PMILLIS, tMinLimit_PMILLIS - epoch_PMILLIS, tMaxLimit_PMILLIS - epoch_PMILLIS);
         this._epoch_PMILLIS = epoch_PMILLIS;
     }
 
@@ -46,6 +46,14 @@ export class TimeAxis1D extends Axis1D {
 
     get tMax_PMILLIS(): number {
         return (this._epoch_PMILLIS + this.vMax);
+    }
+
+    get tMinLimit_PMILLIS(): number {
+        return (this._epoch_PMILLIS + this.vMinLimit);
+    }
+
+    get tMaxLimit_PMILLIS(): number {
+        return (this._epoch_PMILLIS + this.vMaxLimit);
     }
 
     set tMin_PMILLIS(tMin_PMILLIS: number) {

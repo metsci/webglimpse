@@ -35,11 +35,15 @@ import { xFrac, yFrac, Pane, PointerEvent, isLeftMouseDown } from '../core';
 export class Axis1D {
     private _vMin: number;
     private _vMax: number;
+    private _vMinLimit: number;
+    private _vMaxLimit: number;
     private _limitsChanged = new Notification();
 
-    constructor(vMin: number, vMax: number) {
-        this._vMin = vMin;
-        this._vMax = vMax;
+    constructor(vMin: number, vMax: number, vMinLimit = -Infinity, vMaxLimit = Infinity) {
+        this._vMin = Math.max(vMin, vMinLimit);
+        this._vMax = Math.min(vMax, vMaxLimit);
+        this._vMinLimit = vMinLimit;
+        this._vMaxLimit = vMaxLimit;
     }
 
     get vMin(): number {
@@ -50,23 +54,45 @@ export class Axis1D {
         return this._vMax;
     }
 
+    get vMinLimit(): number {
+        return this._vMinLimit;
+    }
+
+    get vMaxLimit(): number {
+        return this._vMaxLimit;
+    }
+
     get limitsChanged(): Notification {
         return this._limitsChanged;
     }
 
     set vMin(vMin: number) {
-        this._vMin = vMin;
+        this._vMin = Math.max(vMin, this._vMinLimit);
         this._limitsChanged.fire();
     }
 
     set vMax(vMax: number) {
-        this._vMax = vMax;
+        this._vMax = Math.min(vMax, this._vMaxLimit);
+        this._limitsChanged.fire();
+    }
+
+    set vMinLimit(vMinLimit: number) {
+        this._vMinLimit = vMinLimit;
+        this._vMin = Math.max(this._vMin, vMinLimit);
+        this._vMax = Math.max(this._vMax, vMinLimit);
+        this._limitsChanged.fire();
+    }
+
+    set vMaxLimit(vMaxLimit: number) {
+        this._vMaxLimit = vMaxLimit;
+        this._vMin = Math.min(this._vMin, vMaxLimit);
+        this._vMax = Math.min(this._vMax, vMaxLimit);
         this._limitsChanged.fire();
     }
 
     setVRange(vMin: number, vMax: number) {
-        this._vMin = vMin;
-        this._vMax = vMax;
+        this._vMin = Math.max(vMin, this._vMinLimit);
+        this._vMax = Math.min(vMax, this._vMaxLimit);
         this._limitsChanged.fire();
     }
 
@@ -83,14 +109,24 @@ export class Axis1D {
     }
 
     pan(vAmount: number) {
-        this._vMin += vAmount;
-        this._vMax += vAmount;
+        if (vAmount + this._vMin < this._vMinLimit) {
+            this._vMax = this._vMinLimit + this.vSize;
+            this._vMin = this._vMinLimit;
+        } else if (vAmount + this._vMax > this._vMaxLimit) {
+            this._vMin = this._vMaxLimit - this.vSize;
+            this._vMax = this._vMaxLimit;
+        } else {
+            this._vMin += vAmount;
+            this._vMax += vAmount;
+        }
         this._limitsChanged.fire();
     }
 
     zoom(factor: number, vAnchor: number) {
-        this._vMin = vAnchor - factor * (vAnchor - this._vMin);
-        this._vMax = vAnchor + factor * (this._vMax - vAnchor);
+        const newVMin = vAnchor - factor * (vAnchor - this._vMin);
+        const newVMax = vAnchor + factor * (this._vMax - vAnchor);
+        this._vMin = Math.max(newVMin, this._vMinLimit);
+        this._vMax = Math.min(newVMax, this._vMaxLimit);
         this._limitsChanged.fire();
     }
 }
