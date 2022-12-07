@@ -110,7 +110,7 @@ export let parseCssColor = (function () {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
-    const g = canvas.getContext('2d');
+    const g = canvas.getContext('2d', { willReadFrequently: true});
     return function (cssColorString: string, alphaOverride?: number): Color {
         g.clearRect(0, 0, 1, 1);
         g.fillStyle = cssColorString;

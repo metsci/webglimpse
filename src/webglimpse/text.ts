@@ -85,7 +85,7 @@ function newFontMetricsCache(): Cache<FontMetrics> {
             const canvas = document.createElement('canvas');
             canvas.width = w;
             canvas.height = h;
-            const g = canvas.getContext('2d');
+            const g = canvas.getContext('2d', { willReadFrequently: true});
 
             g.font = font;
             g.textAlign = 'left';

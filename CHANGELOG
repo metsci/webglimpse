@@ -1,3 +1,8 @@
+Webglimpse 2.6.0 (release 2022-12-7)
+* Added ability to specify min/max limits on TimeAxis1D / Axis1D.
+* Fix warnings about adding `willReadFrequently` option to canvas context that
+  calls `getImageData` a lot.
+
 Webglimpse 2.5.0 (release 2020-11-18)
 * Added annotation label backgrounds.
 
