@@ -27,102 +27,115 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Layout, LayoutEntry } from '../core';
+import { Size, BoundsUnmodifiable } from '../bounds';
+import { Side } from '../misc';
+import { hasval } from '../util/util';
 
+export function newTimelineLayout(axisHeight: number): Layout {
 
-    export function newTimelineLayout( axisHeight : number ) : Layout {
+    return <Layout>{
 
-        return {
+        updatePrefSize: <Layout>function (parentPrefSize: Size, children: LayoutEntry[]) {
+            let topAxis: LayoutEntry = null;
+            let bottomAxis: LayoutEntry = null;
+            let center: LayoutEntry = null;
+            for (let c = 0; c < children.length; c++) {
+                const child = children[c];
+                switch (child.layoutArg) {
+                    case Side.TOP:
+                        if (hasval(topAxis)) {
+                            throw new Error('Timeline-layout can have at most one top-axis pane');
+                        }
+                        topAxis = child;
+                        break;
 
-            updatePrefSize: function( parentPrefSize : Size, children : LayoutEntry[] ) {
-                var topAxis : LayoutEntry = null;
-                var bottomAxis : LayoutEntry = null;
-                var center : LayoutEntry = null;
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    switch ( child.layoutArg ) {
-                        case Side.TOP:
-                            if ( hasval( topAxis ) ) throw new Error( 'Timeline-layout can have at most one top-axis pane' );
-                            topAxis = child;
-                            break;
+                    case Side.BOTTOM:
+                        if (hasval(bottomAxis)) {
+                            throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        }
+                        bottomAxis = child;
+                        break;
 
-                        case Side.BOTTOM:
-                            if ( hasval( bottomAxis ) ) throw new Error( 'Timeline-layout can have at most one bottom-axis pane' );
-                            bottomAxis = child;
-                            break;
-
-                        default:
-                            if ( hasval( center ) ) throw new Error( 'Timeline-layout can have at most one center pane' );
-                            center = child;
-                            break;
-                    }
-                }
-
-                var hSum = 0;
-
-                if ( hasval( topAxis ) ) {
-                    hSum += axisHeight;
-                }
-
-                if ( hasval( bottomAxis ) ) {
-                    hSum += axisHeight;
-                }
-
-                if ( hasval( center ) ) {
-                    if ( hasval( center.prefSize.h ) ) {
-                        hSum += center.prefSize.h;
-                    }
-                    else {
-                        hSum = null;
-                    }
-                }
-
-                parentPrefSize.w = null;
-                parentPrefSize.h = hSum;
-            },
-
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                var topAxis : LayoutEntry = null;
-                var bottomAxis : LayoutEntry = null;
-                var center : LayoutEntry = null;
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    switch ( child.layoutArg ) {
-                        case Side.TOP:
-                            if ( hasval( topAxis ) ) throw new Error( 'Timeline-layout can have at most one top-axis pane' );
-                            topAxis = child;
-                            break;
-
-                        case Side.BOTTOM:
-                            if ( hasval( bottomAxis ) ) throw new Error( 'Timeline-layout can have at most one bottom-axis pane' );
-                            bottomAxis = child;
-                            break;
-
-                        default:
-                            if ( hasval( center ) ) throw new Error( 'Timeline-layout can have at most one center pane' );
-                            center = child;
-                            break;
-                    }
-                }
-
-                if ( hasval( topAxis ) ) {
-                    topAxis.viewport.setRect( parentViewport.i, parentViewport.jEnd - axisHeight, parentViewport.w, axisHeight );
-                }
-
-                if ( hasval( bottomAxis ) ) {
-                    var jBottomMax = ( hasval( topAxis ) ? topAxis.viewport.j : parentViewport.jEnd ) - axisHeight;
-                    bottomAxis.viewport.setRect( parentViewport.i, Math.min( jBottomMax, parentViewport.j ), parentViewport.w, axisHeight );
-                }
-
-                if ( hasval( center ) ) {
-                    var jCenterEnd = ( hasval( topAxis ) ? topAxis.viewport.jStart : parentViewport.jEnd );
-                    var jCenterStart = ( hasval( bottomAxis ) ? bottomAxis.viewport.jEnd : parentViewport.jStart );
-                    center.viewport.setEdges( parentViewport.iStart, parentViewport.iEnd, jCenterStart, jCenterEnd );
+                    default:
+                        if (hasval(center)) {
+                            throw new Error('Timeline-layout can have at most one center pane');
+                        }
+                        center = child;
+                        break;
                 }
             }
 
-        };
-    }
+            let hSum = 0;
 
+            if (hasval(topAxis)) {
+                hSum += axisHeight;
+            }
 
+            if (hasval(bottomAxis)) {
+                hSum += axisHeight;
+            }
+
+            if (hasval(center)) {
+                if (hasval(center.prefSize.h)) {
+                    hSum += center.prefSize.h;
+                }
+                else {
+                    hSum = null;
+                }
+            }
+
+            parentPrefSize.w = null;
+            parentPrefSize.h = hSum;
+        },
+
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            let topAxis: LayoutEntry = null;
+            let bottomAxis: LayoutEntry = null;
+            let center: LayoutEntry = null;
+            for (let c = 0; c < children.length; c++) {
+                const child = children[c];
+                switch (child.layoutArg) {
+                    case Side.TOP:
+                        if (hasval(topAxis)) {
+                            throw new Error('Timeline-layout can have at most one top-axis pane');
+                        }
+                        topAxis = child;
+                        break;
+
+                    case Side.BOTTOM:
+                        if (hasval(bottomAxis)) {
+                            throw new Error('Timeline-layout can have at most one bottom-axis pane');
+                        }
+                        bottomAxis = child;
+                        break;
+
+                    default:
+                        if (hasval(center)) {
+                            throw new Error('Timeline-layout can have at most one center pane');
+                        }
+                        center = child;
+                        break;
+                }
+            }
+
+            if (hasval(topAxis)) {
+                topAxis.viewport.setRect(parentViewport.i, parentViewport.jEnd - axisHeight, parentViewport.w, axisHeight);
+            }
+
+            if (hasval(bottomAxis)) {
+                const jBottomMax = (hasval(topAxis) ? topAxis.viewport.j : parentViewport.jEnd) - axisHeight;
+                bottomAxis.viewport.setRect(parentViewport.i, Math.min(jBottomMax, parentViewport.j), parentViewport.w, axisHeight);
+            }
+
+            if (hasval(center)) {
+                const jCenterEnd = (hasval(topAxis) ? topAxis.viewport.jStart : parentViewport.jEnd);
+                const jCenterStart = (hasval(bottomAxis) ? bottomAxis.viewport.jEnd : parentViewport.jStart);
+                center.viewport.setEdges(parentViewport.iStart, parentViewport.iEnd, jCenterStart, jCenterEnd);
+            }
+        }
+
+    };
 }
+
+

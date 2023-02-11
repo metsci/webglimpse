@@ -413,12 +413,12 @@ declare module JQueryUI {
     }
 
     interface SelectableEvents {
-        selected? (event: Event, ui: { selected?: Element; }): void;
-        selecting? (event: Event, ui: { selecting?: Element; }): void;
-        start? (event: Event, ui: any): void;
-        stop? (event: Event, ui: any): void;
-        unselected? (event: Event, ui: { unselected: Element; }): void;
-        unselecting? (event: Event, ui: { unselecting: Element; }): void;
+        selected?(event: Event, ui: { selected?: Element; }): void;
+        selecting?(event: Event, ui: { selecting?: Element; }): void;
+        start?(event: Event, ui: any): void;
+        stop?(event: Event, ui: any): void;
+        unselected?(event: Event, ui: { unselected: Element; }): void;
+        unselecting?(event: Event, ui: { unselecting: Element; }): void;
     }
 
     interface Selectable extends Widget, SelectableOptions, SelectableEvents {
@@ -836,9 +836,9 @@ interface JQuery {
 
     datepicker(): JQuery;
     datepicker(methodName: 'destroy'): void;
-    datepicker(methodName: 'dialog', date?: Date, onSelect?: ( date : string, datepicker: any ) => void , pos?: any): void;
-    datepicker(methodName: 'dialog', date?: string, onSelect?: ( date : string, datepicker: any ) => void , pos?: any): void;
-    datepicker(methodName: 'dialog', date?: string, onSelect?: ( date : string, datepicker: any ) => void , options?: JQueryUI.DatepickerOptions, pos?: any): void;
+    datepicker(methodName: 'dialog', date?: Date, onSelect?: (date: string, datepicker: any) => void, pos?: any): void;
+    datepicker(methodName: 'dialog', date?: string, onSelect?: (date: string, datepicker: any) => void, pos?: any): void;
+    datepicker(methodName: 'dialog', date?: string, onSelect?: (date: string, datepicker: any) => void, options?: JQueryUI.DatepickerOptions, pos?: any): void;
     datepicker(methodName: 'getDate'): Date;
     datepicker(methodName: 'hide'): void;
     datepicker(methodName: 'isDisabled'): boolean;

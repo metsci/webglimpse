@@ -27,65 +27,72 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Color, black } from '../color';
+import { TimeAxis1D } from './time_axis';
+import { Painter } from '../core';
+import { Program, UniformColor, Attribute } from '../shader';
+import { xyFrac_VERTSHADER, solid_FRAGSHADER } from '../misc';
+import { newDynamicBuffer } from '../buffer';
+import { BoundsUnmodifiable } from '../bounds';
+import { ensureCapacityFloat32, GL, hasval, parseTime_PMILLIS } from '../util/util';
+import { getTickTimes_PMILLIS } from './time_axis_painter';
 
 
-    export interface TimeGridPainterOptions {
-        tickSpacing? : number;
-        gridColor?   : Color;
-        referenceDate? : string;
-    }
-
-
-    export function newTimeGridPainter( timeAxis : TimeAxis1D, isVerticalAxis : boolean, timeZone : string, options? : TimeGridPainterOptions ) : Painter {
-        var tickSpacing = ( hasval( options ) && hasval( options.tickSpacing ) ? options.tickSpacing : 60    );
-        var gridColor   = ( hasval( options ) && hasval( options.gridColor   ) ? options.gridColor   : black );
-        var referenceDate_PMILLIS = ( hasval( options ) && hasval( options.referenceDate  ) ? parseTime_PMILLIS( options.referenceDate )  : undefined );
-
-        var program = new Program( xyFrac_VERTSHADER, solid_FRAGSHADER );
-        var u_Color = new UniformColor( program, 'u_Color' );
-        var a_XyFrac = new Attribute( program, 'a_XyFrac' );
-
-        var xyFrac = new Float32Array( 0 );
-        var xyFracBuffer = newDynamicBuffer( );
-
-        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-            var tickTimes_PMILLIS = getTickTimes_PMILLIS( timeAxis, ( isVerticalAxis ? viewport.h : viewport.w ), tickSpacing, timeZone, referenceDate_PMILLIS );
-            var tickCount = tickTimes_PMILLIS.length;
-
-            program.use( gl );
-            u_Color.setData( gl, gridColor );
-
-            xyFrac = ensureCapacityFloat32( xyFrac, 4*tickCount );
-            for ( var n = 0; n < tickCount; n++ ) {
-                var tFrac = timeAxis.tFrac( tickTimes_PMILLIS[ n ] );
-                if ( isVerticalAxis ) {
-                    tFrac = ( Math.floor( tFrac*viewport.h ) + 0.5 ) / viewport.h;
-                    xyFrac[ ( 4*n + 0 ) ] = 0;
-                    xyFrac[ ( 4*n + 1 ) ] = tFrac;
-                    xyFrac[ ( 4*n + 2 ) ] = 1;
-                    xyFrac[ ( 4*n + 3 ) ] = tFrac;
-                }
-                else {
-                    // Adding epsilon is a crude way to compensate for floating-point error (which is probably introduced up where we compute tFrac)
-                    tFrac = ( Math.floor( tFrac*viewport.w + 1e-4 ) + 0.5 ) / viewport.w;
-                    xyFrac[ ( 4*n + 0 ) ] = tFrac;
-                    xyFrac[ ( 4*n + 1 ) ] = 0;
-                    xyFrac[ ( 4*n + 2 ) ] = tFrac;
-                    xyFrac[ ( 4*n + 3 ) ] = 1;
-                }
-            }
-            xyFracBuffer.setData( xyFrac.subarray( 0, 4*tickCount ) );
-            a_XyFrac.setDataAndEnable( gl, xyFracBuffer, 2, GL.FLOAT );
-
-            // IE does not support lineWidths other than 1, so make sure all browsers use lineWidth of 1
-            gl.lineWidth( 1 );
-            gl.drawArrays( GL.LINES, 0, 2*tickCount );
-
-            a_XyFrac.disable( gl );
-            program.endUse( gl );
-        }
-    }
-
-
+export interface TimeGridPainterOptions {
+    tickSpacing?: number;
+    gridColor?: Color;
+    referenceDate?: string;
 }
+
+
+export function newTimeGridPainter(timeAxis: TimeAxis1D, isVerticalAxis: boolean, timeZone: string, options?: TimeGridPainterOptions): Painter {
+    const tickSpacing = (hasval(options) && hasval(options.tickSpacing) ? options.tickSpacing : 60);
+    const gridColor = (hasval(options) && hasval(options.gridColor) ? options.gridColor : black);
+    const referenceDate_PMILLIS = (hasval(options) && hasval(options.referenceDate) ? parseTime_PMILLIS(options.referenceDate) : undefined);
+
+    const program = new Program(xyFrac_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const a_XyFrac = new Attribute(program, 'a_XyFrac');
+
+    let xyFrac = new Float32Array(0);
+    const xyFracBuffer = newDynamicBuffer();
+
+    return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
+        const tickTimes_PMILLIS = getTickTimes_PMILLIS(timeAxis, (isVerticalAxis ? viewport.h : viewport.w), tickSpacing, timeZone, referenceDate_PMILLIS);
+        const tickCount = tickTimes_PMILLIS.length;
+
+        program.use(gl);
+        u_Color.setData(gl, gridColor);
+
+        xyFrac = ensureCapacityFloat32(xyFrac, 4 * tickCount);
+        for (let n = 0; n < tickCount; n++) {
+            let tFrac = timeAxis.tFrac(tickTimes_PMILLIS[n]);
+            if (isVerticalAxis) {
+                tFrac = (Math.floor(tFrac * viewport.h) + 0.5) / viewport.h;
+                xyFrac[(4 * n + 0)] = 0;
+                xyFrac[(4 * n + 1)] = tFrac;
+                xyFrac[(4 * n + 2)] = 1;
+                xyFrac[(4 * n + 3)] = tFrac;
+            }
+            else {
+                // Adding epsilon is a crude way to compensate for floating-point error (which is probably introduced up where we compute tFrac)
+                tFrac = (Math.floor(tFrac * viewport.w + 1e-4) + 0.5) / viewport.w;
+                xyFrac[(4 * n + 0)] = tFrac;
+                xyFrac[(4 * n + 1)] = 0;
+                xyFrac[(4 * n + 2)] = tFrac;
+                xyFrac[(4 * n + 3)] = 1;
+            }
+        }
+        xyFracBuffer.setData(xyFrac.subarray(0, 4 * tickCount));
+        a_XyFrac.setDataAndEnable(gl, xyFracBuffer, 2, GL.FLOAT);
+
+        // IE does not support lineWidths other than 1, so make sure all browsers use lineWidth of 1
+        gl.lineWidth(1);
+        gl.drawArrays(GL.LINES, 0, 2 * tickCount);
+
+        a_XyFrac.disable(gl);
+        program.endUse(gl);
+    };
+}
+
+

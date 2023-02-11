@@ -27,78 +27,81 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Layout, LayoutEntry } from '../core';
+import { BoundsUnmodifiable } from '../bounds';
+import { Side } from '../misc';
+import { hasval } from '../util/util';
 
-    export function newPlotLayout( options? : { horizAxisHeight? : number; vertAxisWidth? : number } ) : Layout {
-        var horizAxisHeight = ( hasval( options ) && hasval( options.horizAxisHeight ) ? options.horizAxisHeight : 60 );
-        var vertAxisWidth   = ( hasval( options ) && hasval( options.vertAxisWidth  )  ? options.vertAxisWidth   : 70 );
+export function newPlotLayout(options?: { horizAxisHeight?: number; vertAxisWidth?: number }): Layout {
+    const horizAxisHeight = (hasval(options) && hasval(options.horizAxisHeight) ? options.horizAxisHeight : 60);
+    const vertAxisWidth = (hasval(options) && hasval(options.vertAxisWidth) ? options.vertAxisWidth : 70);
 
-        return {
+    return <Layout>{
 
-            updateChildViewports: function( children : LayoutEntry[], parentViewport : BoundsUnmodifiable ) {
-                var topAxes = <LayoutEntry[]> [ ];
-                var leftAxes = <LayoutEntry[]> [ ];
-                var rightAxes = <LayoutEntry[]> [ ];
-                var bottomAxes = <LayoutEntry[]> [ ];
-                var centers = <LayoutEntry[]> [ ];
-                var others = <LayoutEntry[]> [ ];
-                for ( var c = 0; c < children.length; c++ ) {
-                    var child = children[ c ];
-                    switch ( child.layoutArg ) {
-                        case Side.TOP: topAxes.push( child ); break;
-                        case Side.LEFT: leftAxes.push( child ); break;
-                        case Side.RIGHT: rightAxes.push( child ); break;
-                        case Side.BOTTOM: bottomAxes.push( child ); break;
-                        case null: centers.push( child ); break;
-                        default: others.push( child ); break;
-                    }
-                }
-
-                var numVertAxes = leftAxes.length + rightAxes.length;
-                var numHorizAxes = topAxes.length + bottomAxes.length;
-                var centerWidth = Math.max( vertAxisWidth, parentViewport.w - numVertAxes*vertAxisWidth );
-                var centerHeight = Math.max( horizAxisHeight, parentViewport.h - numHorizAxes*horizAxisHeight );
-                var vertAxisWidth2 = ( numVertAxes === 0 ? 0 : ( parentViewport.w - centerWidth )/numVertAxes );
-                var horizAxisHeight2 = ( numHorizAxes === 0 ? 0 : ( parentViewport.h - centerHeight )/numHorizAxes );
-
-                var iCenterStart = parentViewport.iStart + leftAxes.length*vertAxisWidth2;
-                var iCenterEnd = parentViewport.iEnd - rightAxes.length*vertAxisWidth2;
-                var jCenterStart = parentViewport.jStart + bottomAxes.length*horizAxisHeight2;
-                var jCenterEnd = parentViewport.jEnd - topAxes.length*horizAxisHeight2;
-
-                for ( var c = 0; c < topAxes.length; c++ ) {
-                    var jStart = Math.round( jCenterEnd + c*horizAxisHeight2 );
-                    var jEnd = ( c === topAxes.length-1 ? parentViewport.jEnd : Math.round( jCenterEnd + (c+1)*horizAxisHeight2 ) );
-                    topAxes[ c ].viewport.setEdges( iCenterStart, iCenterEnd, jStart, jEnd );
-                }
-
-                for ( var c = 0; c < bottomAxes.length; c++ ) {
-                    var jStart = ( c === bottomAxes.length-1 ? parentViewport.jStart : Math.round( jCenterStart - (c+1)*horizAxisHeight2 ) );
-                    var jEnd = Math.round( jCenterStart - c*horizAxisHeight2 );
-                    bottomAxes[ c ].viewport.setEdges( iCenterStart, iCenterEnd, jStart, jEnd );
-                }
-
-                for ( var c = 0; c < leftAxes.length; c++ ) {
-                    var iStart = ( c === leftAxes.length-1 ? parentViewport.iStart : Math.round( iCenterStart - (c+1)*vertAxisWidth2 ) );
-                    var iEnd = Math.round( iCenterStart - c*vertAxisWidth2 );
-                    leftAxes[ c ].viewport.setEdges( iStart, iEnd, jCenterStart, jCenterEnd );
-                }
-
-                for ( var c = 0; c < rightAxes.length; c++ ) {
-                    var iStart = Math.round( iCenterEnd + c*vertAxisWidth2 );
-                    var iEnd = ( c === rightAxes.length-1 ? parentViewport.iEnd : Math.round( iCenterEnd + (c+1)*vertAxisWidth2 ) );
-                    rightAxes[ c ].viewport.setEdges( iStart, iEnd, jCenterStart, jCenterEnd );
-                }
-
-                for ( var c = 0; c < centers.length; c++ ) {
-                    centers[ c ].viewport.setEdges( iCenterStart, iCenterEnd, jCenterStart, jCenterEnd );
-                }
-
-                for ( var c = 0; c < others.length; c++ ) {
-                    others[ c ].viewport.setEdges( 0, 0, 0, 0 );
+        updateChildViewports: function (children: LayoutEntry[], parentViewport: BoundsUnmodifiable) {
+            const topAxes = <LayoutEntry[]>[];
+            const leftAxes = <LayoutEntry[]>[];
+            const rightAxes = <LayoutEntry[]>[];
+            const bottomAxes = <LayoutEntry[]>[];
+            const centers = <LayoutEntry[]>[];
+            const others = <LayoutEntry[]>[];
+            for (let c = 0; c < children.length; c++) {
+                const child = children[c];
+                switch (child.layoutArg) {
+                    case Side.TOP: topAxes.push(child); break;
+                    case Side.LEFT: leftAxes.push(child); break;
+                    case Side.RIGHT: rightAxes.push(child); break;
+                    case Side.BOTTOM: bottomAxes.push(child); break;
+                    case null: centers.push(child); break;
+                    default: others.push(child); break;
                 }
             }
 
-        };
-    }
+            const numVertAxes = leftAxes.length + rightAxes.length;
+            const numHorizAxes = topAxes.length + bottomAxes.length;
+            const centerWidth = Math.max(vertAxisWidth, parentViewport.w - numVertAxes * vertAxisWidth);
+            const centerHeight = Math.max(horizAxisHeight, parentViewport.h - numHorizAxes * horizAxisHeight);
+            const vertAxisWidth2 = (numVertAxes === 0 ? 0 : (parentViewport.w - centerWidth) / numVertAxes);
+            const horizAxisHeight2 = (numHorizAxes === 0 ? 0 : (parentViewport.h - centerHeight) / numHorizAxes);
+
+            const iCenterStart = parentViewport.iStart + leftAxes.length * vertAxisWidth2;
+            const iCenterEnd = parentViewport.iEnd - rightAxes.length * vertAxisWidth2;
+            const jCenterStart = parentViewport.jStart + bottomAxes.length * horizAxisHeight2;
+            const jCenterEnd = parentViewport.jEnd - topAxes.length * horizAxisHeight2;
+
+            for (let c = 0; c < topAxes.length; c++) {
+                const jStart = Math.round(jCenterEnd + c * horizAxisHeight2);
+                const jEnd = (c === topAxes.length - 1 ? parentViewport.jEnd : Math.round(jCenterEnd + (c + 1) * horizAxisHeight2));
+                topAxes[c].viewport.setEdges(iCenterStart, iCenterEnd, jStart, jEnd);
+            }
+
+            for (let c = 0; c < bottomAxes.length; c++) {
+                const jStart = (c === bottomAxes.length - 1 ? parentViewport.jStart : Math.round(jCenterStart - (c + 1) * horizAxisHeight2));
+                const jEnd = Math.round(jCenterStart - c * horizAxisHeight2);
+                bottomAxes[c].viewport.setEdges(iCenterStart, iCenterEnd, jStart, jEnd);
+            }
+
+            for (let c = 0; c < leftAxes.length; c++) {
+                const iStart = (c === leftAxes.length - 1 ? parentViewport.iStart : Math.round(iCenterStart - (c + 1) * vertAxisWidth2));
+                const iEnd = Math.round(iCenterStart - c * vertAxisWidth2);
+                leftAxes[c].viewport.setEdges(iStart, iEnd, jCenterStart, jCenterEnd);
+            }
+
+            for (let c = 0; c < rightAxes.length; c++) {
+                const iStart = Math.round(iCenterEnd + c * vertAxisWidth2);
+                const iEnd = (c === rightAxes.length - 1 ? parentViewport.iEnd : Math.round(iCenterEnd + (c + 1) * vertAxisWidth2));
+                rightAxes[c].viewport.setEdges(iStart, iEnd, jCenterStart, jCenterEnd);
+            }
+
+            for (let c = 0; c < centers.length; c++) {
+                centers[c].viewport.setEdges(iCenterStart, iCenterEnd, jCenterStart, jCenterEnd);
+            }
+
+            for (let c = 0; c < others.length; c++) {
+                others[c].viewport.setEdges(0, 0, 0, 0);
+            }
+        }
+
+    };
 }
+

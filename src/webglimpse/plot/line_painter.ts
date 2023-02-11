@@ -27,74 +27,81 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-module Webglimpse {
+import { Color, black } from '../color';
+import { Axis2D } from './axis';
+import { Painter } from '../core';
+import { Program, UniformColor, UniformMatrix4f } from '../shader';
+import { modelview_VERTSHADER, solid_FRAGSHADER } from '../misc';
+import { newStaticBuffer } from '../buffer';
+import { BoundsUnmodifiable } from '../bounds';
+import { GL, hasval } from '../util/util';
+import { glOrthoAxis } from '../matrix';
 
-
-    export interface XyLinePainterOptions {
-        color?     : Color;
-        blend?     : boolean;
-        thickness? : number;
-    }
-
-
-    /**
-     * Simple xy line painter which displays static data
-     */
-    export function newXyLinePainter( axis : Axis2D, xCoords : number[], yCoords : number[], options? : XyLinePainterOptions ) : Painter {
-        var thickness = ( hasval( options ) && hasval( options.thickness ) ? options.thickness : 4     );
-        var color     = ( hasval( options ) && hasval( options.color )     ? options.color     : black );
-        var blend     = ( hasval( options ) && hasval( options.blend )     ? options.blend     : false );
-
-        var program = new Program( modelview_VERTSHADER, solid_FRAGSHADER );
-        var u_Color = new UniformColor( program, 'u_Color' );
-        var u_modelViewMatrix = new UniformMatrix4f( program, 'u_modelViewMatrix' );
-
-        var coordArray = [];
-        for ( var i = 0 ; i < xCoords.length ; i++ ) {
-            coordArray[2*i]   = xCoords[i];
-            coordArray[2*i+1] = yCoords[i];
-        }
-        var coordFloatArray = new Float32Array( coordArray );
-        var coordBuffer = newStaticBuffer( coordFloatArray );
-        var dim = 2;
-        var count = coordFloatArray.length / dim;
-
-        return function( gl : WebGLRenderingContext, viewport : BoundsUnmodifiable ) {
-
-            if ( blend ) {
-                gl.blendFuncSeparate( GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA );
-                gl.enable( GL.BLEND );
-            }
-
-            // enable the shader
-            program.use( gl );
-
-            // set color and projection matrix variables
-            u_Color.setData( gl, color );
-            
-            // set the projection matrix based on the axis bounds
-            u_modelViewMatrix.setData( gl, glOrthoAxis( axis ) );
-
-            // XXX: IE doesn't support lineWidth
-            gl.lineWidth( thickness );
-
-            // enable vertex attribute array corresponding to vPosition variable in shader
-            gl.enableVertexAttribArray( 0 );
-
-            // bind buffer data to vertex attribute array
-            coordBuffer.bind( gl, GL.ARRAY_BUFFER );
-            
-            // first argument corresponds to the 0 attrib array set above
-            // second argument indicates two coordinates per vertex
-            gl.vertexAttribPointer( 0, dim, GL.FLOAT, false, 0, 0 );
-
-            // draw the lines
-            gl.drawArrays( GL.LINE_STRIP, 0, count );
-
-            coordBuffer.unbind( gl, GL.ARRAY_BUFFER );
-            program.endUse( gl );
-        }
-    }
-
-
+export interface XyLinePainterOptions {
+    color?: Color;
+    blend?: boolean;
+    thickness?: number;
 }
+
+
+/**
+ * Simple xy line painter which displays static data
+ */
+export function newXyLinePainter(axis: Axis2D, xCoords: number[], yCoords: number[], options?: XyLinePainterOptions): Painter {
+    const thickness = (hasval(options) && hasval(options.thickness) ? options.thickness : 4);
+    const color = (hasval(options) && hasval(options.color) ? options.color : black);
+    const blend = (hasval(options) && hasval(options.blend) ? options.blend : false);
+
+    const program = new Program(modelview_VERTSHADER, solid_FRAGSHADER);
+    const u_Color = new UniformColor(program, 'u_Color');
+    const u_modelViewMatrix = new UniformMatrix4f(program, 'u_modelViewMatrix');
+
+    const coordArray = [];
+    for (let i = 0; i < xCoords.length; i++) {
+        coordArray[2 * i] = xCoords[i];
+        coordArray[2 * i + 1] = yCoords[i];
+    }
+    const coordFloatArray = new Float32Array(coordArray);
+    const coordBuffer = newStaticBuffer(coordFloatArray);
+    const dim = 2;
+    const count = coordFloatArray.length / dim;
+
+    return function (gl: WebGLRenderingContext, viewport: BoundsUnmodifiable) {
+
+        if (blend) {
+            gl.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+            gl.enable(GL.BLEND);
+        }
+
+        // enable the shader
+        program.use(gl);
+
+        // set color and projection matrix variables
+        u_Color.setData(gl, color);
+
+        // set the projection matrix based on the axis bounds
+        u_modelViewMatrix.setData(gl, glOrthoAxis(axis));
+
+        // XXX: IE doesn't support lineWidth
+        gl.lineWidth(thickness);
+
+        // enable vertex attribute array corresponding to vPosition variable in shader
+        gl.enableVertexAttribArray(0);
+
+        // bind buffer data to vertex attribute array
+        coordBuffer.bind(gl, GL.ARRAY_BUFFER);
+
+        // first argument corresponds to the 0 attrib array set above
+        // second argument indicates two coordinates per vertex
+        gl.vertexAttribPointer(0, dim, GL.FLOAT, false, 0, 0);
+
+        // draw the lines
+        gl.drawArrays(GL.LINE_STRIP, 0, count);
+
+        coordBuffer.unbind(gl, GL.ARRAY_BUFFER);
+        program.endUse(gl);
+    };
+}
+
+
+
